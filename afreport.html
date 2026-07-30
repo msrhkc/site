@@ -1,0 +1,2170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>⎈ MSR. — Daily Report</title>
+    <style>
+        /* ── reset & base ── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        :root {
+            --bg: #F2F4F8;
+            --card: #FFFFFF;
+            --accent: #0F2545;
+            --accent2: #1E3A63;
+            --success: #1E7A4C;
+            --danger: #B3261E;
+            --text: #111826;
+            --sub: #5B6472;
+            --border: rgba(15, 37, 69, .12);
+            --shadow: 0 1px 2px rgba(15, 37, 69, .05), 0 6px 20px rgba(15, 37, 69, .06);
+            --radius: 14px;
+            --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Noto Sans Bengali", sans-serif;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            -webkit-font-smoothing: antialiased;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) 40px env(safe-area-inset-left);
+            line-height: 1.5;
+        }
+        .app {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 16px 14px 60px;
+            position: relative;
+        }
+
+        /* ── header & meta ── */
+        header.top {
+            text-align: center;
+            padding: 16px 12px 20px;
+            position: relative;
+        }
+        .wordmark {
+            font-size: 30px;
+            letter-spacing: .02em;
+            color: var(--accent);
+            font-weight: 800;
+        }
+        .subtitle {
+            font-size: 15px;
+            color: var(--sub);
+            margin: 4px 0 0;
+            font-weight: 600;
+        }
+        .subtitle2 {
+            font-size: 12.5px;
+            color: var(--sub);
+            margin: 0 0 10px;
+        }
+        .meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--sub);
+        }
+        .meta-pill {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 4px 12px;
+            box-shadow: var(--shadow);
+        }
+
+        /* ── help icon ── */
+        .help-icon {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: var(--accent);
+            color: #fff;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
+            cursor: pointer;
+            border: none;
+            transition: transform .2s;
+            line-height: 1;
+        }
+        .help-icon:hover {
+            transform: scale(1.05);
+        }
+
+        /* ── cards ── */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px 18px;
+            margin-bottom: 14px;
+            border: 1px solid var(--border);
+        }
+        .card h2 {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--sub);
+            margin: 0 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card h2 .ic {
+            font-size: 14px;
+            color: var(--accent);
+            flex: 0 0 auto;
+        }
+        .card .desc {
+            font-size: 13px;
+            color: var(--sub);
+            margin-bottom: 10px;
+            font-weight: 400;
+        }
+
+        /* ── form elements ── */
+        .field {
+            margin-bottom: 12px;
+        }
+        .field label {
+            display: block;
+            font-size: 13px;
+            color: var(--sub);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        .field label .req {
+            color: var(--danger);
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        textarea,
+        select {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color .15s, box-shadow .15s;
+        }
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(15, 37, 69, .10);
+        }
+        input.invalid {
+            border-color: var(--danger);
+            box-shadow: 0 0 0 3px rgba(179, 38, 30, .10);
+        }
+        textarea {
+            min-height: 70px;
+            resize: vertical;
+            line-height: 1.4;
+        }
+        .grid2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .err-msg {
+            font-size: 12px;
+            color: var(--danger);
+            margin-top: 3px;
+            display: none;
+        }
+
+        /* ── repeatable rows ── */
+        .repeatable-section {
+            margin-top: 4px;
+        }
+        .entry-card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            background: var(--bg);
+        }
+        .entry-top {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .entry-top select {
+            flex: 0 0 120px;
+            padding: 8px 8px;
+            font-size: 13px;
+        }
+        .entry-top input {
+            flex: 1;
+            min-width: 80px;
+        }
+        .rm-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            flex: 0 0 auto;
+            line-height: 1;
+        }
+        .rm-btn:hover {
+            background: rgba(179, 38, 30, .08);
+        }
+        .entry-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+        .entry-grid.two {
+            grid-template-columns: 1fr 1fr;
+        }
+        .entry-grid.four {
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+        }
+        .mini-field label {
+            font-size: 10.5px;
+            color: var(--sub);
+            margin-bottom: 2px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+        .mini-field input {
+            padding: 8px 10px;
+            font-size: 13.5px;
+            border-radius: 8px;
+        }
+        .mini-field input[readonly] {
+            background: transparent;
+            color: var(--sub);
+        }
+        .add-row-btn {
+            margin-top: 2px;
+            background: none;
+            border: 1.5px dashed var(--border);
+            color: var(--accent);
+            width: 100%;
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .add-row-btn:hover {
+            background: rgba(15, 37, 69, .04);
+        }
+
+        /* ── dashboard cards ── */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 6px;
+        }
+        .dash-card {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .dash-card .label {
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--sub);
+        }
+        .dash-card .value {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .dash-card.highlight {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .dash-card.highlight .label {
+            color: rgba(255, 255, 255, .8);
+        }
+        .dash-card.highlight .value {
+            color: #fff;
+        }
+        .dash-card.positive {
+            border-left: 4px solid var(--success);
+        }
+        .dash-card.negative {
+            border-left: 4px solid var(--danger);
+        }
+        .dash-card.neutral {
+            border-left: 4px solid #f0c040;
+        }
+        .dash-card .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 999px;
+            margin-top: 4px;
+        }
+        .badge-pos {
+            background: #d4edda;
+            color: #155724;
+        }
+        .badge-neg {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .badge-zero {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        /* ── preview / report view ── */
+        .preview-container {
+            background: var(--card);
+            border-radius: var(--radius);
+            border: 2px solid var(--accent);
+            padding: 20px;
+            margin-top: 16px;
+            box-shadow: var(--shadow);
+            display: none;
+        }
+        .preview-container.visible {
+            display: block;
+        }
+        .preview-container .report-header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+        }
+        .preview-container .report-header h1 {
+            font-size: 20px;
+            letter-spacing: 1px;
+            color: var(--accent);
+        }
+        .preview-container .report-header .meta {
+            font-size: 13px;
+            color: var(--sub);
+        }
+        .preview-container .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+        .preview-container .summary-card {
+            background: var(--bg);
+            border-radius: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .preview-container .summary-card .label {
+            font-size: 10.5px;
+            color: var(--sub);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .preview-container .summary-card .value {
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .preview-container .summary-card.net {
+            grid-column: 1 / -1;
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .preview-container .summary-card.net .label {
+            color: rgba(255, 255, 255, .8);
+        }
+        .preview-container .summary-card.net .value {
+            color: #fff;
+        }
+        .preview-container .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin: 16px 0 8px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 4px;
+        }
+        .preview-container table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .preview-container table th {
+            background: var(--bg);
+            text-align: left;
+            padding: 6px 8px;
+            border-bottom: 1px solid #ccc;
+        }
+        .preview-container table td {
+            padding: 5px 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .preview-container table .total-row {
+            font-weight: 700;
+            border-top: 2px solid #000;
+        }
+        .preview-container .signature-block {
+            margin-top: 24px;
+            border-top: 1px solid #ccc;
+            padding-top: 14px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .preview-container .signature-block .sig-item {
+            min-width: 160px;
+        }
+        .preview-container .signature-block .sig-line {
+            display: inline-block;
+            width: 140px;
+            border-bottom: 1px solid #000;
+            margin-top: 4px;
+        }
+
+        /* ── actions ── */
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 10px 0 18px;
+        }
+        .actions .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        button.act {
+            border: none;
+            border-radius: 12px;
+            padding: 14px 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform .1s, box-shadow .15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: inherit;
+        }
+        button.act:active {
+            transform: scale(.97);
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 2px 12px rgba(15, 37, 69, .25);
+        }
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+        }
+        .btn-success:hover {
+            box-shadow: 0 2px 12px rgba(30, 122, 76, .25);
+        }
+        .btn-secondary {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover {
+            background: var(--bg);
+        }
+        .btn-danger {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid var(--border);
+        }
+        .btn-danger:hover {
+            background: rgba(179, 38, 30, .06);
+        }
+        .btn-full {
+            grid-column: 1 / -1;
+        }
+        .btn:disabled {
+            opacity: .5;
+            pointer-events: none;
+        }
+
+        /* ── status badge ── */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .status-draft {
+            background: #f0f0f0;
+            color: #666;
+        }
+        .status-review {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-submitted {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        /* ── modal ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .45);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 20px;
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+        .modal-box {
+            background: #fff;
+            border-radius: 20px;
+            max-width: 560px;
+            width: 100%;
+            padding: 28px 30px 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+            animation: modalIn .2s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(.96) translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        .modal-box h2 {
+            font-size: 20px;
+            color: var(--accent);
+            margin: 0 0 6px;
+        }
+        .modal-box .sub {
+            color: var(--sub);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .modal-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-weight: 600;
+            color: var(--sub);
+            border-bottom: 3px solid transparent;
+        }
+        .modal-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        .modal-tab-content {
+            display: none;
+        }
+        .modal-tab-content.active {
+            display: block;
+        }
+        .modal-tab-content ul {
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+        .modal-box .actions {
+            display: flex;
+            gap: 10px;
+            margin: 16px 0 0;
+        }
+        .modal-box .actions button {
+            flex: 1;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 6px 0;
+            font-size: 14px;
+        }
+        .checklist-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+
+        /* ── toast ── */
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--accent);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            opacity: 0;
+            pointer-events: none;
+            transition: all .25s;
+            z-index: 99;
+            box-shadow: var(--shadow);
+            max-width: 90vw;
+            text-align: center;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ── responsive ── */
+        @media (max-width: 640px) {
+            .grid2 {
+                grid-template-columns: 1fr;
+            }
+            .entry-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .entry-grid .mini-field:nth-child(3) {
+                grid-column: 1 / -1;
+            }
+            .entry-grid.two {
+                grid-template-columns: 1fr 1fr;
+            }
+            .entry-grid.two .mini-field:nth-child(2) {
+                grid-column: auto;
+            }
+            .entry-grid.four {
+                grid-template-columns: 1fr 1fr;
+            }
+            .entry-grid.four .mini-field:nth-child(3),
+            .entry-grid.four .mini-field:nth-child(4) {
+                grid-column: auto;
+            }
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .actions .row {
+                grid-template-columns: 1fr;
+            }
+            .preview-container .summary-cards {
+                grid-template-columns: 1fr 1fr;
+            }
+            .modal-box {
+                padding: 20px 18px;
+            }
+            .help-icon {
+                width: 38px;
+                height: 38px;
+                font-size: 18px;
+                top: 12px;
+                right: 12px;
+            }
+        }
+
+        /* ── print styles ── */
+        @media print {
+            body {
+                background: #fff !important;
+                padding: 0 !important;
+                color: #000 !important;
+                font-size: 11pt;
+                line-height: 1.4;
+            }
+            .app {
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .card {
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                padding: 4px 0 !important;
+                margin-bottom: 6px !important;
+                background: transparent !important;
+                break-inside: avoid;
+            }
+            .card h2 {
+                font-size: 10pt !important;
+                color: #000 !important;
+                border-bottom: 1px solid #ccc;
+                padding-bottom: 3px;
+                margin-bottom: 6px;
+            }
+            .dashboard-grid {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 6px !important;
+            }
+            .dash-card {
+                background: #f4f4f4 !important;
+                border: 1px solid #ccc !important;
+                border-radius: 4px !important;
+                padding: 4px 6px !important;
+            }
+            .dash-card .value {
+                font-size: 14pt !important;
+            }
+            .dash-card.highlight {
+                background: #f4f4f4 !important;
+                color: #000 !important;
+                border-color: #ccc !important;
+            }
+            .dash-card.highlight .value {
+                color: #000 !important;
+            }
+            .dash-card .badge {
+                display: none !important;
+            }
+            .entry-card {
+                background: transparent !important;
+                border: 1px solid #ddd !important;
+                border-radius: 4px !important;
+                padding: 6px 8px !important;
+                margin-bottom: 4px !important;
+            }
+            .entry-top select,
+            .entry-top input,
+            .mini-field input,
+            .mini-field select {
+                background: transparent !important;
+                border: 1px solid #ccc !important;
+                border-radius: 3px !important;
+                padding: 3px 5px !important;
+                font-size: 9pt !important;
+            }
+            .mini-field input[readonly] {
+                border: none !important;
+                background: transparent !important;
+            }
+            .preview-container {
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                display: block !important;
+            }
+            .preview-container .report-header h1 {
+                font-size: 16pt !important;
+            }
+            .preview-container table th {
+                background: #f0f0f0 !important;
+            }
+            .preview-container table td {
+                border-bottom: 1px solid #ddd !important;
+            }
+            .preview-container .summary-card {
+                background: #f9f9f9 !important;
+                border: 1px solid #ccc !important;
+            }
+            .preview-container .summary-card.net {
+                background: #f9f9f9 !important;
+                color: #000 !important;
+                border-color: #ccc !important;
+            }
+            .preview-container .summary-card.net .value {
+                color: #000 !important;
+            }
+            .preview-container .summary-card.net .label {
+                color: #666 !important;
+            }
+            .preview-container .signature-block .sig-line {
+                border-bottom: 1px solid #000 !important;
+            }
+            .actions,
+            .add-row-btn,
+            .rm-btn,
+            .toast,
+            .modal-overlay,
+            details.instructions,
+            footer.foot,
+            .help-icon {
+                display: none !important;
+            }
+            .field label {
+                color: #000 !important;
+            }
+            input,
+            textarea,
+            select {
+                border-color: #ccc !important;
+                background: transparent !important;
+                color: #000 !important;
+            }
+            .entry-top {
+                flex-wrap: nowrap !important;
+            }
+            .grid2 {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            .card h2 .ic {
+                color: #000 !important;
+            }
+            header.top {
+                padding: 4px 0 8px !important;
+            }
+            .meta-pill {
+                background: transparent !important;
+                border: 1px solid #ccc !important;
+                box-shadow: none !important;
+            }
+            .wordmark {
+                font-size: 20pt !important;
+                color: #000 !important;
+            }
+            .subtitle {
+                color: #000 !important;
+            }
+            .subtitle2 {
+                color: #333 !important;
+            }
+            .status-badge {
+                display: none !important;
+            }
+            @page {
+                margin: 0.5in 0.6in;
+                @bottom-center {
+                    content: "Page " counter(page) " of " counter(pages);
+                    font-size: 9pt;
+                    color: #666;
+                }
+            }
+            .print-footer {
+                display: block !important;
+                text-align: center;
+                font-size: 9pt;
+                color: #666;
+                border-top: 1px solid #ddd;
+                padding-top: 6px;
+                margin-top: 12px;
+            }
+        }
+        .print-footer {
+            display: none;
+        }
+
+        /* ── utility ── */
+        .mt-1 {
+            margin-top: 6px;
+        }
+        .mb-1 {
+            margin-bottom: 6px;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .gap-1 {
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app" id="app">
+
+        <!-- HELP BUTTON -->
+        <button class="help-icon no-print" id="helpBtn" aria-label="Help">?</button>
+
+        <!-- HEADER -->
+        <header class="top">
+            <div class="wordmark">⎈ MSR.</div>
+            <p class="subtitle" data-i18n="dailyBrief">Daily Financial Report</p>
+            <p class="subtitle2" data-i18n="preparedFor">Prepared for the Attorney-in-Fact</p>
+            <div class="meta-row">
+                <span class="meta-pill" id="mDate"></span>
+                <span class="meta-pill" id="mTime"></span>
+                <span class="meta-pill" id="mId"></span>
+                <span class="meta-pill status-badge status-draft" id="statusBadge" data-i18n="statusDraft">Draft</span>
+            </div>
+        </header>
+
+        <!-- ACCOUNTANT INFO -->
+        <section class="card">
+            <h2><span class="ic">✎</span><span data-i18n="secAccInfo">Accountant Information</span></h2>
+            <div class="grid2">
+                <div class="field">
+                    <label for="accName" data-i18n="lblAccName">Accountant Name <span class="req">*</span></label>
+                    <input type="text" id="accName" required autocomplete="off" />
+                    <div class="err-msg" data-i18n="errAccName">Accountant name is required.</div>
+                </div>
+                <div class="field">
+                    <label for="accDesig" data-i18n="lblAccDesig">Designation <span class="req">*</span></label>
+                    <input type="text" id="accDesig" required />
+                    <div class="err-msg" data-i18n="errAccDesig">Designation is required.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 1: CASH ON HAND (Assets) -->
+        <section class="card">
+            <h2><span class="ic">💰</span><span data-i18n="secCash">Cash in Hand (Assets)</span></h2>
+            <p class="desc" data-i18n="descCash">Count all physical cash at the end of the day.</p>
+            <div class="field">
+                <label for="hand" data-i18n="lblHand">Cash in Hand <span class="req">*</span></label>
+                <input type="text" inputmode="decimal" class="num" id="hand" required />
+                <div class="err-msg" data-i18n="errHand">Required.</div>
+            </div>
+            <div style="margin-top:4px;text-align:right;font-weight:600;color:var(--accent);">
+                <span data-i18n="lblCashTotal">Cash in Hand</span> <span id="outCashTotal">৳0</span>
+            </div>
+        </section>
+
+        <!-- SECTION 2: CASH AT BANK (Assets) -->
+        <section class="card">
+            <h2><span class="ic">🏦</span><span data-i18n="secBankAcc">Cash at Bank (Assets)</span></h2>
+            <p class="desc" data-i18n="descBank">Copy the closing balance shown in your banking app.</p>
+            <div class="repeatable-section" id="bankAccList"></div>
+            <button class="add-row-btn no-print" id="addBankAccBtn" type="button" data-i18n="btnAddBankAcc">+ Add Bank Account</button>
+            <div style="margin-top:8px;text-align:right;font-weight:600;color:var(--accent);">
+                <span data-i18n="lblTotalBank">Total Cash at Bank</span> <span id="outTotalBank">৳0</span>
+            </div>
+        </section>
+
+        <!-- SECTION 2B: CURRENT ASSETS (Inventory & Receivables) -->
+        <section class="card">
+            <h2><span class="ic">🛠</span><span data-i18n="secCurrentAssets">Current Assets</span></h2>
+            <p class="desc" data-i18n="descCurrentAssets">Enter today's closing inventory valuation (from your stock register or ERP). Only include Accounts Receivable if you regularly sell on credit.</p>
+            <div class="grid2">
+                <div class="field">
+                    <label for="closingInventory" data-i18n="lblClosingInventory">Closing Inventory Value <span class="req">*</span></label>
+                    <input type="text" inputmode="decimal" class="num" id="closingInventory" required />
+                    <div class="err-msg" data-i18n="errClosingInventory">Required.</div>
+                </div>
+                <div class="field">
+                    <label for="accountsReceivable" data-i18n="lblAccountsReceivable">Accounts Receivable (optional)</label>
+                    <input type="text" inputmode="decimal" class="num" id="accountsReceivable" placeholder="0" />
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: OWNER'S CAPITAL (Equity) -->
+        <section class="card">
+            <h2><span class="ic">◈</span><span data-i18n="secOwner">Owner's Capital</span></h2>
+            <p class="desc" data-i18n="descOwner">Capital introduced and drawings are tracked separately for a full history — the net figure is calculated automatically.</p>
+            <div class="grid2">
+                <div class="field">
+                    <label for="capitalIntroduced" data-i18n="lblCapitalIntroduced">Owner's Capital Introduced <span class="req">*</span></label>
+                    <input type="text" inputmode="decimal" class="num" id="capitalIntroduced" required />
+                    <div class="err-msg" data-i18n="errCapitalIntroduced">Required.</div>
+                </div>
+                <div class="field">
+                    <label for="capitalWithdrawn" data-i18n="lblCapitalWithdrawn">Capital Withdrawn by Owner</label>
+                    <input type="text" inputmode="decimal" class="num" id="capitalWithdrawn" />
+                    <div class="err-msg" id="errCapitalWithdrawn" style="display:none;" data-i18n="errCapitalWithdrawn">Withdrawn cannot exceed introduced.</div>
+                </div>
+            </div>
+            <div style="margin-top:4px;text-align:right;font-weight:600;color:var(--accent);">
+                <span data-i18n="lblCapitalBalance">Net Owner Investment</span> <span id="outCapitalBalance">৳0</span>
+            </div>
+        </section>
+
+        <!-- SECTION 4: LIABILITIES -->
+        <section class="card">
+            <h2><span class="ic">◆</span><span data-i18n="secLiabilities">Liabilities</span></h2>
+            <p class="desc" data-i18n="descLiabilities">List all amounts the company owes — bank loans, hand loans, investors, suppliers, advances, or others.</p>
+            <div class="repeatable-section" id="liabilitiesList"></div>
+            <button class="add-row-btn no-print" id="addLiabilityBtn" type="button" data-i18n="btnAddLiability">+ Add Liability</button>
+            <div style="margin-top:8px;text-align:right;font-weight:600;color:var(--accent);">
+                <span data-i18n="lblTotalLiabilities">Total Liabilities</span> <span id="outTotalLiabilities">৳0</span>
+            </div>
+            <div style="margin-top:4px;text-align:right;font-weight:600;color:var(--accent);">
+                <span data-i18n="lblTotalDailyInt">Total Daily Interest Expense</span> <span id="outTotalDailyInt">৳0</span>
+            </div>
+        </section>
+
+        <!-- SECTION 4B: OPERATIONS (Sales Recovery) -->
+        <section class="card">
+            <h2><span class="ic">💵</span><span data-i18n="secOperations">Operations</span></h2>
+            <p class="desc" data-i18n="descOperations">One figure — no customer-by-customer breakdown needed.</p>
+            <div class="field">
+                <label for="grossRevenue" data-i18n="lblRevenue">Today's Gross Revenue (Sales Recovery) <span class="req">*</span></label>
+                <input type="text" inputmode="decimal" class="num" id="grossRevenue" required />
+                <div class="err-msg" data-i18n="errRevenue">Required.</div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: REMARKS -->
+        <section class="card">
+            <h2><span class="ic">✎</span><span data-i18n="secRemarks">Remarks</span></h2>
+            <div class="field">
+                <label for="notes" data-i18n="lblRemarks">Additional notes for the Attorney-in-Fact</label>
+                <textarea id="notes" data-i18n-ph="phRemarks" placeholder="Write any remarks, issues, or context for today's report…"></textarea>
+            </div>
+        </section>
+
+        <!-- SECTION 6: SIGNATURE -->
+        <section class="card">
+            <h2><span class="ic">✒</span><span data-i18n="secSignoff">Accountant's Sign-Off</span></h2>
+            <p class="desc" data-i18n="signoffDecl">I confirm the figures above are accurate as of today's closing.</p>
+            <div class="field">
+                <label for="accSign" data-i18n="lblSignature">Typed Signature</label>
+                <input type="text" id="accSign" data-i18n-ph="phSignature" placeholder="Type your full name to sign" />
+            </div>
+        </section>
+
+        <!-- DASHBOARD -->
+        <section class="card" style="border:2px solid var(--accent);">
+            <h2><span class="ic">📊</span><span data-i18n="secDashboard">Today's Financial Position</span></h2>
+            <div class="dashboard-grid" id="dashboardGrid">
+                <div class="dash-card"><div class="label" data-i18n="dashCash">Cash in Hand</div><div class="value" id="dashCash">৳0</div></div>
+                <div class="dash-card"><div class="label" data-i18n="dashBank">Cash at Bank</div><div class="value" id="dashBank">৳0</div></div>
+                <div class="dash-card"><div class="label" data-i18n="dashInventory">Closing Inventory</div><div class="value" id="dashInventory">৳0</div></div>
+                <div class="dash-card"><div class="label" data-i18n="dashReceivable">Accounts Receivable</div><div class="value" id="dashReceivable">৳0</div></div>
+                <div class="dash-card"><div class="label" data-i18n="dashTotalAssets">Total Assets</div><div class="value" id="dashTotalAssets">৳0</div></div>
+                <div class="dash-card"><div class="label" data-i18n="dashCapitalBalance">Net Owner Investment</div><div class="value" id="dashCapitalBalance">৳0</div></div>
+                <div class="dash-card"><div class="label" data-i18n="dashTotalLiabilities">Total Liabilities</div><div class="value" id="dashTotalLiabilities">৳0</div></div>
+                <div class="dash-card"><div class="label" data-i18n="dashDailyInt">Daily Interest Expense</div><div class="value" id="dashDailyInt">৳0</div></div>
+                <div class="dash-card"><div class="label" data-i18n="dashRevenue">Today's Gross Revenue</div><div class="value" id="dashRevenue">৳0</div></div>
+                <div class="dash-card highlight" id="dashNetCard">
+                    <div class="label" data-i18n="dashNet">Owner's Equity</div>
+                    <div class="value" id="dashNet">৳0</div>
+                    <div class="badge badge-zero" id="dashNetBadge">Zero</div>
+                </div>
+                <div class="dash-card highlight" id="dashRecoveryCard">
+                    <div class="label" data-i18n="dashRecovery">Recovery Ratio</div>
+                    <div class="value" id="dashRecovery">0%</div>
+                    <div class="badge badge-zero" id="dashRecoveryBadge">—</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ACTIONS -->
+        <div class="actions no-print">
+            <div class="row">
+                <button class="act btn-primary" id="btnPreview" type="button" data-i18n="btnPreview">📄 Generate Preview</button>
+                <button class="act btn-success" id="btnSubmit" type="button" data-i18n="btnSubmit" disabled>✔ Approve & Submit</button>
+            </div>
+            <div class="row">
+                <button class="act btn-secondary" id="btnPrint" type="button" data-i18n="btnPrint">🖨 Print Official PDF</button>
+                <button class="act btn-secondary" id="btnXlsx" type="button" data-i18n="btnXlsx">📊 Export Excel</button>
+            </div>
+            <button class="act btn-danger" id="btnReset" type="button" data-i18n="btnReset">⟳ Reset Form</button>
+        </div>
+
+        <!-- PREVIEW CONTAINER -->
+        <div class="preview-container" id="previewContainer"></div>
+
+        <!-- INSTRUCTIONS -->
+        <details class="instructions no-print" style="margin-top:10px;padding:10px 14px;background:var(--card);border-radius:var(--radius);border:1px solid var(--border);">
+            <summary style="font-weight:600;color:var(--accent);cursor:pointer;">Step-by-Step Instructions (for the Accountant)</summary>
+            <div style="padding-top:8px;font-size:13px;line-height:1.7;color:var(--text);">
+                This report must be sent to the Attorney-in-Fact every day before 5 PM.<br><br>
+                <strong>Steps:</strong><br>
+                1. Enter your name and designation.<br>
+                2. Enter the amount of cash in hand (at end of day).<br>
+                3. Add bank accounts — name, account number (required), and closing balance.<br>
+                4. Enter the Closing Inventory value (from the stock register or ERP). Add Accounts Receivable only if you sell on credit, otherwise leave it blank.<br>
+                5. Enter Owner's Capital Introduced and Capital Withdrawn.<br>
+                6. Enter company liabilities — bank loans, hand loans, external investors, party advances, or others — with lender name, date issued, outstanding amount, and annual interest rate. Daily interest expense is calculated automatically.<br>
+                7. Enter today's Gross Revenue (sales recovery).<br>
+                8. Write any necessary remarks.<br>
+                9. Finally, type your name to sign.<br>
+                10. Click "Generate Preview" and review.<br>
+                11. Check all checklist boxes and click "Approve & Submit".<br>
+                12. Send the WhatsApp summary, then follow the instructions to print the PDF, seal it in an envelope, and deliver it to the Attorney-in-Fact.<br><br>
+                This software does not store any data — it must be filled in fresh every day.
+            </div>
+        </details>
+
+        <footer class="foot no-print" style="margin-top:12px;font-size:12px;color:var(--sub);text-align:center;border-top:1px solid var(--border);padding-top:12px;">
+            <span data-i18n="preparedByLbl">Prepared by</span> <strong id="fName">—</strong>, <span id="fDesig">—</span><br />
+            <span data-i18n="generatedLbl">Report generated</span> <span id="fTime">—</span><br />
+            <span data-i18n="generatedUsingLbl">MSR Daily Financial Report · v5</span>
+        </footer>
+
+        <div class="print-footer">MSR Daily Financial Report · Page <span class="page-number"></span></div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <!-- HELP MODAL -->
+    <div class="modal-overlay" id="helpModal">
+        <div class="modal-box">
+            <h2>📘 Help & Instructions</h2>
+            <div class="modal-tab-content active" id="help-en">
+                <ul>
+                    <li><strong>Accountant Info:</strong> Your full name and designation.</li>
+                    <li><strong>Cash in Hand:</strong> Count all physical cash at the end of the day.</li>
+                    <li><strong>Cash at Bank:</strong> Copy the closing balance from your banking app. Each account needs a name, account number (required), and balance.</li>
+                    <li><strong>Current Assets:</strong> Closing Inventory is the total valuation from your stock register or ERP — one figure, no breakdown. Accounts Receivable is optional and can be left at 0 if you rarely sell on credit.</li>
+                    <li><strong>Owner's Capital:</strong> Capital introduced and any amount withdrawn are tracked separately so the full history is preserved. Net Owner Investment is calculated automatically.</li>
+                    <li><strong>Liabilities:</strong> List all amounts the company owes — bank loans, hand loans, external investors, party advances, or others. Include the lender name, date issued, outstanding amount, and annual interest rate. Daily interest expense is calculated automatically.</li>
+                    <li><strong>Operations:</strong> Today's Gross Revenue — the total sales recovered today. One figure, no customer breakdown.</li>
+                    <li><strong>Financial Position:</strong> Owner's Equity (Total Assets − Total Liabilities) and Recovery Ratio (Owner's Equity ÷ Owner's Capital Introduced) are calculated automatically.</li>
+                    <li><strong>Remarks:</strong> Any notes for the Attorney‑in‑Fact.</li>
+                    <li><strong>Signature:</strong> Type your name to sign off.</li>
+                </ul>
+                <p><strong>Workflow:</strong> Fill form → Generate Preview → Review → Check all boxes → Approve & Submit → WhatsApp summary → Print PDF → Seal & deliver.</p>
+            </div>
+            <div class="actions">
+                <button class="act btn-secondary" id="helpCloseBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPROVAL CHECKLIST MODAL -->
+    <div class="modal-overlay" id="checklistModal">
+        <div class="modal-box">
+            <h2>✅ End‑of‑Day Validation</h2>
+            <p class="sub">Confirm the following before submitting the report.</p>
+            <div class="checklist-item">
+                <input type="checkbox" id="chk1" />
+                <label for="chk1" data-i18n="chk1">All bank balances are closing balances as of the reporting date.</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="chk2" />
+                <label for="chk2" data-i18n="chk2">Cash in hand has been physically verified.</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="chk3" />
+                <label for="chk3" data-i18n="chk3">All liability amounts have been updated.</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="chk4" />
+                <label for="chk4" data-i18n="chk4">All figures have been reviewed and are accurate.</label>
+            </div>
+            <div class="actions">
+                <button class="act btn-secondary" id="checklistCancel">Cancel</button>
+                <button class="act btn-success" id="checklistConfirm" disabled>Confirm & Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INSTRUCTION MODAL (after submit) -->
+    <div class="modal-overlay" id="instructionModal">
+        <div class="modal-box">
+            <h2>📋 Next Steps</h2>
+            <p class="sub">The report has been submitted. Complete the following to finalize today's process.</p>
+            <ol style="padding-left:20px;line-height:1.8;">
+                <li>Print the finalized PDF report.</li>
+                <li>Place the printed report inside an envelope.</li>
+                <li>Seal the envelope securely.</li>
+                <li>Deliver the sealed envelope to the <strong>Attorney-in-Fact</strong>.</li>
+            </ol>
+            <p style="font-size:13px;color:var(--sub);margin-bottom:14px;">This completes today's reporting process.</p>
+            <div class="actions">
+                <button class="act btn-primary" id="modalPrintBtn">🖨 Print Official PDF</button>
+                <button class="act btn-secondary" id="modalCloseBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+    </script>
+    <script>
+        'use strict';
+
+        /* ============================================================
+           I18N
+           ============================================================ */
+        const I18N = {
+            en: {
+                dailyBrief: "Daily Financial Report",
+                preparedFor: "Prepared for the Attorney-in-Fact",
+                secAccInfo: "Accountant Information",
+                lblAccName: "Accountant Name",
+                errAccName: "Accountant name is required.",
+                lblAccDesig: "Designation",
+                errAccDesig: "Designation is required.",
+                secCash: "Cash in Hand (Assets)",
+                descCash: "Count all physical cash at the end of the day.",
+                lblHand: "Cash in Hand",
+                errHand: "Required.",
+                lblCashTotal: "Cash in Hand",
+                secBankAcc: "Cash at Bank (Assets)",
+                descBank: "Copy the closing balance shown in your banking app.",
+                btnAddBankAcc: "+ Add Bank Account",
+                lblBankName: "Bank Name",
+                lblAccName2: "Account Name",
+                lblAccNumber: "Account Number",
+                lblClosingBal: "Closing Balance",
+                lblTotalBank: "Total Cash at Bank",
+                secCurrentAssets: "Current Assets",
+                descCurrentAssets: "Enter today's closing inventory valuation (from your stock register or ERP). Only include Accounts Receivable if you regularly sell on credit.",
+                lblClosingInventory: "Closing Inventory Value",
+                errClosingInventory: "Required.",
+                lblAccountsReceivable: "Accounts Receivable (optional)",
+                secOwner: "Owner's Capital",
+                descOwner: "Capital introduced and drawings are tracked separately for a full history — the net figure is calculated automatically.",
+                lblCapitalIntroduced: "Owner's Capital Introduced",
+                errCapitalIntroduced: "Required.",
+                lblCapitalWithdrawn: "Capital Withdrawn by Owner",
+                errCapitalWithdrawn: "Withdrawn cannot exceed introduced.",
+                lblCapitalBalance: "Net Owner Investment",
+                secLiabilities: "Liabilities",
+                descLiabilities: "List all amounts the company owes — bank loans, hand loans, investors, suppliers, advances, or others.",
+                btnAddLiability: "+ Add Liability",
+                lblLiabilityType: "Type",
+                optBankLoan: "Bank Loan",
+                optHandLoan: "Hand Loan",
+                optExternalInvestor: "External Investor",
+                optPartyAdvance: "Party Advance",
+                optOther: "Other",
+                lblLenderName: "Lender Name",
+                lblDateIssued: "Date Issued",
+                lblOutstanding: "Outstanding Amount",
+                lblInterestRate: "Annual Interest Rate (%)",
+                lblDailyInt: "Daily Interest Expense",
+                lblNotes: "Notes",
+                lblTotalLiabilities: "Total Liabilities",
+                lblTotalDailyInt: "Total Daily Interest Expense",
+                secOperations: "Operations",
+                descOperations: "One figure — no customer-by-customer breakdown needed.",
+                lblRevenue: "Today's Gross Revenue (Sales Recovery)",
+                errRevenue: "Required.",
+                secRemarks: "Remarks",
+                lblRemarks: "Additional notes for the Attorney-in-Fact",
+                phRemarks: "Write any remarks, issues, or context for today's report…",
+                secSignoff: "Accountant's Sign-Off",
+                signoffDecl: "I confirm the figures above are accurate as of today's closing.",
+                lblSignature: "Typed Signature",
+                phSignature: "Type your full name to sign",
+                secDashboard: "Today's Financial Position",
+                dashCash: "Cash in Hand",
+                dashBank: "Cash at Bank",
+                dashInventory: "Closing Inventory",
+                dashReceivable: "Accounts Receivable",
+                dashTotalAssets: "Total Assets",
+                dashCapitalBalance: "Net Owner Investment",
+                dashTotalLiabilities: "Total Liabilities",
+                dashDailyInt: "Daily Interest Expense",
+                dashRevenue: "Today's Gross Revenue",
+                dashNet: "Owner's Equity",
+                dashRecovery: "Recovery Ratio",
+                btnPreview: "📄 Generate Preview",
+                btnSubmit: "✔ Approve & Submit",
+                btnPrint: "🖨 Print Official PDF",
+                btnXlsx: "📊 Export Excel",
+                btnReset: "⟳ Reset Form",
+                preparedByLbl: "Prepared by",
+                generatedLbl: "Report generated",
+                generatedUsingLbl: "MSR Daily Financial Report · v5",
+                toastFillRequired: "Please fill all required fields.",
+                toastGenerated: "Preview generated.",
+                confirmReset: "Clear all entered data? This cannot be undone.",
+                toastWaOpened: "WhatsApp opened. Complete the instruction steps.",
+                toastApproved: "Report approved and submitted. WhatsApp summary sent.",
+                statusDraft: "Draft",
+                statusReview: "Under Review",
+                statusApproved: "Approved",
+                statusSubmitted: "Submitted",
+                chk1: "All bank balances are closing balances as of the reporting date.",
+                chk2: "Cash in hand has been physically verified.",
+                chk3: "All liability amounts have been updated.",
+                chk4: "All figures have been reviewed and are accurate.",
+                checklistConfirm: "Confirm & Submit",
+                checklistCancel: "Cancel",
+                btnAddLiability: "+ Add Liability",
+            }
+        };
+
+        let currentLang = 'en';
+
+        function applyLang(lang) {
+            currentLang = lang;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const v = I18N[lang][el.dataset.i18n];
+                if (v !== undefined) el.textContent = v;
+            });
+            document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+                const v = I18N[lang][el.dataset.i18nPh];
+                if (v !== undefined) el.placeholder = v;
+            });
+            document.documentElement.lang = lang;
+            updateStatusBadge();
+            // update select options for liability type
+            document.querySelectorAll('#liabilitiesList .li-type').forEach(sel => {
+                const opts = getLiabilityOpts();
+                sel.innerHTML = opts.map(o =>
+                    `<option value="${o.value}">${o.label}</option>`
+                ).join('');
+            });
+            recalcAll();
+        }
+
+
+        function getLiabilityOpts() {
+            const data = I18N[currentLang];
+            return [
+                { value: 'bankloan', label: data.optBankLoan || 'Bank Loan' },
+                { value: 'handloan', label: data.optHandLoan || 'Hand Loan' },
+                { value: 'externalinvestor', label: data.optExternalInvestor || 'External Investor' },
+                { value: 'partyadvance', label: data.optPartyAdvance || 'Party Advance' },
+                { value: 'other', label: data.optOther || 'Other' }
+            ];
+        }
+
+        /* ============================================================
+           HELPERS
+           ============================================================ */
+        const $ = id => document.getElementById(id);
+        const raw = v => parseFloat(String(v).replace(/,/g, '')) || 0;
+        const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+        function clearInvalid(el) {
+            el.classList.remove('invalid');
+            const e = el.parentElement.querySelector('.err-msg');
+            if (e) e.style.display = 'none';
+        }
+
+        function attachNumField(el) {
+            el.addEventListener('input', () => { clearInvalid(el);
+                recalcAll(); });
+            el.addEventListener('blur', () => { if (el.value !== '') el.value = fmt(raw(el.value)); });
+        }
+
+        // Numeric fields: hand, capitalIntroduced, capitalWithdrawn
+        ['hand', 'closingInventory', 'accountsReceivable', 'capitalIntroduced', 'capitalWithdrawn', 'grossRevenue'].forEach(id => attachNumField($(id)));
+
+        /* ============================================================
+           REPORT OBJECT BUILDER
+           ============================================================ */
+        function buildReport() {
+            const bankAccounts = [];
+            document.querySelectorAll('#bankAccList .entry-card').forEach(row => {
+                const name = row.querySelector('.ba-name').value.trim();
+                const accNum = row.querySelector('.ba-accnum').value.trim();
+                if (!name || !accNum) return;
+                bankAccounts.push({
+                    bankName: name,
+                    accountNumber: accNum,
+                    accountName: row.querySelector('.ba-accname').value.trim(),
+                    closingBalance: raw(row.querySelector('.ba-balance').value)
+                });
+            });
+
+            const liabilities = [];
+            document.querySelectorAll('#liabilitiesList .entry-card').forEach(row => {
+                const lender = row.querySelector('.li-lender').value.trim();
+                if (!lender) return;
+                const amount = raw(row.querySelector('.li-amount').value);
+                const rate = raw(row.querySelector('.li-rate').value);
+                const dateIssued = row.querySelector('.li-date').value.trim();
+                liabilities.push({
+                    type: row.querySelector('.li-type').value,
+                    lender: lender,
+                    dateIssued: dateIssued,
+                    amount: amount,
+                    interestRate: rate,
+                    dailyInterest: amount * (rate / 100) / 365,
+                    notes: row.querySelector('.li-notes').value.trim()
+                });
+            });
+
+            const cashInHand = raw($('hand').value);
+            const totalCashAtBank = bankAccounts.reduce((s, a) => s + a.closingBalance, 0);
+            const closingInventory = raw($('closingInventory').value);
+            const accountsReceivable = raw($('accountsReceivable').value);
+            const totalAssets = cashInHand + totalCashAtBank + closingInventory + accountsReceivable;
+
+            const capitalIntroduced = raw($('capitalIntroduced').value);
+            const capitalWithdrawn = raw($('capitalWithdrawn').value);
+            const capitalBalance = Math.max(capitalIntroduced - capitalWithdrawn, 0);
+
+            const totalLiabilities = liabilities.reduce((s, o) => s + o.amount, 0);
+            const totalDailyInterest = liabilities.reduce((s, o) => s + o.dailyInterest, 0);
+
+            const grossRevenue = raw($('grossRevenue').value);
+
+            // Owner's Equity = Total Assets - Total Liabilities (the accounting equation)
+            const ownersEquity = totalAssets - totalLiabilities;
+            const netPosition = ownersEquity;
+            // Recovery Ratio = Owner's Equity / Owner's Capital Introduced × 100%
+            const recoveryRatio = capitalIntroduced > 0 ? (ownersEquity / capitalIntroduced) * 100 : 0;
+
+            return {
+                reportId: $('mId').textContent,
+                date: $('mDate').textContent,
+                timestamp: $('mTime').textContent,
+                accountant: {
+                    name: $('accName').value.trim(),
+                    designation: $('accDesig').value.trim(),
+                    signature: $('accSign').value.trim()
+                },
+                cashInHand,
+                bankAccounts,
+                closingInventory,
+                accountsReceivable,
+                ownerCapital: { introduced: capitalIntroduced, withdrawn: capitalWithdrawn, balance: capitalBalance },
+                liabilities,
+                grossRevenue,
+                remarks: $('notes').value.trim(),
+                totals: {
+                    totalCashAtBank,
+                    totalAssets,
+                    totalLiabilities,
+                    capitalBalance,
+                    totalDailyInterest,
+                    ownersEquity,
+                    netPosition,
+                    recoveryRatio
+                }
+            };
+        }
+
+        /* ============================================================
+           RECALC
+           ============================================================ */
+        function recalcAll() {
+            const report = buildReport();
+            const t = report.totals;
+
+            // Section totals
+            $('outCashTotal').textContent = '৳' + fmt(report.cashInHand);
+            $('outTotalBank').textContent = '৳' + fmt(t.totalCashAtBank);
+            $('outCapitalBalance').textContent = '৳' + fmt(t.capitalBalance);
+            $('outTotalLiabilities').textContent = '৳' + fmt(t.totalLiabilities);
+            $('outTotalDailyInt').textContent = '৳' + fmt(t.totalDailyInterest);
+
+            // Dashboard
+            $('dashCash').textContent = '৳' + fmt(report.cashInHand);
+            $('dashBank').textContent = '৳' + fmt(t.totalCashAtBank);
+            $('dashInventory').textContent = '৳' + fmt(report.closingInventory);
+            $('dashReceivable').textContent = '৳' + fmt(report.accountsReceivable);
+            $('dashTotalAssets').textContent = '৳' + fmt(t.totalAssets);
+            $('dashCapitalBalance').textContent = '৳' + fmt(t.capitalBalance);
+            $('dashTotalLiabilities').textContent = '৳' + fmt(t.totalLiabilities);
+            $('dashDailyInt').textContent = '৳' + fmt(t.totalDailyInterest);
+            $('dashRevenue').textContent = '৳' + fmt(report.grossRevenue);
+
+            const net = t.ownersEquity;
+            const netEl = $('dashNet');
+            netEl.textContent = '৳' + fmt(net);
+            const badge = $('dashNetBadge');
+            const card = $('dashNetCard');
+            card.className = 'dash-card highlight';
+            if (net > 0) {
+                badge.className = 'badge badge-pos';
+                badge.textContent = '▲ Positive';
+                card.style.borderLeftColor = 'var(--success)';
+            } else if (net < 0) {
+                badge.className = 'badge badge-neg';
+                badge.textContent = '▼ Negative';
+                card.style.borderLeftColor = 'var(--danger)';
+            } else {
+                badge.className = 'badge badge-zero';
+                badge.textContent = '● Zero';
+                card.style.borderLeftColor = '#f0c040';
+            }
+
+            // Recovery Ratio card
+            const ratio = t.recoveryRatio;
+            $('dashRecovery').textContent = fmt(ratio) + '%';
+            const ratioBadge = $('dashRecoveryBadge');
+            const ratioCard = $('dashRecoveryCard');
+            ratioCard.className = 'dash-card highlight';
+            if (ratio >= 100) {
+                ratioBadge.className = 'badge badge-pos';
+                ratioBadge.textContent = '▲ Capital Recovered';
+                ratioCard.style.borderLeftColor = 'var(--success)';
+            } else if (ratio < 0) {
+                ratioBadge.className = 'badge badge-neg';
+                ratioBadge.textContent = '▼ Capital Eroded';
+                ratioCard.style.borderLeftColor = 'var(--danger)';
+            } else {
+                ratioBadge.className = 'badge badge-zero';
+                ratioBadge.textContent = '● Recovering';
+                ratioCard.style.borderLeftColor = '#f0c040';
+            }
+
+            // Capital validation: withdrawn cannot exceed introduced
+            const introduced = raw($('capitalIntroduced').value);
+            const withdrawn = raw($('capitalWithdrawn').value);
+            const errCapital = $('errCapitalWithdrawn');
+            if (withdrawn > introduced && introduced > 0) {
+                errCapital.style.display = 'block';
+                $('capitalWithdrawn').classList.add('invalid');
+            } else {
+                errCapital.style.display = 'none';
+                $('capitalWithdrawn').classList.remove('invalid');
+            }
+
+            // Update daily interest fields in liability rows
+            document.querySelectorAll('#liabilitiesList .entry-card').forEach(row => {
+                const amount = raw(row.querySelector('.li-amount').value);
+                const rate = raw(row.querySelector('.li-rate').value);
+                row.querySelector('.li-daily').value = fmt(amount * (rate / 100) / 365);
+            });
+
+            // Update preview if visible
+            if ($('previewContainer').classList.contains('visible')) {
+                renderPreview(buildReport());
+            }
+
+            // Update footer
+            $('fName').textContent = report.accountant.name || '—';
+            $('fDesig').textContent = report.accountant.designation || '—';
+            $('fTime').textContent = report.timestamp;
+        }
+
+        /* ============================================================
+           BANK ACCOUNTS (repeatable)
+           ============================================================ */
+        function bankAccHTML() {
+            return `<div class="entry-card">
+                <div class="entry-top">
+                    <input type="text" class="ba-name" data-i18n-ph="lblBankName" placeholder="Bank Name" style="flex:1;" />
+                    <input type="text" class="ba-accnum" data-i18n-ph="lblAccNumber" placeholder="Account Number" style="flex:1;" required />
+                    <button class="rm-btn" type="button" title="Remove">✕</button>
+                </div>
+                <div class="entry-grid two">
+                    <div class="mini-field"><label data-i18n="lblAccName2">Account Name</label><input type="text" class="ba-accname" placeholder="Optional" /></div>
+                    <div class="mini-field"><label data-i18n="lblClosingBal">Closing Balance</label><input type="text" inputmode="decimal" class="num ba-balance" placeholder="0" /></div>
+                </div>
+            </div>`;
+        }
+
+        function addBankAcc() {
+            const list = $('bankAccList');
+            list.insertAdjacentHTML('beforeend', bankAccHTML());
+            const row = list.lastElementChild;
+            row.querySelector('.ba-balance').addEventListener('input', recalcAll);
+            row.querySelector('.rm-btn').addEventListener('click', () => { row.remove();
+                recalcAll(); });
+            applyLang(currentLang);
+            recalcAll();
+        }
+        $('addBankAccBtn').addEventListener('click', addBankAcc);
+        for (let i = 0; i < 2; i++) addBankAcc();
+
+        /* ============================================================
+           LIABILITIES (repeatable)
+           ============================================================ */
+        function liabilityHTML() {
+            const opts = getLiabilityOpts();
+            return `<div class="entry-card">
+                <div class="entry-top">
+                    <select class="li-type">${opts.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}</select>
+                    <input type="text" class="li-lender" data-i18n-ph="lblLenderName" placeholder="Lender Name" style="flex:1;" />
+                    <button class="rm-btn" type="button" title="Remove">✕</button>
+                </div>
+                <div class="entry-grid four">
+                    <div class="mini-field"><label data-i18n="lblDateIssued">Date Issued</label><input type="date" class="li-date" /></div>
+                    <div class="mini-field"><label data-i18n="lblOutstanding">Outstanding Amount</label><input type="text" inputmode="decimal" class="num li-amount" placeholder="0" /></div>
+                    <div class="mini-field"><label data-i18n="lblInterestRate">Annual Rate (%)</label><input type="text" inputmode="decimal" class="num li-rate" placeholder="0" /></div>
+                    <div class="mini-field"><label data-i18n="lblDailyInt">Daily Interest</label><input type="text" class="li-daily" readonly value="0" /></div>
+                </div>
+                <div style="margin-top:6px;">
+                    <div class="mini-field"><label data-i18n="lblNotes">Notes</label><input type="text" class="li-notes" placeholder="Optional" /></div>
+                </div>
+            </div>`;
+        }
+
+        function addLiability() {
+            const list = $('liabilitiesList');
+            list.insertAdjacentHTML('beforeend', liabilityHTML());
+            const row = list.lastElementChild;
+            row.querySelector('.li-amount').addEventListener('input', recalcAll);
+            row.querySelector('.li-rate').addEventListener('input', recalcAll);
+            row.querySelector('.rm-btn').addEventListener('click', () => { row.remove();
+                recalcAll(); });
+            applyLang(currentLang);
+            recalcAll();
+        }
+        $('addLiabilityBtn').addEventListener('click', addLiability);
+        for (let i = 0; i < 1; i++) addLiability();
+
+        /* ============================================================
+           VALIDATION
+           ============================================================ */
+        function validate() {
+            let ok = true;
+            let firstInvalid = null;
+            const req = ['accName', 'accDesig', 'hand', 'closingInventory', 'capitalIntroduced', 'grossRevenue'];
+            req.forEach(id => {
+                const el = $(id);
+                const empty = el.value.trim() === '';
+                if (empty) {
+                    el.classList.add('invalid');
+                    const e = el.parentElement.querySelector('.err-msg');
+                    if (e) e.style.display = 'block';
+                    ok = false;
+                    if (!firstInvalid) firstInvalid = el;
+                } else {
+                    clearInvalid(el);
+                }
+            });
+
+            // Bank accounts: each must have name and account number
+            document.querySelectorAll('#bankAccList .entry-card').forEach(row => {
+                const name = row.querySelector('.ba-name').value.trim();
+                const num = row.querySelector('.ba-accnum').value.trim();
+                if (!name || !num) {
+                    ok = false;
+                    if (!firstInvalid) {
+                        firstInvalid = row.querySelector('.ba-name');
+                        firstInvalid.focus();
+                    }
+                    row.querySelector('.ba-name').classList.add('invalid');
+                    row.querySelector('.ba-accnum').classList.add('invalid');
+                }
+            });
+
+            // Liabilities: each must have lender name, amount > 0, date issued, rate >= 0
+            document.querySelectorAll('#liabilitiesList .entry-card').forEach(row => {
+                const lender = row.querySelector('.li-lender').value.trim();
+                const amt = raw(row.querySelector('.li-amount').value);
+                const rate = raw(row.querySelector('.li-rate').value);
+                const dateIssued = row.querySelector('.li-date').value.trim();
+                if (!lender || amt <= 0 || !dateIssued || rate < 0) {
+                    ok = false;
+                    if (!firstInvalid) {
+                        firstInvalid = row.querySelector('.li-lender');
+                        firstInvalid.focus();
+                    }
+                    if (!lender) row.querySelector('.li-lender').classList.add('invalid');
+                    if (amt <= 0) row.querySelector('.li-amount').classList.add('invalid');
+                    if (!dateIssued) row.querySelector('.li-date').classList.add('invalid');
+                    if (rate < 0) row.querySelector('.li-rate').classList.add('invalid');
+                }
+            });
+
+            // Capital: withdrawn cannot exceed introduced
+            const introduced = raw($('capitalIntroduced').value);
+            const withdrawn = raw($('capitalWithdrawn').value);
+            if (withdrawn > introduced && introduced > 0) {
+                ok = false;
+                if (!firstInvalid) firstInvalid = $('capitalWithdrawn');
+                $('capitalWithdrawn').classList.add('invalid');
+                $('errCapitalWithdrawn').style.display = 'block';
+            }
+
+            if (firstInvalid) { firstInvalid.focus();
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+            return ok;
+        }
+
+        /* ============================================================
+           RENDER PREVIEW
+           ============================================================ */
+        function renderPreview(report) {
+            const container = $('previewContainer');
+            const t = report.totals;
+            const lang = currentLang;
+            const data = I18N[lang];
+
+            let html = `
+                <div class="report-header">
+                    <h1>MEHREEN SHIP RECYCLING — DAILY FINANCIAL REPORT</h1>
+                    <div class="meta">Report ID: ${report.reportId}  |  Date: ${report.date}  |  Time: ${report.timestamp}</div>
+                    <div class="meta">Prepared by: ${report.accountant.name || '—'} (${report.accountant.designation || '—'})</div>
+                </div>
+                <div class="summary-cards">
+                    <div class="summary-card"><div class="label">Cash in Hand</div><div class="value">৳${fmt(report.cashInHand)}</div></div>
+                    <div class="summary-card"><div class="label">Cash at Bank</div><div class="value">৳${fmt(t.totalCashAtBank)}</div></div>
+                    <div class="summary-card"><div class="label">Closing Inventory</div><div class="value">৳${fmt(report.closingInventory)}</div></div>
+                    <div class="summary-card"><div class="label">Total Assets</div><div class="value">৳${fmt(t.totalAssets)}</div></div>
+                    <div class="summary-card"><div class="label">Net Owner Investment</div><div class="value">৳${fmt(t.capitalBalance)}</div></div>
+                    <div class="summary-card"><div class="label">Total Liabilities</div><div class="value">৳${fmt(t.totalLiabilities)}</div></div>
+                    <div class="summary-card"><div class="label">Daily Interest Expense</div><div class="value">৳${fmt(t.totalDailyInterest)}</div></div>
+                    <div class="summary-card"><div class="label">Today's Gross Revenue</div><div class="value">৳${fmt(report.grossRevenue)}</div></div>
+                    <div class="summary-card net">
+                        <div class="label">Owner's Equity</div>
+                        <div class="value" style="color:${t.ownersEquity >= 0 ? '#fff' : '#ffc107'};">৳${fmt(t.ownersEquity)}</div>
+                        <div style="font-size:12px;opacity:.8;">${t.ownersEquity > 0 ? '▲ Positive' : t.ownersEquity < 0 ? '▼ Negative' : '● Zero'}</div>
+                    </div>
+                    <div class="summary-card net">
+                        <div class="label">Recovery Ratio</div>
+                        <div class="value" style="color:#fff;">${fmt(t.recoveryRatio)}%</div>
+                        <div style="font-size:12px;opacity:.8;">${t.recoveryRatio >= 100 ? '▲ Capital Recovered' : t.recoveryRatio < 0 ? '▼ Capital Eroded' : '● Recovering'}</div>
+                    </div>
+                </div>
+            `;
+
+            // Assets: Cash in Hand
+            html += `<div class="section-title">ASSETS</div>
+                <table><tbody><tr><td>Cash in Hand</td><td>৳${fmt(report.cashInHand)}</td></tr></tbody></table>`;
+
+            // Assets: Cash at Bank
+            if (report.bankAccounts.length > 0) {
+                html += `<table><thead><tr><th>Bank Name</th><th>Account Number</th><th style="text-align:right;">Closing Balance</th></tr></thead><tbody>`;
+                report.bankAccounts.forEach(a => {
+                    html += `<tr><td>${a.bankName}</td><td>${a.accountNumber}</td><td style="text-align:right;">৳${fmt(a.closingBalance)}</td></tr>`;
+                });
+                html +=
+                    `<tr class="total-row"><td colspan="2" style="text-align:right;">Total Cash at Bank</td><td style="text-align:right;">৳${fmt(t.totalCashAtBank)}</td></tr></tbody></table>`;
+            }
+            // Assets: Current Assets (Inventory & Receivables)
+            html += `<table><tbody>
+                <tr><td>Closing Inventory</td><td style="text-align:right;">৳${fmt(report.closingInventory)}</td></tr>
+                ${report.accountsReceivable > 0 ? `<tr><td>Accounts Receivable</td><td style="text-align:right;">৳${fmt(report.accountsReceivable)}</td></tr>` : ''}
+                <tr class="total-row"><td style="font-weight:700;">Total Assets</td><td style="font-weight:700;text-align:right;">৳${fmt(t.totalAssets)}</td></tr>
+                </tbody></table>`;
+
+            // Owner's Capital
+            html += `<div class="section-title">OWNER'S CAPITAL</div>
+                <table><tbody>
+                <tr><td>Owner's Capital Introduced</td><td>৳${fmt(report.ownerCapital.introduced)}</td></tr>
+                <tr><td>Capital Withdrawn by Owner</td><td>৳${fmt(report.ownerCapital.withdrawn)}</td></tr>
+                <tr class="total-row"><td>Net Owner Investment</td><td>৳${fmt(report.ownerCapital.balance)}</td></tr>
+                </tbody></table>`;
+
+            // Liabilities
+            if (report.liabilities.length > 0) {
+                html += `<div class="section-title">LIABILITIES</div>
+                <table><thead><tr><th>Type</th><th>Lender</th><th>Date Issued</th><th style="text-align:right;">Outstanding</th><th style="text-align:right;">Interest Rate</th><th style="text-align:right;">Daily Interest</th><th>Notes</th></tr></thead><tbody>`;
+                report.liabilities.forEach(o => {
+                    const typeLabel = getLiabilityOpts().find(x => x.value === o.type)?.label || o.type;
+                    html +=
+                        `<tr><td>${typeLabel}</td><td>${o.lender}</td><td>${o.dateIssued}</td><td style="text-align:right;">৳${fmt(o.amount)}</td><td style="text-align:right;">${o.interestRate}%</td><td style="text-align:right;">৳${fmt(o.dailyInterest)}</td><td>${o.notes || ''}</td></tr>`;
+                });
+                html +=
+                    `<tr class="total-row"><td colspan="3" style="text-align:right;">Total Liabilities</td><td style="text-align:right;">৳${fmt(t.totalLiabilities)}</td><td colspan="2" style="text-align:right;">Total Daily Interest</td><td style="text-align:right;">৳${fmt(t.totalDailyInterest)}</td></tr></tbody></table>`;
+            }
+
+            // Operations
+            html += `<div class="section-title">OPERATIONS</div>
+                <table><tbody><tr><td>Today's Gross Revenue (Sales Recovery)</td><td style="text-align:right;">৳${fmt(report.grossRevenue)}</td></tr></tbody></table>`;
+
+            // Financial Position Summary
+            html += `<div class="section-title">FINANCIAL POSITION SUMMARY</div>
+                <table><tbody>
+                <tr><td>Total Assets</td><td style="text-align:right;">৳${fmt(t.totalAssets)}</td></tr>
+                <tr><td>Total Liabilities</td><td style="text-align:right;">৳${fmt(t.totalLiabilities)}</td></tr>
+                <tr class="total-row"><td style="font-weight:700;">Owner's Equity</td><td style="font-weight:700;text-align:right;">৳${fmt(t.ownersEquity)}</td></tr>
+                <tr><td>Recovery Ratio (Owner's Equity ÷ Owner's Capital Introduced)</td><td style="text-align:right;">${fmt(t.recoveryRatio)}%</td></tr>
+                </tbody></table>`;
+
+            // Remarks
+            if (report.remarks) {
+                html += `<div class="section-title">REMARKS</div>
+                <div style="padding:6px 0;white-space:pre-wrap;">${report.remarks}</div>`;
+            }
+
+            // Signature block
+            html += `<div class="signature-block">
+                <div class="sig-item">Prepared By: <span class="sig-line">&nbsp;</span></div>
+                <div class="sig-item">Accountant Signature: <span class="sig-line">&nbsp;</span></div>
+                <div class="sig-item">Attorney-in-Fact: <span class="sig-line">&nbsp;</span></div>
+                <div class="sig-item">Date: <span class="sig-line">&nbsp;</span></div>
+            </div>`;
+
+            container.innerHTML = html;
+            container.classList.add('visible');
+            setStatus('review');
+            $('btnSubmit').disabled = false;
+        }
+
+        /* ============================================================
+           STATUS MANAGEMENT
+           ============================================================ */
+        function setStatus(status) {
+            const badge = $('statusBadge');
+            const map = {
+                draft: { class: 'status-draft', label: 'Draft' },
+                review: { class: 'status-review', label: 'Under Review' },
+                approved: { class: 'status-approved', label: 'Approved' },
+                submitted: { class: 'status-submitted', label: 'Submitted' }
+            };
+            const s = map[status] || map.draft;
+            badge.className = 'meta-pill status-badge ' + s.class;
+            const key = 'status' + status.charAt(0).toUpperCase() + status.slice(1);
+            badge.textContent = I18N[currentLang][key] || s.label;
+        }
+
+        function updateStatusBadge() {
+            const badge = $('statusBadge');
+            const cls = badge.className.split(' ').find(c => c.startsWith('status-'));
+            if (cls) {
+                const status = cls.replace('status-', '');
+                const key = 'status' + status.charAt(0).toUpperCase() + status.slice(1);
+                badge.textContent = I18N[currentLang][key] || status;
+            }
+        }
+
+        /* ============================================================
+           GENERATE PREVIEW
+           ============================================================ */
+        $('btnPreview').addEventListener('click', function() {
+            if (!validate()) {
+                showToast(I18N[currentLang].toastFillRequired);
+                return;
+            }
+            const report = buildReport();
+            renderPreview(report);
+            showToast(I18N[currentLang].toastGenerated);
+        });
+
+        /* ============================================================
+           SUBMIT FLOW
+           ============================================================ */
+        $('btnSubmit').addEventListener('click', function() {
+            if (this.disabled) return;
+            if (!validate()) {
+                showToast(I18N[currentLang].toastFillRequired);
+                return;
+            }
+            $('checklistModal').classList.add('open');
+            ['chk1', 'chk2', 'chk3', 'chk4'].forEach(id => $(id).checked = false);
+            $('checklistConfirm').disabled = true;
+        });
+
+        ['chk1', 'chk2', 'chk3', 'chk4'].forEach(id => {
+            $(id).addEventListener('change', function() {
+                const allChecked = ['chk1', 'chk2', 'chk3', 'chk4'].every(cid => $(cid).checked);
+                $('checklistConfirm').disabled = !allChecked;
+            });
+        });
+
+        $('checklistCancel').addEventListener('click', () => {
+            $('checklistModal').classList.remove('open');
+        });
+
+        $('checklistConfirm').addEventListener('click', function() {
+            if (this.disabled) return;
+            const report = buildReport();
+            setStatus('approved');
+            const waText = generateWhatsAppSummary(report);
+            const phone = '8801319001751';
+            const url = `https://wa.me/${phone}?text=${encodeURIComponent(waText)}`;
+            window.open(url, '_blank');
+            showToast(I18N[currentLang].toastApproved);
+            $('checklistModal').classList.remove('open');
+            setTimeout(() => {
+                $('instructionModal').classList.add('open');
+            }, 600);
+            $('btnSubmit').disabled = true;
+            setStatus('submitted');
+        });
+
+        /* ============================================================
+           WHATSAPP SUMMARY
+           ============================================================ */
+        function generateWhatsAppSummary(report) {
+            const t = report.totals;
+            const lines = [];
+            lines.push(`MSR DAILY REPORT`);
+            lines.push(`${report.date}  ·  ${report.timestamp}`);
+            lines.push('');
+            lines.push(`Cash in Hand: ৳${fmt(report.cashInHand)}`);
+            lines.push(`Cash at Bank: ৳${fmt(t.totalCashAtBank)}`);
+            lines.push(`Closing Inventory: ৳${fmt(report.closingInventory)}`);
+            if (report.accountsReceivable > 0) lines.push(`Accounts Receivable: ৳${fmt(report.accountsReceivable)}`);
+            lines.push(`Total Assets: ৳${fmt(t.totalAssets)}`);
+            lines.push(`Net Owner Investment: ৳${fmt(t.capitalBalance)}`);
+            lines.push(`Total Liabilities: ৳${fmt(t.totalLiabilities)}`);
+            lines.push(`Daily Interest Expense: ৳${fmt(t.totalDailyInterest)}`);
+            lines.push(`Today's Gross Revenue: ৳${fmt(report.grossRevenue)}`);
+            lines.push(`Owner's Equity: ৳${fmt(t.ownersEquity)}`);
+            lines.push(`Recovery Ratio: ${fmt(t.recoveryRatio)}%`);
+            if (report.remarks) lines.push(`Remarks: ${report.remarks}`);
+            lines.push(`Prepared by: ${report.accountant.name || '—'}`);
+            return lines.join('\n');
+        }
+
+        /* ============================================================
+           INSTRUCTION MODAL
+           ============================================================ */
+        const instructionModal = document.getElementById('instructionModal');
+        instructionModal.querySelector('#modalPrintBtn').addEventListener('click', () => {
+            instructionModal.classList.remove('open');
+            setTimeout(() => { window.print(); }, 300);
+        });
+        instructionModal.querySelector('#modalCloseBtn').addEventListener('click', () => {
+            instructionModal.classList.remove('open');
+        });
+        instructionModal.addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) instructionModal.classList.remove('open');
+        });
+
+        /* ============================================================
+           PRINT
+           ============================================================ */
+        $('btnPrint').addEventListener('click', function() {
+            if (!$('previewContainer').classList.contains('visible')) {
+                if (!validate()) {
+                    showToast(I18N[currentLang].toastFillRequired);
+                    return;
+                }
+                const report = buildReport();
+                renderPreview(report);
+            }
+            window.print();
+        });
+
+        /* ============================================================
+           XLSX EXPORT
+           ============================================================ */
+        $('btnXlsx').addEventListener('click', function() {
+            if (!validate()) {
+                showToast(I18N[currentLang].toastFillRequired);
+                return;
+            }
+            const report = buildReport();
+            const t = report.totals;
+            const wb = XLSX.utils.book_new();
+
+            // Sheet 1: Summary
+            const s1 = [
+                ['MEHREEN SHIP RECYCLING — DAILY FINANCIAL REPORT'],
+                ['Report ID', report.reportId],
+                ['Date', report.date],
+                ['Time', report.timestamp],
+                ['Accountant', report.accountant.name],
+                ['Designation', report.accountant.designation],
+                [],
+                ['FINANCIAL POSITION'],
+                ['Cash in Hand', report.cashInHand],
+                ['Cash at Bank', t.totalCashAtBank],
+                ['Closing Inventory', report.closingInventory],
+                ['Accounts Receivable', report.accountsReceivable],
+                ['Total Assets', t.totalAssets],
+                ['Net Owner Investment', t.capitalBalance],
+                ['Total Liabilities', t.totalLiabilities],
+                ['Daily Interest Expense', t.totalDailyInterest],
+                ["Today's Gross Revenue", report.grossRevenue],
+                ["Owner's Equity", t.ownersEquity],
+                ['Recovery Ratio (%)', t.recoveryRatio],
+                [],
+                ['Remarks', report.remarks || '(none)'],
+                [],
+                ['Signature', report.accountant.signature || '(not signed)']
+            ];
+            const ws1 = XLSX.utils.aoa_to_sheet(s1);
+            ws1['!cols'] = [{ wch: 35 }, { wch: 18 }];
+            XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
+
+            // Sheet 2: Assets
+            const s2 = [
+                ['ASSETS'],
+                ['Cash in Hand', report.cashInHand],
+                ['Cash at Bank - Total', t.totalCashAtBank],
+                ['Closing Inventory', report.closingInventory],
+                ['Accounts Receivable', report.accountsReceivable],
+                ['Total Assets', t.totalAssets],
+                [],
+                ['Bank Account Details'],
+                ['Bank Name', 'Account Number', 'Account Name', 'Closing Balance']
+            ];
+            report.bankAccounts.forEach(a => {
+                s2.push([a.bankName, a.accountNumber, a.accountName, a.closingBalance]);
+            });
+            if (report.bankAccounts.length > 0) {
+                s2.push(['TOTAL', '', '', t.totalCashAtBank]);
+            }
+            const ws2 = XLSX.utils.aoa_to_sheet(s2);
+            ws2['!cols'] = [{ wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 16 }];
+            XLSX.utils.book_append_sheet(wb, ws2, 'Assets');
+
+            // Sheet 3: Owner's Capital
+            const s3 = [
+                ["OWNER'S CAPITAL"],
+                ["Owner's Capital Introduced", report.ownerCapital.introduced],
+                ["Capital Withdrawn by Owner", report.ownerCapital.withdrawn],
+                ["Net Owner Investment", report.ownerCapital.balance]
+            ];
+            const ws3 = XLSX.utils.aoa_to_sheet(s3);
+            ws3['!cols'] = [{ wch: 35 }, { wch: 18 }];
+            XLSX.utils.book_append_sheet(wb, ws3, 'OwnersCapital');
+
+            // Sheet 4: Liabilities
+            const s4 = [
+                ['LIABILITIES'],
+                ['Type', 'Lender', 'Date Issued', 'Outstanding Amount', 'Annual Interest Rate (%)', 'Daily Interest Expense',
+                    'Notes'
+                ]
+            ];
+            report.liabilities.forEach(o => {
+                const typeLabel = getLiabilityOpts().find(x => x.value === o.type)?.label || o.type;
+                s4.push([typeLabel, o.lender, o.dateIssued, o.amount, o.interestRate, o.dailyInterest, o.notes || '']);
+            });
+            s4.push(['TOTAL', '', '', t.totalLiabilities, '', t.totalDailyInterest, '']);
+            const ws4 = XLSX.utils.aoa_to_sheet(s4);
+            ws4['!cols'] = [{ wch: 16 }, { wch: 18 }, { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 18 }];
+            XLSX.utils.book_append_sheet(wb, ws4, 'Liabilities');
+
+            // Sheet 5: Operations
+            const s5 = [
+                ['OPERATIONS'],
+                ["Today's Gross Revenue (Sales Recovery)", report.grossRevenue]
+            ];
+            const ws5 = XLSX.utils.aoa_to_sheet(s5);
+            ws5['!cols'] = [{ wch: 35 }, { wch: 18 }];
+            XLSX.utils.book_append_sheet(wb, ws5, 'Operations');
+
+            // Sheet 6: Financial Position Summary
+            const s6 = [
+                ['FINANCIAL POSITION SUMMARY'],
+                ['Total Assets', t.totalAssets],
+                ['Total Liabilities', t.totalLiabilities],
+                ["Owner's Equity (Total Assets − Total Liabilities)", t.ownersEquity],
+                ['Recovery Ratio (%)', t.recoveryRatio]
+            ];
+            const ws6 = XLSX.utils.aoa_to_sheet(s6);
+            ws6['!cols'] = [{ wch: 45 }, { wch: 18 }];
+            XLSX.utils.book_append_sheet(wb, ws6, 'FinancialPosition');
+
+            // Sheet 7: Remarks
+            const s7 = [
+                ['Remarks'],
+                [report.remarks || '(none)']
+            ];
+            const ws7 = XLSX.utils.aoa_to_sheet(s7);
+            ws7['!cols'] = [{ wch: 60 }];
+            XLSX.utils.book_append_sheet(wb, ws7, 'Remarks');
+
+            XLSX.writeFile(wb, `MSR_DailyReport_${new Date().toISOString().slice(0,10)}.xlsx`);
+            showToast('Excel exported successfully.');
+        });
+
+        /* ============================================================
+           RESET
+           ============================================================ */
+        $('btnReset').addEventListener('click', () => {
+            if (!confirm(I18N[currentLang].confirmReset)) return;
+            document.querySelectorAll('input[type="text"], textarea, input[type="date"]').forEach(el => el.value = '');
+            ['bankAccList', 'liabilitiesList'].forEach(id => {
+                const list = $(id);
+                list.innerHTML = '';
+            });
+            for (let i = 0; i < 2; i++) addBankAcc();
+            for (let i = 0; i < 1; i++) addLiability();
+            $('previewContainer').classList.remove('visible');
+            $('previewContainer').innerHTML = '';
+            $('btnSubmit').disabled = true;
+            setStatus('draft');
+            document.querySelectorAll('.invalid').forEach(clearInvalid);
+            $('accName').focus();
+            recalcAll();
+        });
+
+        /* ============================================================
+           HELP MODAL
+           ============================================================ */
+        $('helpBtn').addEventListener('click', () => {
+            $('helpModal').classList.add('open');
+        });
+        document.querySelectorAll('.modal-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const target = this.dataset.tab;
+                document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.modal-tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(target).classList.add('active');
+            });
+        });
+        $('helpCloseBtn').addEventListener('click', () => {
+            $('helpModal').classList.remove('open');
+        });
+        $('helpModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) $('helpModal').classList.remove('open');
+        });
+
+        /* ============================================================
+           TOAST
+           ============================================================ */
+        let toastTimer;
+
+        function showToast(msg) {
+            const el = $('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+        }
+
+        /* ============================================================
+           KEYBOARD FLOW
+           ============================================================ */
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Enter') return;
+            const t = e.target;
+            if (t.tagName === 'TEXTAREA') return;
+            if (t.tagName === 'INPUT' || t.tagName === 'SELECT') {
+                e.preventDefault();
+                const focusables = [...document.querySelectorAll('input, select, textarea, button')]
+                    .filter(el => !el.disabled && el.offsetParent !== null && !el.closest('.modal-overlay'));
+                const idx = focusables.indexOf(t);
+                if (idx > -1 && idx < focusables.length - 1) focusables[idx + 1].focus();
+            }
+        });
+
+        /* ============================================================
+           INIT
+           ============================================================ */
+        const now = new Date();
+        const rid = 'MSR-' + now.toISOString().slice(0, 10).replace(/-/g, '') + '-' +
+            String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+        $('mDate').textContent = now.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short',
+            day: 'numeric' });
+        $('mTime').textContent = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        $('mId').textContent = rid;
+
+        applyLang('en');
+        recalcAll();
+        $('accName').focus();
+        setStatus('draft');
+        $('btnSubmit').disabled = true;
+
+        console.log('⎈ MSR Daily Financial Report v5 (sole proprietorship) loaded.');
+    </script>
+</body>
+</html>
