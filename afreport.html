@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>⎈ MSR. — Daily Financial Brief</title>
+<style>
+  :root{
+    --bg:#F2F4F8; --card:#FFFFFF; --accent:#0F2545; --accent2:#1E3A63;
+    --success:#1E7A4C; --warning:#B8791A; --danger:#B3261E;
+    --text:#111826; --sub:#5B6472; --border:rgba(15,37,69,.12);
+    --shadow:0 1px 2px rgba(15,37,69,.05),0 6px 20px rgba(15,37,69,.06);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; min-width:0;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Noto Sans Bengali",sans-serif;
+    -webkit-font-smoothing:antialiased; padding:env(safe-area-inset-top) env(safe-area-inset-right) 40px env(safe-area-inset-left);
+  }
+  .app{max-width:680px; margin:0 auto; padding:20px 16px 60px;}
+  header.top{text-align:center; padding:22px 12px 18px; position:relative;}
+  .lang-toggle{display:inline-flex; border:1px solid var(--border); border-radius:999px; background:var(--card); padding:3px; box-shadow:var(--shadow); margin-bottom:14px;}
+  .lang-btn{border:none; background:none; padding:6px 14px; font-size:12.5px; font-weight:700; border-radius:999px; color:var(--sub); cursor:pointer;}
+  .lang-btn.active{background:var(--accent); color:#fff;}
+  .wordmark{font-size:30px; letter-spacing:.02em; color:var(--accent); font-weight:800;}
+  .subtitle{font-size:14.5px; color:var(--sub); margin:6px 0 2px; font-weight:600;}
+  .subtitle2{font-size:12.5px; color:var(--sub); margin:0 0 14px;}
+  .meta-row{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; font-size:12px; color:var(--sub);}
+  .meta-pill{background:var(--card); border:1px solid var(--border); border-radius:999px; padding:5px 12px; box-shadow:var(--shadow);}
+  .card{background:var(--card); border-radius:20px; box-shadow:var(--shadow); padding:18px; margin-bottom:16px; border:1px solid var(--border); overflow:hidden;}
+  .card h2{font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--sub); margin:0 0 14px; display:flex; align-items:center; gap:8px;}
+  .card h2 .ic{font-size:14px; color:var(--accent); flex:0 0 auto;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:13.5px; color:var(--sub); margin-bottom:6px; font-weight:500;}
+  .field label .req{color:var(--danger);}
+  input[type=text], textarea, select{
+    width:100%; border:1px solid var(--border); background:var(--bg); color:var(--text);
+    border-radius:12px; padding:12px 13px; font-size:16px; font-family:inherit;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input:focus, textarea:focus, select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(15,37,69,.12);}
+  input.invalid{border-color:var(--danger); box-shadow:0 0 0 3px rgba(179,38,30,.12);}
+  textarea{min-height:90px; resize:vertical; line-height:1.4;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px 12px;}
+  .err-msg{font-size:12px; color:var(--danger); margin-top:4px; display:none;}
+  .computed-row{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px;}
+  .computed-card{background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; border-radius:16px; padding:14px; box-shadow:var(--shadow); min-width:0;}
+  .computed-card.neg{background:linear-gradient(135deg,var(--danger),#7a1a15);}
+  .computed-card .label{font-size:11px; opacity:.9; line-height:1.3;}
+  .computed-card .val{font-size:19px; font-weight:700; margin-top:6px; word-break:break-word;}
+
+  /* liability cards — stack uniformly on every screen, no table overflow */
+  .liab-card{border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:10px; background:var(--bg);}
+  .liab-top{display:flex; gap:8px; align-items:center; margin-bottom:10px;}
+  .liab-top select{flex:0 0 108px; padding:10px 8px; font-size:13.5px;}
+  .liab-top input.ln-name{flex:1; min-width:0;}
+  .liab-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
+  .mini-field label{font-size:10.5px; color:var(--sub); margin-bottom:4px; display:block; text-transform:uppercase; letter-spacing:.03em;}
+  .mini-field input{padding:9px 10px; font-size:13.5px; border-radius:9px;}
+  .mini-field input[readonly]{background:transparent; color:var(--sub);}
+  .rm-btn{background:none; border:none; color:var(--danger); font-size:19px; cursor:pointer; padding:4px 8px; border-radius:8px; flex:0 0 auto; line-height:1;}
+  .rm-btn:hover{background:rgba(179,38,30,.08);}
+  .add-row-btn{margin-top:2px; background:none; border:1.5px dashed var(--border); color:var(--accent); width:100%; padding:11px; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer;}
+  .add-row-btn:hover{background:rgba(15,37,69,.05);}
+
+  .summary-box{background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:16px; font-size:14.5px; line-height:1.65; white-space:pre-wrap;}
+  .summary-box:empty::before{content:attr(data-empty); color:var(--sub);}
+  .signoff-text{font-size:13.5px; color:var(--sub); margin-bottom:12px; line-height:1.5;}
+  .actions{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:6px 0 20px;}
+  button.act{border:none; border-radius:14px; padding:15px 12px; font-size:15px; font-weight:600; cursor:pointer; transition:transform .1s; display:flex; align-items:center; justify-content:center; gap:6px;}
+  button.act:active{transform:scale(.97);}
+  .btn-primary{background:var(--accent); color:#fff; grid-column:1/-1;}
+  .btn-secondary{background:var(--card); color:var(--text); border:1px solid var(--border);}
+  .btn-success{background:var(--success); color:#fff;}
+  .btn-danger{background:transparent; color:var(--danger); border:1px solid var(--border); grid-column:1/-1;}
+  details.instructions{background:var(--card); border-radius:18px; padding:4px 18px; margin-bottom:16px; border:1px solid var(--border); box-shadow:var(--shadow);}
+  details.instructions summary{padding:14px 0; font-weight:600; cursor:pointer; list-style:none; font-size:15px; color:var(--accent);}
+  details.instructions summary::-webkit-details-marker{display:none;}
+  details.instructions summary:before{content:"▸ "; }
+  details.instructions[open] summary:before{content:"▾ ";}
+  .bangla{font-size:14.5px; line-height:1.85; padding-bottom:16px; white-space:pre-line; color:var(--text);}
+  footer.foot{text-align:center; font-size:12px; color:var(--sub); padding:20px 10px 0; line-height:1.8;}
+  .toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:var(--accent); color:#fff; padding:12px 20px; border-radius:12px; font-size:14px; opacity:0; pointer-events:none; transition:all .25s; z-index:99; box-shadow:var(--shadow); max-width:90vw; text-align:center;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  @media (max-width:480px){ .grid2{grid-template-columns:1fr;} .actions{grid-template-columns:1fr;} .btn-primary,.btn-danger{grid-column:auto;} .liab-grid{grid-template-columns:1fr 1fr;} .liab-grid .mini-field:nth-child(3){grid-column:1/-1;} }
+  @media print{
+    body{background:#fff; padding:0;}
+    .actions, details.instructions, .toast, .lang-toggle{display:none !important;}
+    .card{box-shadow:none; border:1px solid #ddd; break-inside:avoid;}
+    .computed-card{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    .app{max-width:100%; padding:0 12px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="langEn" type="button" data-lang="en">EN</button>
+      <button class="lang-btn" id="langBn" type="button" data-lang="bn">বাং</button>
+    </div>
+    <div class="wordmark">⎈ MSR.</div>
+    <p class="subtitle" data-i18n="dailyBrief">Daily Financial Brief</p>
+    <p class="subtitle2" data-i18n="preparedFor">Prepared for the Attorney-in-Fact</p>
+    <div class="meta-row">
+      <span class="meta-pill" id="mDate"></span>
+      <span class="meta-pill" id="mTime"></span>
+      <span class="meta-pill" id="mId"></span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="ic">✎</span><span data-i18n="secAccInfo">Accountant Information</span></h2>
+    <div class="field">
+      <label for="accName" data-i18n="lblAccName">Accountant Name</label>
+      <input type="text" id="accName" required autocomplete="off">
+      <div class="err-msg" data-i18n="errAccName">Accountant name is required.</div>
+    </div>
+    <div class="field">
+      <label for="accDesig" data-i18n="lblAccDesig">Designation</label>
+      <input type="text" id="accDesig" required>
+      <div class="err-msg" data-i18n="errAccDesig">Designation is required.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="ic">৳</span><span data-i18n="secCash">Cash Position</span></h2>
+    <div class="grid2">
+      <div class="field"><label for="bank" data-i18n="lblBank">Money in the Bank (Cash at Bank)</label><input type="text" inputmode="decimal" class="num" id="bank" required><div class="err-msg" data-i18n="errBank">Required.</div></div>
+      <div class="field"><label for="hand" data-i18n="lblHand">Money in Hand (Cash on Hand)</label><input type="text" inputmode="decimal" class="num" id="hand" required><div class="err-msg" data-i18n="errHand">Required.</div></div>
+    </div>
+    <div class="computed-row">
+      <div class="computed-card"><div class="label" data-i18n="lblTotalCash">Total Cash Available (Liquidity)</div><div class="val" id="outTotalCash">৳0</div></div>
+      <div class="computed-card" id="netCard"><div class="label" data-i18n="lblNetPosition">What's Left After Debts (Net Position)</div><div class="val" id="outNetCash">৳0</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="ic">◆</span><span data-i18n="secOwner">Money From the Owner (Owner's Investment)</span></h2>
+    <div class="grid2">
+      <div class="field"><label for="invested" data-i18n="lblInvested">Money Owner Put In (Capital Invested)</label><input type="text" inputmode="decimal" class="num" id="invested" required><div class="err-msg" data-i18n="errInvested">Required.</div></div>
+      <div class="field"><label for="recovered" data-i18n="lblRecovered">Money Paid Back to Owner (Capital Recovered)</label><input type="text" inputmode="decimal" class="num" id="recovered"></div>
+    </div>
+    <div class="computed-row">
+      <div class="computed-card"><div class="label" data-i18n="lblOwedOwner">Still Owed to Owner (Owner's Equity Payable)</div><div class="val" id="outOwedOwner">৳0</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="ic">▤</span><span data-i18n="secLiab">Loans &amp; Outside Investments (Liabilities)</span></h2>
+    <div id="liabList"></div>
+    <button class="add-row-btn" id="addLiabBtn" type="button" data-i18n="btnAddLiab">+ Add Loan / Investment</button>
+    <div class="computed-row">
+      <div class="computed-card"><div class="label" data-i18n="lblTotalLiab">Total Owed to Others (Total Liabilities)</div><div class="val" id="outTotalLiab">৳0</div></div>
+      <div class="computed-card"><div class="label" data-i18n="lblTotalDailyInt">Interest Piling Up Daily (Daily Interest)</div><div class="val" id="outDailyInt">৳0</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="ic">◈</span><span data-i18n="secOverall">Where We Stand (Overall Position)</span></h2>
+    <div class="computed-row">
+      <div class="computed-card"><div class="label" data-i18n="lblGrandOwed">Everything Owed, Combined (Total Obligations)</div><div class="val" id="outGrandOwed">৳0</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="ic">✎</span><span data-i18n="secRemarks">Additional Remarks</span></h2>
+    <div class="field">
+      <label for="notes" data-i18n="lblRemarks">Anything the Attorney-in-Fact should know today</label>
+      <textarea id="notes" data-i18n-ph="phRemarks" placeholder="Write any remarks, issues, or context for today's brief…"></textarea>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="ic">▦</span><span data-i18n="secSummary">Auto Summary</span></h2>
+    <div class="summary-box" id="summaryOut" data-empty="Tap Generate Summary to compose the report."></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="ic">✒</span><span data-i18n="secSignoff">Accountant's Sign-Off</span></h2>
+    <p class="signoff-text" data-i18n="signoffDecl">I confirm the figures above are accurate as of today.</p>
+    <div class="field">
+      <label for="accSign" data-i18n="lblSignature">Typed Signature</label>
+      <input type="text" id="accSign" data-i18n-ph="phSignature" placeholder="Type your full name to sign">
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="act btn-primary" id="btnGenerate" type="button" data-i18n="btnGenerate">Generate Summary</button>
+    <button class="act btn-secondary" id="btnPrint" type="button" data-i18n="btnPrint">Print / Save PDF</button>
+    <button class="act btn-secondary" id="btnXlsx" type="button" data-i18n="btnXlsx">Download XLSX</button>
+    <button class="act btn-success" id="btnWa" type="button" data-i18n="btnWa">Send WhatsApp</button>
+    <button class="act btn-secondary" id="btnMail" type="button" style="grid-column:1/-1;" data-i18n="btnMail">Send Email</button>
+    <button class="act btn-danger" id="btnReset" type="button" data-i18n="btnReset">Reset Form</button>
+  </div>
+
+  <details class="instructions">
+    <summary>বাংলা নির্দেশিকা (হিসাবরক্ষকের জন্য)</summary>
+    <div class="bangla">এই রিপোর্ট প্রতিদিন বিকেল ৫টার আগে অ্যাটর্নি-ইন-ফ্যাক্ট-এর কাছে পাঠাতে হবে।
+
+ধাপসমূহ:
+১। আপনার নাম ও পদবি লিখুন।
+২। ব্যাংকে ও হাতে থাকা নগদ টাকার পরিমাণ লিখুন।
+৩। মালিকের মোট বিনিয়োগ এবং এখন পর্যন্ত ফেরত পাওয়া টাকার পরিমাণ লিখুন।
+৪। সকল ঋণ ও অংশীদার-বহির্ভূত বিনিয়োগ তালিকায় যোগ করুন — নাম, বকেয়া পরিমাণ ও বার্ষিক সুদের হার দিন। দৈনিক সুদ স্বয়ংক্রিয়ভাবে হিসাব হবে।
+৫। প্রয়োজনীয় মন্তব্য লিখুন।
+৬। সবশেষে নিজের নাম টাইপ করে স্বাক্ষর করুন।
+৭। "Generate Summary" চাপুন।
+৮। WhatsApp অথবা Email দিয়ে রিপোর্ট পাঠান।
+৯। প্রয়োজন হলে Print করে PDF হিসেবে সংরক্ষণ করুন।
+
+এই সফটওয়্যারে কোনো তথ্য সংরক্ষণ করা হয় না — প্রতিদিন নতুন করে পূরণ করতে হবে।</div>
+  </details>
+
+  <footer class="foot">
+    <span data-i18n="preparedByLbl">Prepared by</span> <strong id="fName">—</strong>, <span id="fDesig">—</span><br>
+    <span data-i18n="generatedLbl">Generated</span> <span id="fTime">—</span><br>
+    <span data-i18n="generatedUsingLbl">Generated using MSR Daily Financial Brief</span>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const numIds = ['bank','hand','invested','recovered'];
+const reqIds = ['accName','accDesig','bank','hand','invested'];
+
+// ---------- i18n: pure vanilla dictionary, zero deps, instant switch ----------
+const I18N = {
+  en:{
+    dailyBrief:"Daily Financial Brief", preparedFor:"Prepared for the Attorney-in-Fact",
+    secAccInfo:"Accountant Information", lblAccName:"Accountant Name", errAccName:"Accountant name is required.",
+    lblAccDesig:"Designation", errAccDesig:"Designation is required.",
+    secCash:"Cash Position", lblBank:"Money in the Bank (Cash at Bank)", errBank:"Required.",
+    lblHand:"Money in Hand (Cash on Hand)", errHand:"Required.",
+    lblTotalCash:"Total Cash Available (Liquidity)", lblNetPosition:"What's Left After Debts (Net Position)",
+    secOwner:"Money From the Owner (Owner's Investment)", lblInvested:"Money Owner Put In (Capital Invested)", errInvested:"Required.",
+    lblRecovered:"Money Paid Back to Owner (Capital Recovered)", lblOwedOwner:"Still Owed to Owner (Owner's Equity Payable)",
+    secLiab:"Loans & Outside Investments (Liabilities)", phLiabName:"Lender / Investor name",
+    optLoan:"Loan", optInvestment:"Investment", lblBalance:"Balance (Principal)", lblRate:"Interest Rate (%/yr)",
+    lblDailyInt:"Daily Interest (Accrual)", btnAddLiab:"+ Add Loan / Investment",
+    lblTotalLiab:"Total Owed to Others (Total Liabilities)", lblTotalDailyInt:"Interest Piling Up Daily (Daily Interest)",
+    secOverall:"Where We Stand (Overall Position)", lblGrandOwed:"Everything Owed, Combined (Total Obligations)",
+    secRemarks:"Additional Remarks", lblRemarks:"Anything the Attorney-in-Fact should know today",
+    phRemarks:"Write any remarks, issues, or context for today's brief…",
+    secSummary:"Auto Summary", emptySummary:"Tap Generate Summary to compose the report.",
+    secSignoff:"Accountant's Sign-Off", signoffDecl:"I confirm the figures above are accurate as of today.",
+    lblSignature:"Typed Signature", phSignature:"Type your full name to sign",
+    btnGenerate:"Generate Summary", btnPrint:"Print / Save PDF", btnXlsx:"Download XLSX",
+    btnWa:"Send WhatsApp", btnMail:"Send Email", btnReset:"Reset Form",
+    preparedByLbl:"Prepared by", generatedLbl:"Generated", generatedUsingLbl:"Generated using MSR Daily Financial Brief",
+    toastFillRequired:"Please fill all required fields.", toastGenerated:"Summary generated.",
+    confirmReset:"Clear all entered data? This cannot be undone."
+  },
+  bn:{
+    dailyBrief:"দৈনিক আর্থিক প্রতিবেদন", preparedFor:"অ্যাটর্নি-ইন-ফ্যাক্ট-এর জন্য প্রস্তুত",
+    secAccInfo:"হিসাবরক্ষকের তথ্য", lblAccName:"হিসাবরক্ষকের নাম", errAccName:"হিসাবরক্ষকের নাম আবশ্যক।",
+    lblAccDesig:"পদবি", errAccDesig:"পদবি আবশ্যক।",
+    secCash:"নগদ অবস্থান", lblBank:"ব্যাংকে জমা টাকা (ব্যাংক নগদ)", errBank:"আবশ্যক।",
+    lblHand:"হাতে থাকা টাকা (হাতের নগদ)", errHand:"আবশ্যক।",
+    lblTotalCash:"মোট নগদ (তারল্য)", lblNetPosition:"দায় বাদে অবশিষ্ট (নিট অবস্থান)",
+    secOwner:"মালিকের বিনিয়োগ", lblInvested:"মালিক যে টাকা দিয়েছেন (মূলধন বিনিয়োগ)", errInvested:"আবশ্যক।",
+    lblRecovered:"মালিককে ফেরত দেওয়া টাকা (মূলধন উদ্ধার)", lblOwedOwner:"মালিকের কাছে এখনও বকেয়া (প্রদেয় মূলধন)",
+    secLiab:"ঋণ ও বহিরাগত বিনিয়োগ (দায়)", phLiabName:"ঋণদাতা / বিনিয়োগকারীর নাম",
+    optLoan:"ঋণ", optInvestment:"বিনিয়োগ", lblBalance:"বকেয়া (আসল)", lblRate:"সুদের হার (%/বছর)",
+    lblDailyInt:"দৈনিক সুদ (জমাকৃত)", btnAddLiab:"+ ঋণ / বিনিয়োগ যোগ করুন",
+    lblTotalLiab:"অন্যদের কাছে মোট দায় (মোট দায়)", lblTotalDailyInt:"প্রতিদিন জমা হওয়া সুদ (দৈনিক সুদ)",
+    secOverall:"সামগ্রিক অবস্থান", lblGrandOwed:"সর্বমোট বকেয়া (মোট দায়বদ্ধতা)",
+    secRemarks:"অতিরিক্ত মন্তব্য", lblRemarks:"আজ অ্যাটর্নি-ইন-ফ্যাক্টের জানা প্রয়োজন এমন কিছু",
+    phRemarks:"আজকের প্রতিবেদনের জন্য মন্তব্য, সমস্যা বা প্রেক্ষাপট লিখুন…",
+    secSummary:"স্বয়ংক্রিয় সারসংক্ষেপ", emptySummary:"প্রতিবেদন তৈরি করতে Generate Summary চাপুন।",
+    secSignoff:"হিসাবরক্ষকের স্বাক্ষর", signoffDecl:"আমি নিশ্চিত করছি যে উপরের তথ্য আজকের তারিখ অনুযায়ী সঠিক।",
+    lblSignature:"টাইপকৃত স্বাক্ষর", phSignature:"স্বাক্ষরের জন্য আপনার পুরো নাম লিখুন",
+    btnGenerate:"সারসংক্ষেপ তৈরি করুন", btnPrint:"প্রিন্ট / পিডিএফ সংরক্ষণ", btnXlsx:"XLSX ডাউনলোড",
+    btnWa:"হোয়াটসঅ্যাপে পাঠান", btnMail:"ইমেইলে পাঠান", btnReset:"ফর্ম রিসেট করুন",
+    preparedByLbl:"প্রস্তুতকারী", generatedLbl:"তৈরির সময়", generatedUsingLbl:"MSR দৈনিক আর্থিক প্রতিবেদন ব্যবহার করে তৈরি",
+    toastFillRequired:"সকল আবশ্যক ঘর পূরণ করুন।", toastGenerated:"সারসংক্ষেপ তৈরি হয়েছে।",
+    confirmReset:"সমস্ত তথ্য মুছে ফেলবেন? এটি পূর্বাবস্থায় ফেরানো যাবে না।"
+  }
+};
+let currentLang = 'en';
+function applyLang(lang){
+  currentLang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ const v=I18N[lang][el.dataset.i18n]; if(v!==undefined) el.textContent=v; });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ const v=I18N[lang][el.dataset.i18nPh]; if(v!==undefined) el.placeholder=v; });
+  $('summaryOut').setAttribute('data-empty', I18N[lang].emptySummary);
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active', b.dataset.lang===lang));
+  document.documentElement.lang = lang;
+}
+$('langEn').addEventListener('click', ()=>applyLang('en'));
+$('langBn').addEventListener('click', ()=>applyLang('bn'));
+
+// ---------- header meta ----------
+const now = new Date();
+const reportId = 'MSR-' + now.toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+$('mDate').textContent = now.toLocaleDateString(undefined,{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+$('mTime').textContent = now.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+$('mId').textContent = reportId;
+
+// ---------- number formatting ----------
+const raw = v => parseFloat(String(v).replace(/,/g,'')) || 0;
+const fmt = n => n.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});
+function attachNumField(el){
+  el.addEventListener('input', ()=>{ clearInvalid(el); recalc(); });
+  el.addEventListener('blur', ()=>{ if(el.value!=='') el.value = fmt(raw(el.value)); });
+}
+numIds.forEach(id=>attachNumField($(id)));
+function clearInvalid(el){ el.classList.remove('invalid'); const e=el.parentElement.querySelector('.err-msg'); if(e) e.style.display='none'; }
+
+// ---------- liabilities: stacked cards, uniform on every screen ----------
+function liabCardHTML(){
+  return `<div class="liab-card">
+    <div class="liab-top">
+      <select class="ln-type"><option value="Loan" data-i18n="optLoan">Loan</option><option value="Investment" data-i18n="optInvestment">Investment</option></select>
+      <input type="text" class="ln-name" data-i18n-ph="phLiabName" placeholder="Lender / Investor name">
+      <button class="rm-btn" type="button" title="Remove">✕</button>
+    </div>
+    <div class="liab-grid">
+      <div class="mini-field"><label data-i18n="lblBalance">Balance (Principal)</label><input type="text" inputmode="decimal" class="num ln-balance" placeholder="0"></div>
+      <div class="mini-field"><label data-i18n="lblRate">Interest Rate (%/yr)</label><input type="text" inputmode="decimal" class="num ln-rate" placeholder="0"></div>
+      <div class="mini-field"><label data-i18n="lblDailyInt">Daily Interest (Accrual)</label><input type="text" class="ln-daily" readonly value="0"></div>
+    </div>
+  </div>`;
+}
+function addLiabRow(){
+  $('liabList').insertAdjacentHTML('beforeend', liabCardHTML());
+  const row = $('liabList').lastElementChild;
+  row.querySelector('.ln-balance').addEventListener('input', recalc);
+  row.querySelector('.ln-rate').addEventListener('input', recalc);
+  row.querySelector('.rm-btn').addEventListener('click', ()=>{ row.remove(); recalc(); });
+  applyLang(currentLang);
+}
+$('addLiabBtn').addEventListener('click', addLiabRow);
+addLiabRow();
+
+// ---------- recalc ----------
+function recalc(){
+  const cash = raw($('bank').value) + raw($('hand').value);
+  const invested = raw($('invested').value);
+  const recovered = raw($('recovered').value);
+  const owedOwner = Math.max(invested - recovered, 0);
+
+  let totalLiab = 0, totalDaily = 0;
+  document.querySelectorAll('.liab-card').forEach(row=>{
+    const bal = raw(row.querySelector('.ln-balance').value);
+    const rate = raw(row.querySelector('.ln-rate').value);
+    const daily = bal * (rate/100) / 365;
+    row.querySelector('.ln-daily').value = fmt(daily);
+    totalLiab += bal; totalDaily += daily;
+  });
+
+  const grandOwed = owedOwner + totalLiab;
+  const net = cash - grandOwed;
+
+  $('outTotalCash').textContent = '৳' + fmt(cash);
+  $('outNetCash').textContent = '৳' + fmt(net);
+  $('netCard').classList.toggle('neg', net < 0);
+  $('outOwedOwner').textContent = '৳' + fmt(owedOwner);
+  $('outTotalLiab').textContent = '৳' + fmt(totalLiab);
+  $('outDailyInt').textContent = '৳' + fmt(totalDaily);
+  $('outGrandOwed').textContent = '৳' + fmt(grandOwed);
+}
+
+// ---------- validation ----------
+function validate(){
+  let ok = true; let firstInvalid = null;
+  reqIds.forEach(id=>{
+    const el = $(id);
+    const empty = el.value.trim()==='';
+    if(empty){
+      el.classList.add('invalid');
+      const e = el.parentElement.querySelector('.err-msg'); if(e) e.style.display='block';
+      ok = false; if(!firstInvalid) firstInvalid = el;
+    } else clearInvalid(el);
+  });
+  if(firstInvalid){ firstInvalid.focus(); firstInvalid.scrollIntoView({behavior:'smooth',block:'center'}); }
+  return ok;
+}
+
+// ---------- summary ----------
+function buildSummaryText(){
+  const cash = raw($('bank').value)+raw($('hand').value);
+  const invested = raw($('invested').value), recovered = raw($('recovered').value);
+  const owedOwner = Math.max(invested-recovered,0);
+  const liabRows = [...document.querySelectorAll('.liab-card')].filter(r=>r.querySelector('.ln-name').value.trim()!=='');
+  let totalLiab=0, totalDaily=0;
+  liabRows.forEach(r=>{ totalLiab += raw(r.querySelector('.ln-balance').value); totalDaily += raw(r.querySelector('.ln-daily').value); });
+  const grandOwed = owedOwner + totalLiab;
+  const net = cash - grandOwed;
+
+  const lines = [
+`Mehreen Ship Recycling — Daily Financial Brief`,
+`${$('mDate').textContent}, ${$('mTime').textContent}  ·  Report ${reportId}`,
+``,
+`Total available cash is ৳${fmt(cash)} (Bank ৳${fmt(raw($('bank').value))} + Hand ৳${fmt(raw($('hand').value))}).`,
+``,
+`Owner has invested ৳${fmt(invested)} to date; ৳${fmt(recovered)} has been recovered, leaving ৳${fmt(owedOwner)} owed to the owner.`,
+`Total external liabilities (loans + non-partner investments) are ৳${fmt(totalLiab)}, accruing ৳${fmt(totalDaily)} in daily interest.`,
+`Overall, ৳${fmt(grandOwed)} is owed in total (owner + liabilities), against ৳${fmt(cash)} in available cash — a net position of ৳${fmt(net)}.`,
+  ];
+  if(liabRows.length){
+    lines.push('', 'Liability Ledger:');
+    liabRows.forEach(r=>{
+      lines.push(`• [${r.querySelector('.ln-type').value}] ${r.querySelector('.ln-name').value} — Balance ৳${fmt(raw(r.querySelector('.ln-balance').value))}, Rate ${r.querySelector('.ln-rate').value||0}%/yr, Daily Int. ৳${r.querySelector('.ln-daily').value}`);
+    });
+  }
+  if($('notes').value.trim()){ lines.push('', 'Remarks:', $('notes').value.trim()); }
+  lines.push('', `Prepared by ${$('accName').value||'—'}, ${$('accDesig').value||'—'}`);
+  if($('accSign').value.trim()){ lines.push(`Signed: ${$('accSign').value.trim()}`); }
+  return lines.join('\n');
+}
+$('btnGenerate').addEventListener('click', ()=>{
+  if(!validate()){ showToast(I18N[currentLang].toastFillRequired); return; }
+  $('summaryOut').textContent = buildSummaryText();
+  $('fName').textContent = $('accName').value || '—';
+  $('fDesig').textContent = $('accDesig').value || '—';
+  $('fTime').textContent = new Date().toLocaleString();
+  showToast(I18N[currentLang].toastGenerated);
+});
+
+// ---------- print ----------
+$('btnPrint').addEventListener('click', ()=>{
+  if(!$('summaryOut').textContent) $('summaryOut').textContent = buildSummaryText();
+  window.print();
+});
+
+// ---------- xlsx ----------
+$('btnXlsx').addEventListener('click', ()=>{
+  const rows = [['Field','Value']];
+  rows.push(['Report ID', reportId]);
+  rows.push(['Date', $('mDate').textContent]);
+  rows.push(['Time', $('mTime').textContent]);
+  rows.push(['Accountant Name', $('accName').value]);
+  rows.push(['Designation', $('accDesig').value]);
+  rows.push(['Cash in Bank', raw($('bank').value)]);
+  rows.push(['Cash on Hand', raw($('hand').value)]);
+  rows.push(['Total Available Cash', raw($('bank').value)+raw($('hand').value)]);
+  rows.push(['Owner Total Invested', raw($('invested').value)]);
+  rows.push(['Owner Total Recovered', raw($('recovered').value)]);
+  rows.push(['Owed to Owner', Math.max(raw($('invested').value)-raw($('recovered').value),0)]);
+  rows.push(['Remarks', $('notes').value]);
+  rows.push(['', '']); rows.push(['Liability Ledger','']);
+  rows.push(['Type','Name','Balance','Rate %/yr','Daily Interest']);
+  let totalLiab=0, totalDaily=0;
+  document.querySelectorAll('.liab-card').forEach(r=>{
+    const bal = raw(r.querySelector('.ln-balance').value), daily = raw(r.querySelector('.ln-daily').value);
+    totalLiab += bal; totalDaily += daily;
+    rows.push([r.querySelector('.ln-type').value, r.querySelector('.ln-name').value, bal, raw(r.querySelector('.ln-rate').value), daily]);
+  });
+  rows.push(['Total Liabilities', '', totalLiab, '', totalDaily]);
+  rows.push(['Total Owed (Owner + Liabilities)', Math.max(raw($('invested').value)-raw($('recovered').value),0)+totalLiab]);
+  rows.push(['', '']); rows.push(['Accountant Signature', $('accSign').value]);
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:28},{wch:18},{wch:12},{wch:12},{wch:14}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Daily Brief');
+  XLSX.writeFile(wb, `DailyFinancialBrief_${new Date().toISOString().slice(0,10)}.xlsx`);
+});
+
+// ---------- share ----------
+$('btnWa').addEventListener('click', ()=>{
+  if(!validate()){ showToast(I18N[currentLang].toastFillRequired); return; }
+  const text = $('summaryOut').textContent || buildSummaryText();
+  window.open(`https://wa.me/8801319001751?text=${encodeURIComponent(text)}`, '_blank');
+});
+$('btnMail').addEventListener('click', ()=>{
+  if(!validate()){ showToast(I18N[currentLang].toastFillRequired); return; }
+  const text = $('summaryOut').textContent || buildSummaryText();
+  window.location.href = `mailto:af@msrhkc.com?subject=${encodeURIComponent('Daily Financial Brief')}&body=${encodeURIComponent(text)}`;
+});
+
+// ---------- reset ----------
+$('btnReset').addEventListener('click', ()=>{
+  if(!confirm(I18N[currentLang].confirmReset)) return;
+  document.querySelectorAll('input[type=text], textarea').forEach(el=>el.value='');
+  $('liabList').innerHTML=''; addLiabRow();
+  $('summaryOut').textContent=''; recalc();
+  document.querySelectorAll('.invalid').forEach(clearInvalid);
+  $('accName').focus();
+});
+
+// ---------- keyboard flow ----------
+document.addEventListener('keydown', e=>{
+  if(e.key !== 'Enter') return;
+  const t = e.target;
+  if(t.tagName === 'TEXTAREA') return;
+  if(t.tagName === 'INPUT' || t.tagName === 'SELECT'){
+    e.preventDefault();
+    const focusables = [...document.querySelectorAll('input, select, textarea, button')].filter(el=>!el.disabled && el.offsetParent!==null);
+    const idx = focusables.indexOf(t);
+    if(idx > -1 && idx < focusables.length-1) focusables[idx+1].focus();
+  }
+});
+
+// ---------- toast ----------
+let toastTimer;
+function showToast(msg){
+  const el = $('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>el.classList.remove('show'), 2600);
+}
+
+// ---------- init ----------
+recalc();
+$('accName').focus();
+</script>
+</body>
+</html>
