@@ -1,0 +1,2258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mehreen Ship Recycling</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'><text x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-size='20' fill='%23002147'>⎈</text></svg>" />
+    <meta name="description" content="Mehreen Ship Recycling, Chittagong, Bangladesh — responsible ship recycling, material recovery, and resource circulation for local and international markets." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&family=Big+Shoulders+Display:wght@700;800&display=swap" rel="stylesheet" />
+    <style>
+        /* ============================================================
+           GLOBAL TOKENS & RESET
+           ============================================================ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: clip;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --navy: #0B1F38;
+            --navy-2: #122a4a;
+            --char: #12141A;
+            --char-2: #1b1e28;
+            --char-line: rgba(255, 255, 255, 0.12);
+            --red: #A61E32;
+            --green: #007A52;
+            --paper: #FCFCFA;
+            --paper-2: #F4F3EE;
+            --ink: #1C2530;
+            --ink-soft: #4B5563;
+            --line: rgba(11, 31, 56, 0.12);
+            --line-on-navy: rgba(255, 255, 255, 0.16);
+            --s1: 8px;
+            --s2: 16px;
+            --s3: 24px;
+            --s4: 32px;
+            --s5: 48px;
+            --s6: 64px;
+            --s7: 96px;
+            --s8: 128px;
+            --serif: 'Source Serif 4', Georgia, serif;
+            --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --mono: 'IBM Plex Mono', ui-monospace, monospace;
+            --display: 'Big Shoulders Display', 'Inter', sans-serif;
+            --ticker-h: 40px;
+            --header-h: 68px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        body {
+            background: var(--paper);
+            color: var(--ink);
+            font-family: var(--sans);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        img {
+            max-width: 100%;
+            display: block;
+            height: auto;
+        }
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        h1,
+        h2,
+        h3 {
+            font-family: var(--serif);
+            font-weight: 600;
+            text-wrap: balance;
+            margin: 0;
+            color: var(--navy);
+        }
+        p {
+            max-width: 65ch;
+            color: var(--ink-soft);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-left: clamp(20px, 5vw, 64px);
+            padding-right: clamp(20px, 5vw, 64px);
+            overflow-x: hidden;
+        }
+
+        section {
+            padding-top: var(--s8);
+            padding-bottom: var(--s8);
+        }
+
+        .eyebrow {
+            font-family: var(--mono);
+            font-size: 12px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--red);
+            display: block;
+            margin-bottom: var(--s2);
+        }
+
+        .rule {
+            height: 1px;
+            background: var(--line);
+            border: 0;
+            margin: var(--s6) 0;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--red);
+            outline-offset: 3px;
+        }
+
+        /* ============================================================
+           MARKET TICKER
+           ============================================================ */
+        .market-ticker {
+            position: relative;
+            z-index: 80;
+            min-height: var(--ticker-h);
+            background: var(--char);
+            color: #fff;
+            overflow: hidden;
+            border-bottom: 1px solid var(--char-line);
+            transition: opacity 0.25s ease, max-height 0.25s ease;
+        }
+        .market-ticker.hidden {
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            pointer-events: none;
+            padding: 0;
+            border: 0;
+        }
+        .tv-ticker {
+            min-height: var(--ticker-h);
+            display: block;
+        }
+        .tv-ticker .tradingview-widget-container,
+        .tv-ticker .tradingview-widget-container__widget {
+            width: 100%;
+        }
+        .tv-ticker .tradingview-widget-copyright {
+            font-family: var(--mono);
+            font-size: 9px;
+            letter-spacing: 0.04em;
+            text-align: right;
+            padding: 1px 12px 2px;
+            line-height: 1.2;
+        }
+        .tv-ticker .tradingview-widget-copyright a {
+            color: rgba(255, 255, 255, 0.38);
+            text-decoration: none;
+        }
+        .tv-ticker .tradingview-widget-copyright a:hover {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .ticker-fallback {
+            display: flex;
+            align-items: stretch;
+            height: var(--ticker-h);
+        }
+        .ticker-fallback[hidden] {
+            display: none;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .market-ticker {
+                height: auto;
+                min-height: var(--ticker-h);
+            }
+            .ticker-track {
+                animation: none !important;
+                flex-wrap: wrap;
+                padding: 4px 0;
+                gap: 4px 20px;
+            }
+            .ticker-viewport {
+                overflow: visible;
+                height: auto;
+                padding: 4px 12px;
+            }
+            .ticker-pause-hint {
+                display: none;
+            }
+        }
+        .ticker-label {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--red);
+            padding: 0 var(--s3);
+            font-family: var(--mono);
+            font-size: 10.5px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .ticker-label .pulse {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #fff;
+            opacity: 0.9;
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .ticker-label .pulse {
+                animation: none;
+                opacity: 1;
+            }
+        }
+        .ticker-viewport {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            position: relative;
+        }
+        .ticker-track {
+            display: flex;
+            white-space: nowrap;
+            font-family: var(--mono);
+            font-size: 12px;
+            letter-spacing: 0.02em;
+            padding-left: var(--s3);
+            color: rgba(255, 255, 255, 0.75);
+            animation: tickerScroll 40s linear infinite;
+            width: max-content;
+        }
+        .ticker-track .ticker-item {
+            display: inline-block;
+            padding-right: 2em;
+        }
+        .ticker-track .ticker-item strong {
+            color: #fff;
+            font-weight: 600;
+        }
+        .ticker-track .ticker-chg {
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .ticker-track .ticker-chg.up { color: #4ade80; }
+        .ticker-track .ticker-chg.down { color: #f87171; }
+        .ticker-track .ticker-tag {
+            font-family: var(--mono);
+            font-size: 0.72em;
+            letter-spacing: 0.04em;
+            color: rgba(255, 255, 255, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 3px;
+            padding: 0 4px;
+            margin-left: 4px;
+        }
+        .ticker-viewport:hover .ticker-track,
+        .ticker-viewport:focus-within .ticker-track {
+            animation-play-state: paused;
+        }
+        @keyframes tickerScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .ticker-track {
+                animation: none !important;
+            }
+        }
+        .ticker-pause-hint {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.5);
+            font-family: var(--mono);
+            letter-spacing: 0.04em;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .ticker-viewport:hover .ticker-pause-hint {
+            opacity: 1;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .ticker-pause-hint {
+                display: none;
+            }
+        }
+        .ticker-status {
+            font-family: var(--mono);
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.4);
+            padding: 0 12px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ticker-status .dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.35);
+        }
+        .ticker-status .dot.live { background: #4ade80; }
+        .ticker-status .dot.cached { background: #facc15; }
+        .ticker-status .dot.reference { background: #93a4bd; }
+
+        /* ============================================================
+           HEADER
+           ============================================================ */
+        #mainSite header {
+            position: sticky;
+            top: 0;
+            z-index: 70;
+            background: var(--char);
+            color: #fff;
+            padding-top: clamp(12px, 2vw, var(--s3));
+            padding-bottom: clamp(12px, 2vw, var(--s3));
+            border-bottom: 1px solid var(--char-line);
+            box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.45);
+        }
+
+        .brand-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--s2);
+            flex-wrap: nowrap;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .site-wordmark {
+            font-family: var(--display);
+            font-weight: 800;
+            font-size: clamp(22px, 5vw, 26px);
+            letter-spacing: 0.025em;
+            line-height: 1;
+            white-space: nowrap;
+            color: #fff;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: baseline;
+        }
+        .site-wordmark:hover,
+        .site-wordmark:focus-visible {
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            margin-left: auto;
+            min-width: fit-content;
+        }
+
+        .btn-primary {
+            font-family: var(--sans);
+            font-weight: 600;
+            font-size: clamp(11px, 1.4vw, 14px);
+            background: var(--red);
+            color: #fff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.15s ease;
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        .btn-primary:hover {
+            background: #8c1a2a;
+            transform: translateY(-1px);
+        }
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+
+        /* ============================================================
+           NAVIGATION
+           ============================================================ */
+        .nav-desktop {
+            display: flex;
+            align-items: center;
+            gap: clamp(12px, 1.8vw, 28px);
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-desktop li a {
+            color: rgba(255, 255, 255, 0.75);
+            font-size: clamp(12px, 1.2vw, 14px);
+            font-weight: 500;
+            text-decoration: none;
+            transition: color 0.2s;
+            padding: 6px 0;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-desktop li a:hover {
+            color: #fff;
+            border-bottom-color: var(--red);
+            text-decoration: none;
+        }
+
+        .nav-mobile-toggle {
+            display: none;
+            background: transparent;
+            border: none;
+            outline: none;
+            box-shadow: none;
+            -webkit-appearance: none;
+            appearance: none;
+            border-radius: 4px;
+            padding: 6px 10px;
+            cursor: pointer;
+            color: #fff;
+            font-size: 20px;
+            min-height: 44px;
+            min-width: 44px;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--sans);
+        }
+        .nav-mobile-toggle:hover,
+        .nav-mobile-toggle:focus,
+        .nav-mobile-toggle:focus-visible,
+        .nav-mobile-toggle:active {
+            border: none;
+            outline: none;
+            box-shadow: none;
+        }
+        .nav-mobile-toggle::before,
+        .nav-mobile-toggle::after {
+            border: none;
+            box-shadow: none;
+        }
+        .nav-mobile-toggle:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        @media (max-width: 820px) {
+            .nav-desktop { display: none; }
+            .nav-mobile-toggle { display: flex; }
+            .header-actions .btn-primary { font-size: 12px; padding: 8px 12px; }
+        }
+
+        @media (max-width: 480px) {
+            .header-actions .btn-primary { font-size: 11px; padding: 6px 10px; min-height: 38px; min-width: 38px; }
+            .nav-mobile-toggle { min-height: 38px; min-width: 38px; font-size: 18px; padding: 4px 8px; }
+        }
+
+        @media (max-width: 360px) {
+            .header-actions .btn-primary { font-size: 10px; padding: 4px 8px; min-height: 32px; min-width: 32px; }
+        }
+
+        /* ============================================================
+           NAV PANEL
+           ============================================================ */
+        .nav-panel {
+            position: fixed;
+            inset: 0;
+            background: var(--navy);
+            z-index: 85;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+        }
+        .nav-panel.open {
+            opacity: 1;
+            pointer-events: auto;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .nav-panel-close {
+            position: absolute;
+            top: var(--s5);
+            right: clamp(20px, 5vw, 64px);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--s3);
+        }
+        .nav-list a {
+            font-family: var(--serif);
+            font-size: clamp(20px, 3.6vw, 28px);
+            color: #fff;
+            text-decoration: none;
+            opacity: 0.75;
+            transition: opacity 0.2s ease;
+            padding: 8px 16px;
+        }
+        .nav-list a:hover {
+            opacity: 1;
+            text-decoration: none;
+        }
+
+        /* ============================================================
+           HERO
+           ============================================================ */
+        .hero {
+            background: var(--char);
+            color: #fff;
+            padding-top: var(--s7);
+            padding-bottom: var(--s7);
+            position: relative;
+            border-top: 1px solid var(--char-line);
+            overflow: hidden;
+        }
+
+        .hero-img-wrap {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .hero-img-wrap::before {
+            content: "";
+            position: absolute;
+            inset: -8%;
+            background-image: url("https://upload.wikimedia.org/wikipedia/commons/7/75/BALTIC_ACE_%2820561884573%29.jpg");
+            background-size: cover;
+            background-position: 65% center;
+            background-repeat: no-repeat;
+            filter: brightness(.38) contrast(1.08) saturate(.95);
+            animation: heroFloat 32s ease-in-out infinite alternate;
+            will-change: transform;
+        }
+
+        .hero-img-wrap::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at center, rgba(0, 0, 0, .15), rgba(0, 0, 0, .55)),
+                linear-gradient(180deg, rgba(10, 15, 22, .72), rgba(10, 15, 22, .58), rgba(10, 15, 22, .78));
+        }
+
+        @keyframes heroFloat {
+            0%   { transform: scale(1.05) translate3d(0, 0, 0); }
+            25%  { transform: scale(1.08) translate3d(-2%, 1%, 0); }
+            50%  { transform: scale(1.10) translate3d(2%, -1%, 0); }
+            75%  { transform: scale(1.08) translate3d(-1%, 2%, 0); }
+            100% { transform: scale(1.12) translate3d(2%, 0%, 0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .hero-img-wrap::before {
+                animation: none;
+                transform: scale(1.05) translate3d(0, 0, 0);
+            }
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            color: #fff;
+            text-shadow: 0 3px 10px rgba(0, 0, 0, .45), 0 12px 40px rgba(0, 0, 0, .35);
+            font-size: clamp(34px, 5.4vw, 64px);
+            line-height: 1.08;
+            max-width: 16ch;
+        }
+
+        .hero-lede {
+            color: rgba(255, 255, 255, .92);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, .45);
+            font-size: clamp(16px, 2vw, 19px);
+            max-width: 60ch;
+            margin-top: var(--s4);
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: var(--s5);
+            margin-top: var(--s6);
+            flex-wrap: wrap;
+            font-family: var(--mono);
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 0.04em;
+        }
+        .hero-meta strong {
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
+        }
+
+        .hero-quicklinks {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: var(--s6);
+        }
+        .quicklink {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13.5px;
+            font-weight: 500;
+            font-family: var(--sans);
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+            min-height: 44px;
+        }
+        .quicklink svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+        .quicklink:hover,
+        .quicklink:focus-visible {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: #fff;
+        }
+        .quicklink-cta {
+            background: var(--red);
+            border-color: var(--red);
+        }
+        .quicklink-cta:hover,
+        .quicklink-cta:focus-visible {
+            background: #8c1a2a;
+            border-color: #8c1a2a;
+        }
+
+        /* ============================================================
+           SCROLL REVEAL
+           ============================================================ */
+        .reveal {
+            opacity: 0;
+            transform: translateY(16px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .reveal.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .reveal {
+                opacity: 1;
+                transform: none;
+                transition: none;
+            }
+        }
+        .grid-cards .reveal:nth-child(2),
+        .leader-grid .reveal:nth-child(2) { transition-delay: 0.08s; }
+        .grid-cards .reveal:nth-child(3),
+        .leader-grid .reveal:nth-child(3) { transition-delay: 0.16s; }
+        .grid-cards .reveal:nth-child(4) { transition-delay: 0.24s; }
+        .grid-cards .reveal:nth-child(5) { transition-delay: 0.32s; }
+
+        /* ============================================================
+           GENERIC LAYOUT
+           ============================================================ */
+        .split {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--s6);
+            align-items: start;
+        }
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--s5);
+            margin-top: var(--s6);
+        }
+        .card {
+            border: 1px solid var(--line);
+            padding: var(--s5);
+            background: #fff;
+        }
+        .card .idx {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--red);
+            letter-spacing: 0.08em;
+            display: block;
+            margin-bottom: var(--s2);
+        }
+        .card-icon {
+            color: var(--navy);
+            margin-bottom: var(--s2);
+        }
+        .card h3 {
+            font-size: 20px;
+            margin-bottom: var(--s2);
+        }
+        .card p {
+            font-size: 15px;
+            max-width: none;
+        }
+        .section-alt {
+            background: var(--paper-2);
+        }
+        .section-head {
+            max-width: 70ch;
+            margin-bottom: var(--s5);
+        }
+        .section-head h2 {
+            font-size: clamp(26px, 3.4vw, 38px);
+        }
+        .section-head .sub {
+            font-family: var(--serif);
+            font-style: italic;
+            color: var(--ink-soft);
+            font-size: 18px;
+            margin-top: var(--s2);
+        }
+        figure {
+            margin: 0;
+        }
+
+        .img-inline {
+            border-radius: 4px;
+            overflow: hidden;
+            background: var(--paper-2);
+            margin: var(--s4) 0;
+        }
+        .img-inline img {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            display: block;
+        }
+        .img-inline figcaption {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--ink-soft);
+            padding: 8px 12px;
+            background: #fff;
+            border-top: 1px solid var(--line);
+            letter-spacing: 0.02em;
+        }
+
+        .img-band {
+            border-radius: 4px;
+            overflow: hidden;
+            background: var(--paper-2);
+            margin: var(--s6) 0 0;
+        }
+        .img-band img {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 21/9;
+            object-fit: cover;
+            display: block;
+        }
+        .img-band figcaption {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--ink-soft);
+            padding: 8px 12px;
+            background: #fff;
+            border-top: 1px solid var(--line);
+            letter-spacing: 0.02em;
+        }
+        @media (max-width: 640px) {
+            .img-band img { aspect-ratio: 16/9; }
+        }
+
+        .img-placeholder {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background:
+                repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 12px, transparent 12px 24px),
+                linear-gradient(135deg, var(--char) 0%, var(--char-2) 100%);
+            display: block;
+        }
+        .img-band .img-placeholder,
+        .img-inline .img-placeholder { aspect-ratio: auto; min-height: 220px; }
+
+        /* Leadership */
+        .leader-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--s6);
+            margin-top: var(--s6);
+        }
+        .leader {
+            border-top: 2px solid var(--navy);
+            padding-top: var(--s4);
+        }
+        .leader h3 {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        .leader .title {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--red);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: var(--s3);
+        }
+        .leader details summary {
+            cursor: pointer;
+            font-family: var(--sans);
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--navy);
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+        }
+        .leader details summary::-webkit-details-marker { display: none; }
+        .leader details summary::after {
+            content: '+';
+            font-size: 18px;
+            color: var(--red);
+            line-height: 1;
+        }
+        .leader details[open] summary::after { content: '−'; }
+        .leader details p {
+            font-size: 14.5px;
+            margin-top: var(--s3);
+        }
+
+        /* HKC */
+        .hkc {
+            background: var(--navy);
+            color: #fff;
+        }
+        .hkc h2 { color: #fff; }
+        .hkc p { color: rgba(255, 255, 255, 0.7); }
+        .hkc .section-head {
+            border-left: 2px solid var(--red);
+            padding-left: var(--s4);
+        }
+
+        /* Impact stats */
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--s5);
+            margin-top: var(--s5);
+        }
+        .stat-row ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: var(--s2);
+        }
+        .stat-row li {
+            font-family: var(--sans);
+            font-size: 15px;
+            padding-bottom: var(--s2);
+            border-bottom: 1px solid var(--line);
+        }
+        .big-number {
+            font-family: var(--serif);
+            font-size: clamp(48px, 7vw, 84px);
+            color: var(--navy);
+            line-height: 1;
+        }
+        .big-number+span {
+            display: block;
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--ink-soft);
+            margin-top: var(--s2);
+            letter-spacing: 0.03em;
+        }
+
+        /* Market panel */
+        .market-panel {
+            margin-top: var(--s7);
+            border: 1px solid var(--line);
+            background: #fff;
+        }
+        .market-panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: var(--s2);
+            padding: var(--s4) var(--s5) 0;
+        }
+        .market-panel-note {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--ink-soft);
+            letter-spacing: 0.02em;
+        }
+        .market-panel-body {
+            padding: var(--s3) var(--s5) var(--s2);
+        }
+        .market-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 10px 16px;
+            padding: var(--s2) 0;
+            border-bottom: 1px solid var(--line);
+            font-size: 14.5px;
+            flex-wrap: wrap;
+        }
+        .market-row:last-child { border-bottom: 0; }
+        .market-row .k {
+            color: var(--ink-soft);
+            flex: 1 1 auto;
+        }
+        .market-row .v {
+            font-family: var(--mono);
+            font-weight: 600;
+            color: var(--navy);
+            display: inline-flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            align-items: baseline;
+            gap: 4px 8px;
+            text-align: right;
+            margin-left: auto;
+        }
+        .market-row .v .mkt-price { white-space: nowrap; }
+        .market-row .v.down { color: var(--red); }
+        .market-row .v .mkt-tag {
+            font-family: var(--sans);
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+            border: 1px solid var(--line);
+            border-radius: 3px;
+            padding: 1px 5px;
+            white-space: nowrap;
+            align-self: center;
+        }
+        .market-row .v .mkt-tag.live {
+            color: var(--green);
+            border-color: rgba(0, 122, 82, 0.35);
+        }
+        @media (max-width: 480px) {
+            .market-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+            }
+            .market-row .v {
+                justify-content: flex-start;
+                margin-left: 0;
+                text-align: left;
+                font-size: 16px;
+            }
+            .market-row .k {
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+        }
+        .market-timestamp {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--ink-soft);
+            text-align: right;
+            padding: 0 var(--s5) var(--s3);
+            opacity: 0.85;
+            line-height: 1.5;
+        }
+        .market-timestamp.offline { opacity: 0.75; }
+
+        /* Resource Flow */
+        .flow {
+            margin-top: var(--s7);
+            overflow-x: auto;
+            position: relative;
+        }
+        .flow::after {
+            content: '→ swipe →';
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--ink-soft);
+            opacity: 0.5;
+            letter-spacing: 0.04em;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 4px 10px;
+            border-radius: 12px;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .flow:hover::after { opacity: 0; }
+        @media (min-width: 820px) { .flow::after { display: none; } }
+        .flow-track {
+            display: flex;
+            align-items: stretch;
+            min-width: 640px;
+            gap: 0;
+        }
+        .flow-node {
+            flex: 1;
+            padding: var(--s4) var(--s3);
+            border-top: 1px solid var(--line);
+            position: relative;
+            min-width: 140px;
+        }
+        .flow-node .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--red);
+            position: absolute;
+            top: -5px;
+            left: 0;
+        }
+        .flow-node h3 {
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+        .flow-node p {
+            font-size: 13.5px;
+            max-width: none;
+        }
+
+        /* Digital */
+        .digital-list {
+            list-style: none;
+            margin: var(--s4) 0 0;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: var(--s2) var(--s5);
+        }
+        .digital-list li {
+            font-size: 15px;
+            padding: var(--s2) 0;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+        .digital-list li::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--red);
+            flex-shrink: 0;
+            transform: translateY(-2px);
+        }
+
+        /* Contact */
+        .contact {
+            background: var(--char);
+            color: #fff;
+        }
+        .contact h2 { color: #fff; }
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--s6);
+            margin-top: var(--s6);
+        }
+        .contact-block dt {
+            font-family: var(--mono);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.45);
+            margin-bottom: 6px;
+        }
+        .contact-block dd {
+            margin: 0 0 var(--s4);
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .contact-block a {
+            text-decoration: none;
+            border-bottom: 1px solid var(--line-on-navy);
+        }
+        .contact-block a:hover {
+            border-bottom-color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Footer */
+        footer.site-footer {
+            background: var(--char);
+            color: rgba(255, 255, 255, 0.55);
+            padding: var(--s4) 0;
+            font-size: 13px;
+            text-align: center;
+            border-top: 1px solid var(--char-line);
+        }
+        footer.site-footer .footer-locale {
+            display: block;
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: var(--s2);
+        }
+        footer.site-footer a {
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+        }
+        footer.site-footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 640px) {
+            .contact-grid, .split { gap: var(--s5); }
+            .flow-track { min-width: 480px; }
+            .flow-node { padding: var(--s3) var(--s2); min-width: 120px; }
+            .flow-node h3 { font-size: 14px; }
+            .flow-node p { font-size: 12px; }
+            .stat-row { gap: var(--s3); }
+        }
+
+        @media (max-width: 400px) {
+            .hero h1 { font-size: 24px; }
+            .hero-img-wrap { opacity: 0.12; }
+        }
+
+        /* ============================================================
+           UTILITY
+           ============================================================ */
+        .hidden { display: none !important; }
+        #mainSite { display: block; }
+
+        /* ============================================================
+           TOUCH TARGETS
+           ============================================================ */
+        .btn-primary,
+        .nav-mobile-toggle,
+        .nav-panel-close {
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        @media (max-width: 480px) {
+            .btn-primary { min-height: 38px; min-width: 38px; padding: 6px 10px; font-size: 11px; }
+            .nav-mobile-toggle { min-height: 36px; min-width: 36px; }
+        }
+
+        /* ============================================================
+           ARIA LIVE REGION
+           ============================================================ */
+        .aria-live-announcer {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+
+        /* ============================================================
+           BACK TO TOP
+           ============================================================ */
+        #backToTop {
+            position: fixed;
+            right: 1.5rem;
+            bottom: 1.5rem;
+            width: 52px;
+            height: 52px;
+            border: none;
+            border-radius: 999px;
+            background: var(--red);
+            color: #fff;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: opacity .35s ease, transform .35s ease, visibility .35s ease, background .25s ease;
+            z-index: 9999;
+            font-size: 24px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+            font-family: var(--sans);
+            font-weight: 600;
+        }
+        #backToTop.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        #backToTop:hover {
+            background: #8c1a2a;
+            transform: translateY(-2px);
+        }
+        #backToTop:focus-visible {
+            outline: 2px solid var(--red);
+            outline-offset: 2px;
+        }
+
+        /* ============================================================
+           PRINT
+           ============================================================ */
+        @media print {
+            .market-ticker,
+            .nav-desktop,
+            .nav-mobile-toggle,
+            .nav-panel,
+            .btn-primary,
+            .hero-img-wrap,
+            #backToTop {
+                display: none !important;
+            }
+            body { background: #fff !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <script>
+        // Defined before any <img> is parsed so inline onerror handlers are safe.
+        function msrImgFallback(img) {
+            var step = img.getAttribute('data-fb-step') || '0';
+            var backup = img.getAttribute('data-fallback');
+            if (step === '0' && backup) {
+                img.setAttribute('data-fb-step', '1');
+                img.src = backup;
+                return;
+            }
+            img.setAttribute('data-fb-step', '2');
+            img.style.display = 'none';
+            if (img.getAttribute('data-fb-done')) return;
+            img.setAttribute('data-fb-done', '1');
+            var ph = document.createElement('div');
+            ph.className = 'img-placeholder';
+            ph.setAttribute('role', 'img');
+            ph.setAttribute('aria-label', img.getAttribute('alt') || 'Image unavailable');
+            if (img.parentNode) img.parentNode.insertBefore(ph, img);
+        }
+    </script>
+
+    <!-- ============================================================
+    ARIA LIVE ANNOUNCER
+    ============================================================ -->
+    <div class="aria-live-announcer" aria-live="polite" aria-atomic="true" id="ariaAnnouncer"></div>
+
+    <!-- ============================================================
+    MARKET TICKER — TradingView Ticker Tape (self-contained embed)
+    ============================================================ -->
+    <div class="market-ticker" id="marketTicker" aria-label="Live metals market prices">
+        <div class="tv-ticker" id="tvTicker">
+            <div class="tradingview-widget-container">
+                <div class="tradingview-widget-container__widget"></div>
+                <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">Markets by TradingView</a></div>
+            </div>
+        </div>
+        <div class="ticker-fallback" id="tickerFallback" role="status" hidden>
+            <div class="ticker-label"><span class="pulse"></span>Metals</div>
+            <div class="ticker-viewport">
+                <div class="ticker-track" id="tickerTrack"></div>
+                <span class="ticker-pause-hint">⏸ pause</span>
+            </div>
+            <div class="ticker-status" id="tickerStatus">
+                <span class="dot" id="statusDot"></span>
+                <span id="statusLabel">reference</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    NAV PANEL
+    ============================================================ -->
+    <nav class="nav-panel" id="navPanel" aria-hidden="true" inert>
+        <button class="nav-panel-close" id="navClose" aria-label="Close menu">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M2 2L14 14M14 2L2 14" stroke="white" stroke-width="1.4"/></svg>
+        </button>
+        <ul class="nav-list">
+            <li><a href="#home" onclick="closeNav()">Home</a></li>
+            <li><a href="#about" onclick="closeNav()">About</a></li>
+            <li><a href="#leadership" onclick="closeNav()">Leadership</a></li>
+            <li><a href="#process" onclick="closeNav()">Process</a></li>
+            <li><a href="#hkc" onclick="closeNav()">HKC</a></li>
+            <li><a href="#impact" onclick="closeNav()">Impact</a></li>
+            <li><a href="#digital" onclick="closeNav()">Digital</a></li>
+            <li><a href="#contact" onclick="closeNav()">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- ============================================================
+    MAIN SITE
+    ============================================================ -->
+    <div id="mainSite">
+
+        <!-- ============ HEADER ============ -->
+        <header id="home">
+            <div class="container">
+                <div class="brand-row">
+                    <div class="brand">
+                        <a href="https://msrhkc.com/" class="site-wordmark" aria-label="MSR — Mehreen Ship Recycling home">⎈ MSR.</a>
+                    </div>
+
+                    <ul class="nav-desktop" role="navigation" aria-label="Main navigation">
+                        <li><a href="#about">About</a></li>
+                        <li><a href="#leadership">Leadership</a></li>
+                        <li><a href="#process">Process</a></li>
+                        <li><a href="#hkc">HKC</a></li>
+                        <li><a href="#impact">Impact</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+
+                    <div class="header-actions">
+                        <button class="btn-primary" onclick="location.href='bid/';">Inventory</button>
+                        <button class="nav-mobile-toggle" id="navMobileOpen" aria-label="Open menu" aria-expanded="false">
+                            <span style="font-size:22px; line-height:1;">𓃑</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ============ HERO ============ -->
+        <section class="hero" aria-label="Hero">
+            <div class="hero-img-wrap" role="img" aria-label="The Baltic Ace vessel beached at a ship recycling yard in Chittagong"></div>
+            <div class="container">
+                <span class="eyebrow">Mehreen Ship Recycling · Chittagong</span>
+                <h1>Responsible Recovery of Maritime Assets</h1>
+                <p class="hero-lede">Mehreen Ship Recycling is an HKC compliant shipyard based in Ghoramara, Chittagong, Bangladesh, operating within one of the most established ship recycling regions in the world. It specializes in the acquisition of end-of-life vessels, responsible ship recycling, material recovery, and the connection of recovered resources with local and international markets.</p>
+                <div class="hero-meta"></div>
+                <nav class="hero-quicklinks" aria-label="Quick links">
+                    <a href="#about" class="quicklink">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l8-4 8 4v14"/><path d="M9 21v-6h6v6"/></svg>
+                        <span>About MSR</span>
+                    </a>
+                    <a href="#process" class="quicklink">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 3v6h-6"/></svg>
+                        <span>Our Process</span>
+                    </a>
+                    <a href="#hkc" class="quicklink">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.5-3 8.5-7 9-4-.5-7-4.5-7-9V7z"/><path d="M9 12l2 2 4-4"/></svg>
+                        <span>HKC Compliance</span>
+                    </a>
+                    <button type="button" class="quicklink quicklink-cta" onclick="location.href='bid/';">Place Your Bid</button>
+                </nav>
+            </div>
+        </section>
+
+        <!-- ============ ABOUT ============ -->
+        <section id="about">
+            <div class="container">
+                <div class="split">
+                    <div>
+                        <span class="eyebrow">About</span>
+                        <h2>Mehreen Ship Recycling</h2>
+                        <p style="margin-top:var(--s4)">Mehreen Ship Recycling is a HKC compliant shipyard based in Ghoramara, Chittagong, Bangladesh, operating within one of the world's most established ship recycling regions.</p>
+                        <p>The company specializes in the acquisition of end-of-life vessels, responsible ship recycling, material recovery, and the connection of recovered resources with local and international markets.</p>
+                        <p>MSR approaches ship recycling as a structured resource recovery process. Beyond dismantling vessels, the industry connects maritime assets with workers, suppliers, transporters, traders, downstream industries, and buyers through the continued circulation of valuable materials and equipment.</p>
+                    </div>
+                    <figure class="img-inline reveal">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Shipbreaking_Chittagong_2014.JPG/1280px-Shipbreaking_Chittagong_2014.JPG" alt="Shipbreaking yard in Chittagong showing vessels being dismantled" loading="lazy" width="1280" height="720" onerror="msrImgFallback(this)" data-fallback="https://commons.wikimedia.org/wiki/Special:FilePath/Chittagong%20Ship%20breaking%20yard.JPG?width=1280" />
+                        <figcaption>Chittagong ship recycling yard — one of the world's largest shipbreaking regions</figcaption>
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ LEADERSHIP ============ -->
+        <section id="leadership" class="section-alt">
+            <div class="container">
+                <span class="eyebrow">Leadership</span>
+                <h2>Management & Ownership</h2>
+                <div class="leader-grid">
+                    <div class="leader reveal">
+                        <h3>J. Alam</h3>
+                        <span class="title">Managing Partner</span>
+                        <details>
+                            <summary>Read biography</summary>
+                            <p>Mr. Jahurul Alam has been involved in the Chittagong ship recycling industry since its early development. With extensive experience in planning and industrial management, he oversees operational strategy, vessel acquisition activities, and execution across MSR's operations.</p>
+                            <p>His role focuses on maintaining effective coordination between commercial decisions, operational planning, and the practical requirements of ship recycling activities.</p>
+                        </details>
+                    </div>
+                    <div class="leader reveal">
+                        <h3>Lucky Johar</h3>
+                        <span class="title">Partner</span>
+                        <details>
+                            <summary>Read biography</summary>
+                            <p>Mrs. Johar is a strategic partner at MSR. Her investment supports the company's financial foundation, operational development, and continued participation in the ship recycling industry.</p>
+                        </details>
+                    </div>
+                    <div class="leader reveal">
+                        <h3>Hamid Yasir, FRSA, ADC</h3>
+                        <span class="title">Attorney-in-Fact</span>
+                        <details>
+                            <summary>Read biography</summary>
+                            <p>Mr. Hamid Yasir serves as the Attorney-in-Fact for the company. He is responsible for corporate affairs, business administration, purchasing, sales, financial coordination, and strategic advisory functions.</p>
+                            <p>His role supports the coordination of commercial, administrative, and strategic matters across MSR.</p>
+                        </details>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ PROCESS ============ -->
+        <section id="process">
+            <div class="container">
+                <div class="section-head">
+                    <span class="eyebrow">Our Approach</span>
+                    <h2>From Vessel Acquisition to Resource Recovery</h2>
+                    <p style="margin-top:var(--s3)">Ship recycling requires careful planning, industrial knowledge, skilled workers, and effective connection with material markets. MSR manages the recycling process through several key stages.</p>
+                </div>
+                <div class="grid-cards">
+                    <div class="card reveal">
+                        <svg class="card-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15l4-9h10l4 9M3 15v4a1 1 0 001 1h16a1 1 0 001-1v-4M3 15h18"/></svg>
+                        <span class="idx">Stage 01</span>
+                        <h3>Acquisition</h3>
+                        <p>The process begins with the evaluation and acquisition of end-of-life vessels. Each vessel is assessed according to its condition, material composition, operational history, and commercial suitability.</p>
+                    </div>
+                    <div class="card reveal">
+                        <svg class="card-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M9 4v16"/></svg>
+                        <span class="idx">Stage 02</span>
+                        <h3>Planning</h3>
+                        <p>Before recycling activities begin, vessels are reviewed and prepared to support organized operations, responsible handling, and efficient recovery of materials.</p>
+                    </div>
+                    <div class="card reveal">
+                        <svg class="card-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 010 1.4l-7 7a1 1 0 01-1.4 0l-1-1a1 1 0 010-1.4l7-7a1 1 0 011.4 0z"/><path d="M17 9l-2-2M3 21l3.5-1 6-6-2-2-6 6z"/></svg>
+                        <span class="idx">Stage 03</span>
+                        <h3>Dismantling</h3>
+                        <p>Vessels are dismantled through structured processes designed around safety, organization, and responsible recovery practices.</p>
+                    </div>
+                    <div class="card reveal">
+                        <svg class="card-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                        <span class="idx">Stage 04</span>
+                        <h3>Sorting</h3>
+                        <p>Recovered materials are separated according to type, quality, and potential application. Steel, machinery, equipment, non-ferrous materials, and reusable components are directed toward appropriate markets.</p>
+                    </div>
+                    <div class="card reveal">
+                        <svg class="card-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18"/></svg>
+                        <span class="idx">Stage 05</span>
+                        <h3>Market Integration</h3>
+                        <p>Recovered resources are connected with local and international buyers, supporting continued use within industrial supply chains.</p>
+                    </div>
+                </div>
+                <figure class="img-band reveal">
+                    <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Jafrabad%20Chittagong%20shipbreaking%20%286%29.JPG?width=1600" alt="Workers dismantling a beached vessel at a Chittagong ship recycling yard" loading="lazy" width="1600" height="686" onerror="msrImgFallback(this)" data-fallback="https://commons.wikimedia.org/wiki/Special:FilePath/Jafrabad%20Chittagong%20shipbreaking%20%284%29.JPG?width=1600" />
+                    <figcaption>Structured dismantling in progress at a Chittagong yard</figcaption>
+                </figure>
+            </div>
+        </section>
+
+        <!-- ============ HKC ============ -->
+        <section id="hkc" class="hkc">
+            <div class="container">
+                <div class="section-head">
+                    <span class="eyebrow">HKC Responsible Recycling</span>
+                    <h2>Safe and Environmentally Sound Practices</h2>
+                </div>
+                <div class="split">
+                    <div>
+                        <p>Responsible ship recycling requires planning, documentation, controlled operations, and responsible management of recovered materials alongside robust dismantling capability.</p>
+                        <p>MSR is committed to practices aligned with the principles of the Hong Kong International Convention for the Safe and Environmentally Sound Recycling of Ships.</p>
+                        <p>Through improved processes and documentation, the company aims to support safer operations, greater transparency, and responsible resource recovery.</p>
+                    </div>
+                    <figure class="img-inline reveal">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Steel_plate_%2843272521745%29.jpg/1280px-Steel_plate_%2843272521745%29.jpg" alt="Stacked steel plates recovered from ship recycling" loading="lazy" width="1280" height="720" onerror="msrImgFallback(this)" data-fallback="https://commons.wikimedia.org/wiki/Special:FilePath/Safe%20removal%20of%20Hazardous%20materials%20from%20recycled%20ship.jpg?width=1280" />
+                        <figcaption>Recovered steel plates — a core resource from responsible ship recycling</figcaption>
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ IMPACT ============ -->
+        <section id="impact" class="section-alt">
+            <div class="container">
+                <div class="section-head">
+                    <span class="eyebrow">Industrial Ecosystem Impact</span>
+                    <h2>Supporting Chittagong's Industrial Network</h2>
+                    <p style="margin-top:var(--s3)">Ship recycling maintains a resource recovery ecosystem that connects maritime assets with local and international industries.</p>
+                </div>
+                <figure class="img-band" style="margin-bottom:var(--s6)">
+                    <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Jafrabad%20Chittagong%20shipbreaking%20%281%29.JPG?width=1600" alt="Yard workers moving recovered material at a Chittagong ship recycling site" loading="lazy" width="1600" height="686" onerror="msrImgFallback(this)" data-fallback="https://commons.wikimedia.org/wiki/Special:FilePath/Jafrabad%20Chittagong%20shipbreaking%20%288%29.JPG?width=1600" />
+                    <figcaption>The yard sits at the centre of a wide industrial network of workers, suppliers, and traders</figcaption>
+                </figure>
+                <div class="stat-row">
+                    <div>
+                        <span class="big-number">1,000+</span>
+                        <span>People in direct and indirect employment connected to the wider ship recycling ecosystem</span>
+                    </div>
+                    <ul>
+                        <li>Workers</li>
+                        <li>Suppliers</li>
+                        <li>Transporters</li>
+                        <li>Traders</li>
+                        <li>Downstream industries</li>
+                        <li>Buyers</li>
+                    </ul>
+                </div>
+                <p style="margin-top:var(--s5)">Through the recovery and circulation of materials, ship recycling supports industrial activity far beyond the recycling yard itself.</p>
+                <hr class="rule">
+                <div class="section-head">
+                    <span class="eyebrow">Resource Recovery</span>
+                    <h2>Returning Maritime Resources to Industry</h2>
+                    <p style="margin-top:var(--s3)">A vessel contains a wide range of materials and components that retain value beyond its operational life.</p>
+                </div>
+                <div class="flow">
+                    <div class="flow-track">
+                        <div class="flow-node"><span class="dot"></span><h3>Steel</h3><p>Recovered steel continues into construction, manufacturing, and industrial production.</p></div>
+                        <div class="flow-node"><span class="dot"></span><h3>Machinery &amp; Equipment</h3><p>Marine machinery and equipment may continue serving secondary markets through reuse, redistribution, and industrial applications.</p></div>
+                        <div class="flow-node"><span class="dot"></span><h3>Non-Ferrous Materials</h3><p>Copper, aluminum, and other materials support specialized manufacturing and industrial requirements.</p></div>
+                        <div class="flow-node"><span class="dot"></span><h3>Marine Components</h3><p>Recoverable components can continue supporting maritime and industrial activities.</p></div>
+                    </div>
+                </div>
+                <div class="market-panel">
+                    <div class="market-panel-head">
+                        <span class="eyebrow" style="margin-bottom:0">Market Reference</span>
+                        <span class="market-panel-note">Reference levels</span>
+                    </div>
+                    <div class="market-panel-body" id="marketPanelBody">
+                        <div class="market-row"><span class="k">Steel (HRC)</span><span class="v" id="mktSteel">Loading…</span></div>
+                        <div class="market-row"><span class="k">Brass</span><span class="v" id="mktBrass">Loading…</span></div>
+                        <div class="market-row"><span class="k">Copper</span><span class="v" id="mktCopper">Loading…</span></div>
+                        <div class="market-row"><span class="k">Aluminium</span><span class="v" id="mktAluminium">Loading…</span></div>
+                    </div>
+                    <div class="market-timestamp" id="mktTimestamp">Loading market data…</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ DIGITAL ============ -->
+        <section id="digital">
+            <div class="container">
+                <div class="split">
+                    <div>
+                        <span class="eyebrow">Digital Transformation</span>
+                        <h2>Building Greater Transparency Through Technology</h2>
+                        <p style="margin-top:var(--s3)">MSR is working toward the digital development of ship recycling workflows. Digital tools can help connect vessel owners, recycling facilities, buyers, and industry participants through more accessible and reliable information.</p>
+                        <ul class="digital-list">
+                            <li>Improved documentation</li>
+                            <li>Clearer records</li>
+                            <li>Easier access to information</li>
+                            <li>Better stakeholder communication</li>
+                            <li>Increased transparency</li>
+                        </ul>
+                    </div>
+                </div>
+                <figure class="img-band reveal">
+                    <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Safety%20inspection%20during%20as%20recycling%20of%20offshore%20asset.jpg?width=1600" alt="Documented safety inspection during the recycling of a marine asset" loading="lazy" width="1600" height="686" onerror="msrImgFallback(this)" data-fallback="https://commons.wikimedia.org/wiki/Special:FilePath/Safe%20removal%20of%20Hazardous%20materials%20from%20recycled%20ship.jpg?width=1600" />
+                    <figcaption>Documentation and inspection underpin safer, more transparent recycling</figcaption>
+                </figure>
+            </div>
+        </section>
+
+        <!-- ============ CONTACT ============ -->
+        <section id="contact" class="contact">
+            <div class="container">
+                <span class="eyebrow">Contact</span>
+                <h2>Mehreen Ship Recycling</h2>
+                <div class="contact-grid">
+                    <dl class="contact-block">
+                        <dt>Address</dt>
+                        <dd>Ghoramara, Chittagong 4314, Bangladesh</dd>
+                        <dt>Phone</dt>
+                        <dd><a href="tel:+8809611336887">09611336887</a></dd>
+                    </dl>
+                    <dl class="contact-block">
+                        <dt>Email</dt>
+                        <dd><a href="mailto:info@msrhkc.com">info@msrhkc.com</a></dd>
+                        <dt>Website</dt>
+                        <dd><a href="https://msrhkc.com">msrhkc.com</a></dd>
+                    </dl>
+                </div>
+            </div>
+        </section>
+
+        <footer class="site-footer">
+            <div class="container">
+                <span class="footer-locale">Chittagong · Bangladesh</span>
+                &copy; Mehreen Ship Recycling | Powered by <a href="https://hamidyasir.com" target="_blank" rel="noopener">Hamid Yasir &amp; Co.</a>
+            </div>
+        </footer>
+
+    </div>
+    <!-- /#mainSite -->
+
+    <!-- ============================================================
+    BACK TO TOP
+    ============================================================ -->
+    <button id="backToTop" aria-label="Back to top">↑</button>
+
+    <!-- ============================================================
+    JAVASCRIPT
+    ============================================================ -->
+    <script>
+        // ============================================================
+        // 0. SCROLL REVEAL
+        // ============================================================
+        (function() {
+            var items = document.querySelectorAll('.reveal');
+            if (!items.length) return;
+            if (!('IntersectionObserver' in window)) {
+                items.forEach(function(el) { el.classList.add('is-visible'); });
+                return;
+            }
+            var io = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        io.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+            items.forEach(function(el) { io.observe(el); });
+        })();
+
+        // ============================================================
+        // 1. NAVIGATION
+        // ============================================================
+        (function() {
+            var panel = document.getElementById('navPanel');
+            var openBtn = document.getElementById('navMobileOpen');
+            var closeBtn = document.getElementById('navClose');
+            var announcer = document.getElementById('ariaAnnouncer');
+
+            function openNav() {
+                panel.classList.add('open');
+                panel.setAttribute('aria-hidden', 'false');
+                panel.removeAttribute('inert');
+                openBtn.setAttribute('aria-expanded', 'true');
+                var firstLink = panel.querySelector('.nav-list a');
+                if (firstLink) setTimeout(function() { firstLink.focus(); }, 100);
+                if (announcer) announcer.textContent = 'Navigation menu opened';
+            }
+
+            function closeNav() {
+                panel.classList.remove('open');
+                panel.setAttribute('aria-hidden', 'true');
+                panel.setAttribute('inert', '');
+                openBtn.setAttribute('aria-expanded', 'false');
+                openBtn.focus();
+                if (announcer) announcer.textContent = 'Navigation menu closed';
+            }
+
+            if (openBtn) openBtn.addEventListener('click', openNav);
+            if (closeBtn) closeBtn.addEventListener('click', closeNav);
+
+            var navLinks = panel.querySelectorAll('a');
+            navLinks.forEach(function(link) {
+                link.addEventListener('click', closeNav);
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && panel.classList.contains('open')) closeNav();
+            });
+
+            window.closeNav = closeNav;
+        })();
+
+        // ============================================================
+        // 2. BACK TO TOP
+        // ============================================================
+        (function() {
+            var btn = document.getElementById('backToTop');
+            if (!btn) return;
+            var SCROLL_THRESHOLD = 500;
+            var ticking = false;
+
+            function updateButton() {
+                var scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+                if (scrollY > SCROLL_THRESHOLD) {
+                    btn.classList.add('show');
+                } else {
+                    btn.classList.remove('show');
+                }
+            }
+
+            function onScroll() {
+                if (!ticking) {
+                    window.requestAnimationFrame(function() {
+                        updateButton();
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            }
+
+            window.addEventListener('scroll', onScroll, { passive: true });
+            window.addEventListener('resize', onScroll, { passive: true });
+            updateButton();
+
+            btn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        })();
+
+        // ============================================================
+        // 3. SHARED — free, no-key CORS passthroughs
+        // ============================================================
+        var CORS_PROXIES = [
+            {
+                build: function(u) { return 'https://api.allorigins.win/get?url=' + encodeURIComponent(u); },
+                unwrap: function(t) { try { var j = JSON.parse(t); return (j && typeof j.contents === 'string') ? j.contents : null; } catch (e) { return null; } }
+            },
+            { build: function(u) { return 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u); } },
+            { build: function(u) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); } },
+            { build: function(u) { return 'https://corsproxy.org/?url=' + encodeURIComponent(u); } },
+            { build: function(u) { return 'https://cors.x2u.in/' + u; } }
+        ];
+
+        function fetchText(url, timeoutMs) {
+            timeoutMs = timeoutMs || 4500;
+            var attempts = [{ build: function() { return url; } }].concat(CORS_PROXIES);
+            var i = 0;
+
+            function tryNext() {
+                if (i >= attempts.length) return Promise.reject(new Error('all sources failed'));
+                var proxy = attempts[i++];
+                var target = proxy.build(url);
+                var controller = ('AbortController' in window) ? new AbortController() : null;
+                var timer = setTimeout(function() { if (controller) controller.abort(); }, timeoutMs);
+                return fetch(target, controller ? { signal: controller.signal } : {})
+                    .then(function(res) {
+                        clearTimeout(timer);
+                        if (!res.ok) throw new Error('bad status');
+                        return res.text();
+                    })
+                    .then(function(text) {
+                        if (proxy.unwrap) {
+                            var body = proxy.unwrap(text);
+                            if (body === null) throw new Error('unwrap failed');
+                            return body;
+                        }
+                        return text;
+                    })
+                    .catch(function() { clearTimeout(timer); return tryNext(); });
+            }
+            return tryNext();
+        }
+
+        // ============================================================
+        // 4. LIVE TICKER — TradingView Ticker Tape
+        // ============================================================
+        (function() {
+            var tv = document.getElementById('tvTicker');
+            var mount = tv ? tv.querySelector('.tradingview-widget-container__widget') : null;
+            var fallback = document.getElementById('tickerFallback');
+
+            function showFallback() {
+                if (tv) tv.style.display = 'none';
+                if (fallback) fallback.hidden = false;
+            }
+            if (!mount) { showFallback(); return; }
+
+            try {
+                var s = document.createElement('script');
+                s.type = 'text/javascript';
+                s.async = true;
+                s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js';
+                s.innerHTML = JSON.stringify({
+                    symbols: [
+                        { description: 'Copper', proName: 'COMEX:HG1!' },
+                        { description: 'Aluminium', proName: 'COMEX:ALI1!' },
+                        { description: 'Steel HRC', proName: 'COMEX:HRC1!' }
+                    ],
+                    showSymbolLogo: true,
+                    isTransparent: true,
+                    displayMode: 'adaptive',
+                    colorTheme: 'dark',
+                    locale: 'en'
+                });
+                s.onerror = showFallback;
+                mount.parentNode.appendChild(s);
+                setTimeout(function() {
+                    if (!mount.querySelector('iframe')) showFallback();
+                }, 6000);
+            } catch (e) {
+                showFallback();
+            }
+        })();
+
+        // ============================================================
+        // 5. METALS TICKER — real futures via Yahoo Finance
+        // ============================================================
+        (function() {
+            var track = document.getElementById('tickerTrack');
+            var tsEl = document.getElementById('mktTimestamp');
+            var statusDot = document.getElementById('statusDot');
+            var statusLabel = document.getElementById('statusLabel');
+
+            var CACHE_KEY = 'msr_metals_v4';
+            var CACHE_TTL = 12 * 60 * 60 * 1000;
+
+            var INSTRUMENTS = [
+                { key: 'steel', label: 'Steel', panelId: 'mktSteel', symbol: 'HRC=F', unit: '/short ton', decimals: 0, tag: 'index proxy' },
+                { key: 'brass', label: 'Brass', panelId: 'mktBrass', symbol: null, unit: '/t', decimals: 0, tag: 'indicative' },
+                { key: 'copper', label: 'Copper', panelId: 'mktCopper', symbol: 'HG=F', unit: '/lb', decimals: 2, tag: '' },
+                { key: 'aluminium', label: 'Aluminium', panelId: 'mktAluminium', symbol: 'ALI=F', unit: '/t', decimals: 0, tag: '' }
+            ];
+
+            var REFERENCE = { steel: 850, brass: 6100, copper: 5.00, aluminium: 2750 };
+
+            function formatPrice(m, val, src) {
+                if (typeof val !== 'number' || isNaN(val)) return '—';
+                var num = val.toLocaleString('en-US', { minimumFractionDigits: m.decimals, maximumFractionDigits: m.decimals });
+                var prefix = (src === 'reference' || m.key === 'brass') ? '≈ ' : '';
+                return prefix + '$' + num + ' ' + m.unit;
+            }
+
+            function setStatus(mode) {
+                var labels = { live: 'live', cached: 'cached', reference: 'reference' };
+                statusDot.className = 'dot ' + (mode || 'reference');
+                statusLabel.textContent = labels[mode] || 'reference';
+            }
+
+            function render(data, overall, at) {
+                var trackContent = '';
+                INSTRUMENTS.forEach(function(m) {
+                    var d = data[m.key] || {};
+                    var priceStr = formatPrice(m, d.v, d.src);
+                    var chip = '';
+                    if (typeof d.chg === 'number' && !isNaN(d.chg) && d.src === 'live') {
+                        var sign = d.chg >= 0 ? '+' : '';
+                        chip = ' <span class="ticker-chg ' + (d.chg >= 0 ? 'up' : 'down') + '">' + sign + d.chg.toFixed(1) + '%</span>';
+                    }
+                    var tag = m.tag ? ' <span class="ticker-tag">' + m.tag + '</span>' : '';
+                    trackContent += '<span class="ticker-item"><strong>' + m.label + '</strong> ' + priceStr + chip + tag + '</span>';
+
+                    var el = document.getElementById(m.panelId);
+                    if (el) {
+                        var panelTag = '';
+                        if (m.tag) panelTag = ' <span class="mkt-tag">' + m.tag + '</span>';
+                        else if (d.src === 'live') panelTag = ' <span class="mkt-tag live">live</span>';
+                        else if (d.src === 'cached') panelTag = ' <span class="mkt-tag">cached</span>';
+                        else if (d.src === 'reference') panelTag = ' <span class="mkt-tag">reference</span>';
+                        el.innerHTML = '<span class="mkt-price">' + priceStr + '</span>' + panelTag;
+                    }
+                });
+                track.innerHTML = trackContent + trackContent;
+
+                if (tsEl) {
+                    var d2 = at ? new Date(at) : new Date();
+                    var msg;
+                    if (overall === 'live') {
+                        msg = 'Live futures — updated ' + d2.toLocaleString('en-GB') +
+                            ' · source: Yahoo Finance (copper HG, aluminium ALI, steel HRC). Brass indicative.';
+                    } else if (overall === 'cached') {
+                        msg = 'Cached from Yahoo Finance futures — ' + d2.toLocaleString('en-GB') +
+                            '. Brass indicative.';
+                    } else {
+                        msg = 'Indicative reference values (not live) — ' + d2.toLocaleString('en-GB') +
+                            '. Live futures unavailable right now; pulled from Yahoo Finance when reachable.';
+                    }
+                    tsEl.textContent = msg;
+                    tsEl.classList.toggle('offline', overall !== 'live');
+                }
+                setStatus(overall);
+            }
+
+            function referenceData() {
+                var out = {};
+                INSTRUMENTS.forEach(function(m) { out[m.key] = { v: REFERENCE[m.key], src: 'reference' }; });
+                return out;
+            }
+
+            function readCache() {
+                try {
+                    var raw = localStorage.getItem(CACHE_KEY);
+                    if (!raw) return null;
+                    var parsed = JSON.parse(raw);
+                    if (parsed && parsed.data && parsed.at) return parsed;
+                } catch (e) {}
+                return null;
+            }
+
+            function parseYahoo(text) {
+                var json = JSON.parse(text);
+                var r = json && json.chart && json.chart.result && json.chart.result[0];
+                var meta = r && r.meta;
+                if (!meta || typeof meta.regularMarketPrice !== 'number') return null;
+                var prev = (typeof meta.chartPreviousClose === 'number') ? meta.chartPreviousClose : meta.previousClose;
+                return { price: meta.regularMarketPrice, prev: (typeof prev === 'number' ? prev : null) };
+            }
+
+            function fetchLive() {
+                var jobs = INSTRUMENTS.filter(function(m) { return m.symbol; }).map(function(m) {
+                    var url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(m.symbol) + '?interval=1d&range=5d';
+                    return fetchText(url, 7000).then(function(txt) {
+                        var p = parseYahoo(txt);
+                        if (!p) return null;
+                        var chg = (p.prev && p.prev !== 0) ? ((p.price - p.prev) / p.prev) * 100 : null;
+                        return { key: m.key, v: p.price, chg: chg };
+                    }).catch(function() { return null; });
+                });
+                return Promise.all(jobs);
+            }
+
+            function loadMetals() {
+                var cache = readCache();
+                if (cache && (Date.now() - cache.at < CACHE_TTL)) {
+                    var cachedView = {};
+                    Object.keys(cache.data).forEach(function(k) {
+                        cachedView[k] = { v: cache.data[k].v, chg: cache.data[k].chg, src: 'cached' };
+                    });
+                    render(cachedView, 'cached', cache.at);
+                } else {
+                    render(referenceData(), 'reference', Date.now());
+                }
+
+                fetchLive().then(function(results) {
+                    var live = {};
+                    var gotAny = false;
+                    results.forEach(function(row) {
+                        if (row && typeof row.v === 'number') { live[row.key] = row; gotAny = true; }
+                    });
+                    if (!gotAny) return;
+
+                    var view = {};
+                    var store = {};
+                    INSTRUMENTS.forEach(function(m) {
+                        if (live[m.key]) {
+                            view[m.key] = { v: live[m.key].v, chg: live[m.key].chg, src: 'live' };
+                            store[m.key] = { v: live[m.key].v, chg: live[m.key].chg };
+                        } else if (m.key === 'brass') {
+                            view[m.key] = { v: REFERENCE.brass, src: 'reference' };
+                            store[m.key] = { v: REFERENCE.brass };
+                        } else if (cache && cache.data[m.key]) {
+                            view[m.key] = { v: cache.data[m.key].v, chg: cache.data[m.key].chg, src: 'cached' };
+                            store[m.key] = cache.data[m.key];
+                        } else {
+                            view[m.key] = { v: REFERENCE[m.key], src: 'reference' };
+                            store[m.key] = { v: REFERENCE[m.key] };
+                        }
+                    });
+                    render(view, 'live', Date.now());
+                    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: store, at: Date.now() })); } catch (e) {}
+                });
+            }
+
+            loadMetals();
+            setInterval(loadMetals, 10 * 60 * 1000);
+        })();
+
+        // ============================================================
+        // 6. NEWS — real headlines from maritime publishers
+        // ============================================================
+        (function() {
+            var feedList = document.getElementById('feedList');
+            var feedStatus = document.getElementById('feedStatus');
+            // If the elements don't exist, skip the whole news feature.
+            if (!feedList || !feedStatus) return;
+
+            var NEWS_CACHE_KEY = 'msr_news_v2';
+            var MAX_ITEMS = 6;
+
+            var FEEDS = [
+                { source: 'gCaptain', url: 'https://gcaptain.com/feed/' },
+                { source: 'gCaptain', url: 'https://feeds.feedburner.com/gcaptain' },
+                { source: 'Marine Insight', url: 'https://www.marineinsight.com/feed/' },
+                { source: 'Hellenic Shipping News', url: 'https://www.hellenicshippingnews.com/feed/' },
+                { source: 'Splash247', url: 'https://splash247.com/feed/' }
+            ];
+
+            var KEYWORDS = ['recycl', 'scrap', 'demolition', 'shipbreak', 'ship breaking', 'breaker',
+                'hkc', 'hong kong convention', 'green ship', 'end-of-life', 'end of life',
+                'beaching', 'dismantl', 'alang', 'chittagong', 'gadani'
+            ];
+
+            var SOURCE_HOME = {
+                'gCaptain': 'https://gcaptain.com/',
+                'Marine Insight': 'https://www.marineinsight.com/',
+                'Hellenic Shipping News': 'https://www.hellenicshippingnews.com/',
+                'Splash247': 'https://splash247.com/'
+            };
+
+            function childText(node, tag) {
+                var els = node.getElementsByTagName(tag);
+                return (els && els[0]) ? (els[0].textContent || '').trim() : '';
+            }
+
+            function parseFeed(xmlText, source) {
+                var out = [];
+                try {
+                    var doc = new DOMParser().parseFromString(xmlText, 'text/xml');
+                    if (doc.getElementsByTagName('parsererror').length) return out;
+                    var nodes = doc.getElementsByTagName('item');
+                    if (!nodes.length) nodes = doc.getElementsByTagName('entry');
+                    for (var i = 0; i < nodes.length; i++) {
+                        var n = nodes[i];
+                        var title = childText(n, 'title');
+                        var link = '';
+                        var linkEls = n.getElementsByTagName('link');
+                        if (linkEls && linkEls[0]) {
+                            link = linkEls[0].getAttribute('href') || linkEls[0].textContent || '';
+                        }
+                        var dateStr = childText(n, 'pubDate') || childText(n, 'published') ||
+                            childText(n, 'updated') || childText(n, 'date');
+                        var when = dateStr ? new Date(dateStr) : null;
+                        if (when && isNaN(when.getTime())) when = null;
+                        title = title.replace(/\s+/g, ' ').trim();
+                        link = (link || '').trim();
+                        if (title && link) out.push({ title: title, link: link, source: source, when: when });
+                    }
+                } catch (e) {}
+                return out;
+            }
+
+            function matchesKeyword(title) {
+                var t = title.toLowerCase();
+                for (var i = 0; i < KEYWORDS.length; i++) { if (t.indexOf(KEYWORDS[i]) !== -1) return true; }
+                return false;
+            }
+
+            function dedupe(items) {
+                var seen = {}, out = [];
+                items.forEach(function(it) {
+                    var k = it.link.replace(/[#?].*$/, '');
+                    if (!seen[k]) { seen[k] = true; out.push(it); }
+                });
+                return out;
+            }
+
+            function byNewest(a, b) {
+                var ta = a.when ? a.when.getTime() : 0;
+                var tb = b.when ? b.when.getTime() : 0;
+                return tb - ta;
+            }
+
+            function fmtDate(when) {
+                if (!when) return '';
+                try { return when.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; }
+            }
+
+            function renderItems(items, noticeText) {
+                feedList.innerHTML = '';
+                if (noticeText && feedStatus) {
+                    feedStatus.textContent = noticeText;
+                    feedStatus.style.display = '';
+                } else if (feedStatus) {
+                    feedStatus.style.display = 'none';
+                }
+                items.forEach(function(item) {
+                    var a = document.createElement('a');
+                    a.className = 'feed-item';
+                    a.href = item.link;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+
+                    var date = document.createElement('span');
+                    date.className = 'feed-date';
+                    var d = fmtDate(item.when ? new Date(item.when) : null);
+                    date.textContent = (d ? d + ' · ' : '') + item.source;
+
+                    var title = document.createElement('span');
+                    title.className = 'feed-title';
+                    title.textContent = item.title;
+
+                    a.appendChild(date);
+                    a.appendChild(title);
+                    feedList.appendChild(a);
+                });
+            }
+
+            function renderUnavailable() {
+                feedList.innerHTML = '';
+                if (feedStatus) {
+                    feedStatus.textContent = 'Live headlines are temporarily unavailable. Visit the publications directly for the latest coverage:';
+                    feedStatus.style.display = '';
+                }
+                Object.keys(SOURCE_HOME).forEach(function(name) {
+                    var a = document.createElement('a');
+                    a.className = 'feed-item';
+                    a.href = SOURCE_HOME[name];
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    var date = document.createElement('span');
+                    date.className = 'feed-date';
+                    date.textContent = 'Open source';
+                    var title = document.createElement('span');
+                    title.className = 'feed-title';
+                    title.textContent = name;
+                    a.appendChild(date);
+                    a.appendChild(title);
+                    feedList.appendChild(a);
+                });
+            }
+
+            function readCache() {
+                try {
+                    var raw = localStorage.getItem(NEWS_CACHE_KEY);
+                    if (!raw) return null;
+                    var parsed = JSON.parse(raw);
+                    if (parsed && parsed.items && parsed.items.length) return parsed;
+                } catch (e) {}
+                return null;
+            }
+
+            function selectItems(all) {
+                var clean = dedupe(all);
+                var matched = clean.filter(function(it) { return matchesKeyword(it.title); }).sort(byNewest);
+                var rest = clean.filter(function(it) { return !matchesKeyword(it.title); }).sort(byNewest);
+                var chosen = matched.slice(0, MAX_ITEMS);
+                for (var i = 0; chosen.length < MAX_ITEMS && i < rest.length; i++) chosen.push(rest[i]);
+                return chosen;
+            }
+
+            function parseRss2json(text, source) {
+                var out = [];
+                try {
+                    var data = JSON.parse(text);
+                    if (!data || data.status !== 'ok' || !data.items) return out;
+                    data.items.forEach(function(it) {
+                        var title = (it.title || '').replace(/\s+/g, ' ').trim();
+                        var link = (it.link || '').trim();
+                        var when = it.pubDate ? new Date(it.pubDate.replace(' ', 'T')) : null;
+                        if (when && isNaN(when.getTime())) when = new Date(it.pubDate);
+                        if (when && isNaN(when.getTime())) when = null;
+                        if (title && link) out.push({ title: title, link: link, source: source, when: when });
+                    });
+                } catch (e) {}
+                return out;
+            }
+
+            function fetchFeedItems(f) {
+                var r2j = 'https://api.rss2json.com/v1/api.json?count=25&rss_url=' + encodeURIComponent(f.url);
+                var controller = ('AbortController' in window) ? new AbortController() : null;
+                var timer = setTimeout(function() { if (controller) controller.abort(); }, 7000);
+                return fetch(r2j, controller ? { signal: controller.signal } : {})
+                    .then(function(res) { clearTimeout(timer); if (!res.ok) throw new Error('r2j status'); return res.text(); })
+                    .then(function(txt) {
+                        var items = parseRss2json(txt, f.source);
+                        if (items.length) return items;
+                        throw new Error('r2j empty');
+                    })
+                    .catch(function() {
+                        clearTimeout(timer);
+                        return fetchText(f.url, 6000)
+                            .then(function(txt) { return parseFeed(txt, f.source); })
+                            .catch(function() { return []; });
+                    });
+            }
+
+            function loadNews() {
+                var cache = readCache();
+                if (cache) {
+                    renderItems(cache.items, 'Showing cached headlines from ' + fmtDate(new Date(cache.at)) + ' — refreshing…');
+                } else if (feedStatus) {
+                    feedStatus.textContent = 'Loading the latest maritime headlines…';
+                    feedStatus.style.display = '';
+                }
+
+                var jobs = FEEDS.map(function(f) { return fetchFeedItems(f); });
+
+                Promise.all(jobs).then(function(batches) {
+                    var all = [];
+                    batches.forEach(function(b) { all = all.concat(b); });
+
+                    if (!all.length) {
+                        if (cache) {
+                            renderItems(cache.items, 'Showing cached headlines from ' + fmtDate(new Date(cache.at)) + ' — live sources are unreachable right now.');
+                        } else {
+                            renderUnavailable();
+                        }
+                        return;
+                    }
+
+                    var chosen = selectItems(all);
+                    if (!chosen.length) {
+                        if (cache) { renderItems(cache.items, 'Showing cached headlines from ' + fmtDate(new Date(cache.at)) + '.'); } else { renderUnavailable(); }
+                        return;
+                    }
+
+                    renderItems(chosen, null);
+                    try {
+                        localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify({
+                            items: chosen.map(function(it) {
+                                return { title: it.title, link: it.link, source: it.source, when: it.when ? it.when.getTime() : null };
+                            }),
+                            at: Date.now()
+                        }));
+                    } catch (e) {}
+                });
+            }
+
+            loadNews();
+        })();
+    </script>
+</body>
+</html>
