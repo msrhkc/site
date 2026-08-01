@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Organogram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root{
+    --navy:      #0d2438;
+    --navy-2:    #133249;
+    --steel:     #4a6478;
+    --steel-lt:  #dbe4ea;
+    --plate:     #f4f6f7;
+    --paper:     #fbfaf7;
+    --rust:      #c1502e;
+    --rust-dk:   #9c3d21;
+    --safety:    #e3a92b;
+    --line:      #c7d1d8;
+    --ink:       #16232c;
+    --ink-soft:  #55666f;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 500px at 15% -5%, rgba(13,36,56,0.05), transparent 60%),
+      var(--paper);
+    font-family:'IBM Plex Sans',sans-serif;
+    color:var(--ink);
+    padding:56px 40px 90px;
+  }
+
+  /* ---------- Header / Title block ---------- */
+  .titleblock{
+    max-width:1520px;
+    margin:0 auto 46px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:3px solid var(--navy);
+    padding-bottom:22px;
+  }
+  .titleblock .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    letter-spacing:.16em;
+    color:var(--rust);
+    font-weight:600;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .titleblock h1{
+    font-family:'Zilla Slab',serif;
+    font-weight:700;
+    font-size:38px;
+    color:var(--navy);
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .titleblock .sub{
+    font-size:14.5px;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+  .titleblock .stamp{
+    text-align:right;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--steel);
+    line-height:1.7;
+  }
+  .titleblock .stamp b{color:var(--navy);}
+
+  .wrap{max-width:1520px;margin:0 auto;}
+
+  /* ---------- Section labels ---------- */
+  .section-label{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin:64px 0 26px;
+  }
+  .section-label .tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:#fff;
+    background:var(--navy);
+    padding:6px 14px;
+    white-space:nowrap;
+  }
+  .section-label .rule{flex:1;height:1px;background:var(--line);}
+
+  /* ================= EXECUTIVE SPINE ================= */
+  .exec-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+    margin-bottom:14px;
+  }
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-top:4px solid var(--navy);
+    padding:18px 20px 16px;
+    position:relative;
+  }
+  .card.equal{border-top-color:var(--navy);}
+  .card .role{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--rust);
+    font-weight:600;
+    margin-bottom:5px;
+  }
+  .card .name{
+    font-family:'Zilla Slab',serif;
+    font-weight:700;
+    font-size:19px;
+    color:var(--navy);
+    margin-bottom:6px;
+  }
+  .card .tasks{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    line-height:1.55;
+  }
+
+  .connector{
+    display:flex;
+    justify-content:center;
+    height:26px;
+    position:relative;
+  }
+  .connector::before{
+    content:'';
+    position:absolute;
+    top:0;bottom:0;left:50%;
+    width:2px;
+    background:var(--steel);
+  }
+  .connector.tjoin::after{
+    content:'';
+    position:absolute;
+    top:0;
+    left:25%;right:25%;
+    height:2px;
+    background:var(--steel);
+  }
+
+  .aif-card{
+    max-width:520px;
+    margin:0 auto;
+    background:var(--navy);
+    color:#fff;
+    border-top:4px solid var(--safety);
+    padding:20px 26px 18px;
+    text-align:center;
+  }
+  .aif-card .role{color:var(--safety);font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;margin-bottom:6px;}
+  .aif-card .name{font-family:'Zilla Slab',serif;font-weight:700;font-size:22px;margin-bottom:6px;}
+  .aif-card .tasks{font-size:12.5px;color:#cfd9e2;line-height:1.55;}
+
+  .advisors-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+    max-width:640px;
+    margin:0 auto;
+  }
+  .advisor-card{
+    background:var(--plate);
+    border:1px solid var(--line);
+    border-left:4px solid var(--steel);
+    padding:14px 18px;
+  }
+  .advisor-card .role{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--steel);font-weight:600;margin-bottom:4px;}
+  .advisor-card .name{font-family:'Zilla Slab',serif;font-weight:600;font-size:15.5px;color:var(--navy);margin-bottom:3px;}
+  .advisor-card .tasks{font-size:11.5px;color:var(--ink-soft);line-height:1.45;}
+
+  .exec-hub{
+    background:#fff;
+    border:1px solid var(--line);
+    border-top:4px solid var(--rust);
+    max-width:640px;
+    margin:0 auto;
+    padding:14px 20px;
+    text-align:center;
+  }
+  .exec-hub .role{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--rust);font-weight:600;margin-bottom:5px;}
+  .exec-hub .name{font-family:'Zilla Slab',serif;font-weight:700;font-size:17px;color:var(--navy);margin-bottom:5px;}
+  .exec-hub .tasks{font-size:12px;color:var(--ink-soft);}
+
+  /* ================= UNIT GRID ================= */
+  .unit-grid{
+    display:grid;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:12px;
+    align-items:start;
+  }
+  .sales-head{border-bottom-color:var(--rust) !important;border-bottom:3px solid var(--rust);}
+  .mini-path{margin:0;padding-left:15px;font-size:10.5px;color:var(--ink-soft);line-height:1.65;}
+  .mini-path.flat{padding-left:0;list-style:none;}
+  .mini-path.flat li::before{content:'· ';color:var(--steel);}
+  .unit-col{
+    background:#fff;
+    border:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    min-height:100%;
+  }
+  .unit-head{
+    background:var(--navy-2);
+    color:#fff;
+    padding:12px 14px 11px;
+    border-bottom:3px solid var(--safety);
+  }
+  .unit-head .u-eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--safety);
+    font-weight:600;
+    margin-bottom:4px;
+  }
+  .unit-head .u-title{
+    font-family:'Zilla Slab',serif;
+    font-weight:700;
+    font-size:15px;
+    line-height:1.25;
+  }
+  .unit-head .u-monitor{
+    font-size:11px;
+    color:#c9d4dc;
+    margin-top:5px;
+  }
+  .unit-body{padding:12px 14px 16px;flex:1;}
+  .person{
+    padding:9px 0;
+    border-bottom:1px solid var(--steel-lt);
+  }
+  .person:last-child{border-bottom:none;}
+  .person .p-name{
+    font-family:'IBM Plex Sans',sans-serif;
+    font-weight:600;
+    font-size:12.5px;
+    color:var(--navy);
+    display:flex;
+    align-items:baseline;
+    gap:5px;
+  }
+  .person .p-role{
+    font-size:10.5px;
+    color:var(--rust-dk);
+    font-weight:500;
+    margin-top:1px;
+  }
+  .person .p-tasks{
+    font-size:10.5px;
+    color:var(--ink-soft);
+    margin-top:3px;
+    line-height:1.4;
+  }
+  .flag{
+    font-size:9px;
+    color:var(--steel);
+    font-weight:600;
+    border:1px solid var(--steel);
+    border-radius:2px;
+    padding:0 3px;
+    line-height:1.4;
+  }
+
+  /* sub-unit nested block (Security → guards) */
+  .subunit{
+    margin-top:10px;
+    padding-top:10px;
+    border-top:2px dashed var(--line);
+  }
+  .subunit-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--steel);
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .guard-list{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:2px 10px;
+  }
+  .guard-list .g{
+    font-size:10.5px;
+    color:var(--ink);
+    padding:3px 0;
+    border-bottom:1px solid var(--steel-lt);
+  }
+  .guard-list .g.senior{font-weight:600;color:var(--navy);}
+
+  .unit-down{
+    display:flex;justify-content:center;height:16px;position:relative;
+  }
+  .unit-down::before{content:'';position:absolute;top:0;bottom:0;left:50%;width:2px;background:var(--steel);}
+
+  /* connector bar spanning unit grid */
+  .fan{
+    position:relative;
+    height:34px;
+    margin-bottom:0;
+  }
+  .fan svg{width:100%;height:100%;display:block;overflow:visible;}
+
+  /* ---------- Sales & Procurement block ---------- */
+  .sales-section{
+    display:grid;
+    grid-template-columns:1.1fr 1fr;
+    gap:28px;
+    align-items:start;
+  }
+  .sales-flow{
+    background:#fff;
+    border:1px solid var(--line);
+    border-top:4px solid var(--rust);
+    padding:20px 22px;
+  }
+  .sales-flow .role{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--rust);font-weight:600;margin-bottom:5px;}
+  .sales-flow .name{font-family:'Zilla Slab',serif;font-weight:700;font-size:19px;color:var(--navy);margin-bottom:8px;}
+  .sales-flow .tasks{font-size:12.5px;color:var(--ink-soft);line-height:1.55;margin-bottom:16px;}
+  .dual-path{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .path{border:1px solid var(--line);padding:10px 12px;background:var(--plate);}
+  .path .p-head{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);font-weight:600;margin-bottom:6px;}
+  .path ol{margin:0;padding-left:16px;font-size:11.5px;color:var(--ink-soft);line-height:1.7;}
+  .path.proc ol{padding-left:0;list-style:none;}
+  .path.proc li{padding:2px 0;}
+
+  .accounts-mini{
+    background:#fff;
+    border:1px solid var(--line);
+    border-top:4px solid var(--steel);
+  }
+  .accounts-mini .unit-head{background:var(--navy-2);}
+
+  /* ---------- Legend ---------- */
+  .legend{
+    margin-top:60px;
+    background:var(--plate);
+    border:1px solid var(--line);
+    padding:20px 26px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:18px;
+  }
+  .legend h4{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--navy);
+    margin:0 0 6px;
+  }
+  .legend p{font-size:12px;color:var(--ink-soft);line-height:1.55;margin:0;}
+  .legend .full{grid-column:1/-1;border-top:1px solid var(--line);padding-top:14px;margin-top:4px;}
+
+  .footer-note{
+    text-align:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:var(--steel);
+    margin-top:36px;
+    letter-spacing:.04em;
+  }
+
+  @media print{
+    body{padding:20px;}
+    .unit-grid{grid-template-columns:repeat(5,1fr);}
+  }
+</style>
+</head>
+<body>
+
+<div class="titleblock">
+  <div>
+    <div class="eyebrow">Mehreen Ship Recycling</div>
+    <h1>Organizational &amp; Administrative Structure</h1>
+    <div class="sub">Ownership authority, executive delegation, and functional reporting lines</div>
+  </div>
+  <div class="stamp">
+    <div>Document type: <b>Organogram</b></div>
+    <div>Structure levels: <b>6</b></div>
+    <div>Functional units: <b>6</b></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ============ EXECUTIVE SPINE ============ -->
+  <div class="section-label"><span class="tag">01 — Ownership &amp; Executive Authority</span><span class="rule"></span></div>
+
+  <div class="exec-row">
+    <div class="card">
+      <div class="role">Managing Partner</div>
+      <div class="name">Md. Jahurul Alam</div>
+      <div class="tasks">Strategic leadership, capital allocation, executive approvals, procurement approvals</div>
+    </div>
+    <div class="card">
+      <div class="role">Equity Partner</div>
+      <div class="name">Lucky Johar</div>
+      <div class="tasks">Ownership oversight, investment oversight, strategic approvals</div>
+    </div>
+  </div>
+
+  <div class="connector tjoin"></div>
+
+  <div class="aif-card">
+    <div class="role">Attorney-in-Fact · Partner-Designate</div>
+    <div class="name">Hamid Yasir</div>
+    <div class="tasks">Exercises delegated executive authority, executive administration, operational oversight, final executive approvals — highest delegated authority in the organization</div>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="advisors-row">
+    <div class="advisor-card">
+      <div class="role">HR, Org. Development &amp; Strategic Advisor</div>
+      <div class="name">Seju Yasir</div>
+      <div class="tasks">Human resources strategy, organizational development, strategic advice</div>
+    </div>
+    <div class="advisor-card">
+      <div class="role">Public Well-Being Advisor</div>
+      <div class="name">Akhi Johar</div>
+      <div class="tasks">Employee well-being, public health awareness, social responsibility advice</div>
+    </div>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="exec-hub">
+    <div class="role">Executive Assistant to the Attorney-in-Fact</div>
+    <div class="name">Arefin Mahmood — Audit, Standardization &amp; Administration</div>
+    <div class="tasks">Report consolidation, executive coordination, audit coordination, SOP implementation, administration oversight</div>
+  </div>
+
+  <!-- ============ FUNCTIONAL UNITS ============ -->
+  <div class="section-label"><span class="tag">02 — Functional Units</span><span class="rule"></span></div>
+
+  <div class="fan">
+    <svg viewBox="0 0 1200 34" preserveAspectRatio="none">
+      <line x1="600" y1="0" x2="600" y2="10" stroke="#4a6478" stroke-width="2"/>
+      <line x1="100" y1="10" x2="1100" y2="10" stroke="#4a6478" stroke-width="2"/>
+      <line x1="100" y1="10" x2="100" y2="34" stroke="#4a6478" stroke-width="2"/>
+      <line x1="300" y1="10" x2="300" y2="34" stroke="#4a6478" stroke-width="2"/>
+      <line x1="500" y1="10" x2="500" y2="34" stroke="#4a6478" stroke-width="2"/>
+      <line x1="700" y1="10" x2="700" y2="34" stroke="#4a6478" stroke-width="2"/>
+      <line x1="900" y1="10" x2="900" y2="34" stroke="#4a6478" stroke-width="2"/>
+      <line x1="1100" y1="10" x2="1100" y2="34" stroke="#4a6478" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="unit-grid">
+
+    <!-- Sales & Procurement -->
+    <div class="unit-col sales-col">
+      <div class="unit-head sales-head">
+        <div class="u-eyebrow">Unit</div>
+        <div class="u-title">Sales &amp; Procurement</div>
+        <div class="u-monitor">Exec. Director: Md. Tarek</div>
+      </div>
+      <div class="unit-body">
+        <div class="person" style="border-bottom:none;padding-bottom:4px;">
+          <div class="p-name">Md. Tarek</div>
+          <div class="p-role">Executive Director (Sales &amp; Procurement)</div>
+          <div class="p-tasks">Sales development, vessel sourcing, procurement recommendations, commercial coordination, client liaison. Holds no independent approval authority.</div>
+        </div>
+
+        <div class="subunit" style="margin-top:8px;padding-top:10px;">
+          <div class="subunit-label">Sales reporting path</div>
+          <ol class="mini-path">
+            <li>Executive Director</li>
+            <li>Accounts Unit</li>
+            <li>Exec. Assistant to A-i-F</li>
+            <li>Attorney-in-Fact</li>
+          </ol>
+        </div>
+
+        <div class="subunit">
+          <div class="subunit-label">Procurement collaboration</div>
+          <ol class="mini-path flat">
+            <li>Managing Partner</li>
+            <li>Equity Partner</li>
+            <li>Attorney-in-Fact</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <!-- Head Office & External Coordination -->
+    <div class="unit-col">
+      <div class="unit-head">
+        <div class="u-eyebrow">Unit</div>
+        <div class="u-title">Head Office &amp; External Coordination</div>
+        <div class="u-monitor">Monitor: Md. Akter Hossain</div>
+      </div>
+      <div class="unit-body">
+        <div class="person">
+          <div class="p-name">Md. Akter Hossain</div>
+          <div class="p-role">Executive Assistant (Head Office &amp; Ext. Coordination)</div>
+          <div class="p-tasks">Executive correspondence, head office administration, government liaison, external coordination</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Md. Jakir Hossain</div>
+          <div class="p-role">Head Office &amp; Ext. Coordination Assistant</div>
+          <div class="p-tasks">Correspondence support, administrative assistance, liaison support</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accounts -->
+    <div class="unit-col">
+      <div class="unit-head">
+        <div class="u-eyebrow">Unit</div>
+        <div class="u-title">Accounts</div>
+        <div class="u-monitor">Monitor: Md. Safiqul Islam</div>
+      </div>
+      <div class="unit-body">
+        <div class="person">
+          <div class="p-name">Md. Safiqul Islam</div>
+          <div class="p-role">Executive Assistant (Accounts)</div>
+          <div class="p-tasks">Sales reporting, cash oversight, executive reporting, records coordination</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Md. Mizanur Rahman</div>
+          <div class="p-role">Records Assistant</div>
+          <div class="p-tasks">Data entry, recordkeeping, document filing</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Md. Meraj <span class="flag">±</span></div>
+          <div class="p-role">Cash &amp; Records Assistant</div>
+          <div class="p-tasks">Cash receipts, register maintenance, records support</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HSE & Compliance -->
+    <div class="unit-col">
+      <div class="unit-head">
+        <div class="u-eyebrow">Unit</div>
+        <div class="u-title">Health, Safety, Environment &amp; Compliance</div>
+        <div class="u-monitor">Monitor: Durjoy Chowdhury</div>
+      </div>
+      <div class="unit-body">
+        <div class="person">
+          <div class="p-name">Durjoy Chowdhury</div>
+          <div class="p-role">Executive Assistant (HSE &amp; Compliance)</div>
+          <div class="p-tasks">HSE management, inspections, environmental compliance, regulatory coordination</div>
+        </div>
+        <div class="person">
+          <div class="p-name">S.M. Ertajul Suvo</div>
+          <div class="p-role">Safety Assistant</div>
+          <div class="p-tasks">Safety inspections, toolbox meetings, incident reporting</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Md. Abdul Mannan <span class="flag">±</span></div>
+          <div class="p-role">Quality Assistant</div>
+          <div class="p-tasks">Quality inspections, quality documentation</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Md. Arif Hasan <span class="flag">±</span></div>
+          <div class="p-role">Quality Assistant</div>
+          <div class="p-tasks">Quality inspections, quality documentation</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Md. Forhad Hossain</div>
+          <div class="p-role">Environmental Assistant</div>
+          <div class="p-tasks">Environmental monitoring, waste management, compliance support</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Operations -->
+    <div class="unit-col">
+      <div class="unit-head">
+        <div class="u-eyebrow">Unit</div>
+        <div class="u-title">Operations</div>
+        <div class="u-monitor">Monitor: Md. Robiul Islam</div>
+      </div>
+      <div class="unit-body">
+        <div class="person">
+          <div class="p-name">Md. Robiul Islam</div>
+          <div class="p-role">Yard Operations Assistant</div>
+          <div class="p-tasks">Coordinate daily yard activities, operational reporting, work allocation support</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Md. Shamshul Alam</div>
+          <div class="p-role">Foreman</div>
+          <div class="p-tasks">Supervise work crews and daily production</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Md. Ariful Islam</div>
+          <div class="p-role">Scale Monitor</div>
+          <div class="p-tasks">Monitor weighing operations, maintain weight records</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Md. Sofi</div>
+          <div class="p-role">Wireman</div>
+          <div class="p-tasks">Electrical wiring and cable installation</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Md. Robiul Islam</div>
+          <div class="p-role">Fitter</div>
+          <div class="p-tasks">Mechanical fitting and equipment maintenance</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Md. Sohidul Islam</div>
+          <div class="p-role">Electrical Assistant</div>
+          <div class="p-tasks">Electrical maintenance support</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Md. Rashed</div>
+          <div class="p-role">Winch Operator</div>
+          <div class="p-tasks">Operate winching equipment</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Md. Liton</div>
+          <div class="p-role">Winch Operator</div>
+          <div class="p-tasks">Operate winching equipment</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Rajib Das</div>
+          <div class="p-role">Marine Yard Labourer</div>
+          <div class="p-tasks">General yard labour and material handling</div>
+        </div>
+        <div class="person">
+          <div class="p-name">Joy Kumar Das <span class="flag">±</span></div>
+          <div class="p-role">Yard Cleaner</div>
+          <div class="p-tasks">Yard cleaning and housekeeping</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit / Admin / Security parent col -->
+    <div class="unit-col">
+      <div class="unit-head">
+        <div class="u-eyebrow">Unit</div>
+        <div class="u-title">Audit, Standardization &amp; Administration</div>
+        <div class="u-monitor">Monitor: Arefin Mahmood</div>
+      </div>
+      <div class="unit-body">
+        <div class="subunit" style="margin-top:0;padding-top:0;border-top:none;">
+          <div class="subunit-label">Administration Sub-Unit</div>
+          <div class="person">
+            <div class="p-name">Uttam Datta</div>
+            <div class="p-role">Administrative Assistant</div>
+            <div class="p-tasks">Administrative support, filing, documentation</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Nurul Islam <span class="flag">±</span></div>
+            <div class="p-role">Administrative Assistant</div>
+            <div class="p-tasks">Administrative support, office records</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Rayed Hossan Chowdhury <span class="flag">±</span></div>
+            <div class="p-role">Office Assistant</div>
+            <div class="p-tasks">Office support, logistics</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Ali <span class="flag">±</span></div>
+            <div class="p-role">Office Assistant</div>
+            <div class="p-tasks">Office support, logistics</div>
+          </div>
+        </div>
+
+        <div class="subunit">
+          <div class="subunit-label">Security Sub-Unit — Coordinator: Mohammad Younuch</div>
+          <div class="person" style="padding-top:0;">
+            <div class="p-name">Mohammad Younuch</div>
+            <div class="p-role">Security Coordinator</div>
+            <div class="p-tasks">Coordinate security operations, patrol scheduling, access control, incident reporting</div>
+          </div>
+          <div class="guard-list">
+            <div class="g senior">Md. Mahmaudul Karim <span style="font-weight:400;color:var(--ink-soft);">— Sr. Guard</span></div>
+            <div class="g senior">Joynal Abedin <span style="font-weight:400;color:var(--ink-soft);">— Sr. Guard</span></div>
+            <div class="g">Md. Sumon</div>
+            <div class="g">Ukayang Marma</div>
+            <div class="g">Md. Nurul Alam</div>
+            <div class="g">Md. Hossen</div>
+            <div class="g">Md. Samasul Islam</div>
+            <div class="g">Md. Tohi Uddin</div>
+            <div class="g">Md. Masud</div>
+            <div class="g">Md. Shah Alam</div>
+            <div class="g">Md. Robiul Islam Rakib</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ LEGEND ============ -->
+  <div class="legend">
+    <div>
+      <h4>Unit Monitor</h4>
+      <p>Administrative responsibility for monitoring, coordination and reporting within a functional unit. Confers no independent executive, managerial or financial authority.</p>
+    </div>
+    <div>
+      <h4>Sub-Unit Monitor</h4>
+      <p>Administrative responsibility for monitoring and coordination within a sub-unit, reporting up through its parent unit.</p>
+    </div>
+    <div>
+      <h4><span class="flag" style="margin-right:5px;">±</span>Marked Position</h4>
+      <p>May be considered for future reassignment, consolidation, or workforce optimization, subject to operational requirements.</p>
+    </div>
+    <div class="full">
+      <p><b style="color:var(--navy);">All executive authority remains vested in the Attorney-in-Fact</b> under delegated authority from the Managing Partner and Equity Partner. Every functional unit ultimately reports administratively to the Attorney-in-Fact through the Executive Assistant (Audit, Standardization &amp; Administration).</p>
+    </div>
+  </div>
+
+  <div class="footer-note">MEHREEN SHIP RECYCLING · ORGANIZATIONAL STRUCTURE</div>
+
+</div>
+</body>
+</html>
