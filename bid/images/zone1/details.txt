@@ -1,1 +1,4 @@
-
+<2>
+Title = Industrial Analyzer
+Suggested Price = 300000
+Description = Industrial analyzer/control system consisting of: Power Supply Unit (PS-103), Industrial display/controller, BDN analyzer/control box, Interface/control module, Wiring and mounting hardware.
