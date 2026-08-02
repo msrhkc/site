@@ -1,0 +1,2967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>MSR Gate Security</title>
+    <meta name="theme-color" content="#0A2A43">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* ─── RESET & BASE ─── */
+        * {
+            box-sizing: border-box;
+        }
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #F6F7F9;
+            color: #101418;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+            font-size: clamp(14px, 1.4vw, 16px);
+        }
+        button,
+        input,
+        select,
+        textarea {
+            font-family: inherit;
+            font-size: inherit;
+        }
+        input,
+        select,
+        textarea {
+            border: 1px solid #E3E6EA;
+            border-radius: 10px;
+            padding: .68em .85em;
+            background: #fff;
+            color: #101418;
+            width: 100%;
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
+            max-width: 100%;
+        }
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #123258;
+            box-shadow: 0 0 0 3px rgba(10, 35, 64, .12);
+        }
+        input:read-only {
+            background: #f3f4f6;
+            color: #444;
+            cursor: default;
+        }
+        label {
+            display: block;
+            font-size: .8em;
+            font-weight: 600;
+            color: #68727E;
+            margin: 0 0 .35em 2px;
+            letter-spacing: .01em;
+        }
+        .field {
+            margin-bottom: 1em;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .hint {
+            font-size: .78em;
+            color: #68727E;
+            margin-top: .3em;
+        }
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            letter-spacing: .01em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .5em;
+        }
+        .btn {
+            padding: .7em 1.2em;
+            background: #fff;
+            border: 1px solid #E3E6EA;
+            color: #101418;
+            transition: .15s;
+        }
+        .btn:hover {
+            border-color: #123258;
+            background: #fbfbfc;
+        }
+        .btn:active {
+            transform: scale(.98);
+        }
+        .btn-primary {
+            background: #0A2340;
+            color: #fff;
+            border: 1px solid #0A2340;
+        }
+        .btn-primary:hover {
+            background: #123258;
+            border-color: #123258;
+        }
+        .btn-gold {
+            background: #C6A15B;
+            color: #2b210c;
+            border: 1px solid #C6A15B;
+        }
+        .btn-danger {
+            background: #fff;
+            color: #C23B3B;
+            border: 1px solid #eecccc;
+        }
+        .btn-danger:hover {
+            background: #fdf2f2;
+        }
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid transparent;
+            color: #68727E;
+        }
+        .btn-ghost:hover {
+            background: #eef0f3;
+        }
+        .btn-block {
+            width: 100%;
+        }
+        .btn-sm {
+            padding: .4em .8em;
+            font-size: .82em;
+            border-radius: 9px;
+        }
+        .btn-lg {
+            padding: .95em 1.4em;
+            font-size: 1.02em;
+            border-radius: 13px;
+        }
+        .row {
+            display: flex;
+            gap: .6em;
+            flex-wrap: wrap;
+        }
+        .row>* {
+            flex: 1;
+        }
+        .spacer {
+            flex: 1;
+        }
+        .small {
+            font-size: .8em;
+            color: #68727E;
+        }
+        .mono {
+            font-family: "SF Mono", ui-monospace, "Menlo", "Consolas", monospace;
+        }
+        .center {
+            text-align: center;
+        }
+        .hidden {
+            display: none !important;
+        }
+        hr.sep {
+            border: none;
+            border-top: 1px solid #E3E6EA;
+            margin: 1.1em 0;
+        }
+        .kv {
+            display: flex;
+            justify-content: space-between;
+            padding: .4em 0;
+            border-bottom: 1px solid #EEF0F2;
+            font-size: .9em;
+        }
+        .kv b {
+            font-weight: 700;
+        }
+
+        /* ─── APP SHELL ─── */
+        #app {
+            display: flex;
+            min-height: 100vh;
+        }
+        #sidebar {
+            width: 236px;
+            flex: none;
+            background: linear-gradient(180deg, #0A2340 0%, #071A2E 100%);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            z-index: 40;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: .6em;
+            padding: 1.5em 1.2em 1.2em;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+        }
+        .brand-text {
+            line-height: 1.15;
+        }
+        .wordmark {
+            display: inline-flex;
+            align-items: baseline;
+            gap: .28em;
+            font-family: "Big Shoulders Display", "Arial Narrow", -apple-system, sans-serif;
+            font-weight: 800;
+            letter-spacing: .01em;
+        }
+        /* On dark backgrounds, both symbol and text are white */
+        .wordmark .helm {
+            font-weight: 400;
+        }
+        .brand .wordmark,
+        .brand .wordmark .helm {
+            color: #fff;
+        }
+        .brand-sub {
+            font-size: .66em;
+            color: rgba(255, 255, 255, .5);
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            margin-top: .2em;
+        }
+        .role-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .4em;
+            font-size: .72em;
+            padding: .3em .6em;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, .08);
+            color: #fff;
+            margin: .6em 1.1em 0;
+        }
+        .role-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #8A93A0;
+        }
+        .role-dot.on {
+            background: #1E8E5A;
+        }
+
+        nav.tabs {
+            padding: .8em .7em;
+            display: flex;
+            flex-direction: column;
+            gap: .15em;
+            overflow-y: auto;
+            flex: 1;
+        }
+        nav.tabs .navbtn {
+            display: flex;
+            align-items: center;
+            gap: .7em;
+            padding: .65em .8em;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, .75);
+            background: transparent;
+            text-align: left;
+            font-weight: 600;
+            font-size: .92em;
+        }
+        nav.tabs .navbtn:hover {
+            background: rgba(255, 255, 255, .06);
+            color: #fff;
+        }
+        nav.tabs .navbtn.active {
+            background: rgba(255, 255, 255, .12);
+            color: #fff;
+            box-shadow: inset 3px 0 0 #C6A15B;
+        }
+        nav.tabs .navbtn .icon {
+            width: 18px;
+            height: 18px;
+            vertical-align: -.3em;
+            flex: none;
+        }
+        .sidebar-foot {
+            padding: .9em 1.1em 1.1em;
+            border-top: 1px solid rgba(255, 255, 255, .08);
+            font-size: .7em;
+            color: rgba(255, 255, 255, .4);
+        }
+
+        #main {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        #topbar {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background: rgba(246, 247, 249, .85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #E3E6EA;
+            padding: .85em 1.4em;
+            display: flex;
+            align-items: center;
+            gap: .8em;
+        }
+        #hamburger {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: #fff;
+            border: 1px solid #E3E6EA;
+        }
+        .page-title {
+            font-weight: 800;
+            font-size: 1.25em;
+            letter-spacing: -.01em;
+        }
+        .topbar-search {
+            max-width: 340px;
+            flex: 1;
+        }
+        #content {
+            padding: 1.4em;
+            flex: 1;
+        }
+
+        /* ─── CARDS ─── */
+        .card {
+            background: #FFFFFF;
+            border: 1px solid #E3E6EA;
+            border-radius: 16px;
+            box-shadow: 0 1px 2px rgba(10, 35, 64, .05), 0 10px 28px -14px rgba(10, 35, 64, .2);
+        }
+        .card-pad {
+            padding: 1.2em 1.3em;
+        }
+        .section-title {
+            font-weight: 800;
+            font-size: 1.05em;
+            margin: 0 0 .8em;
+            letter-spacing: -.01em;
+            display: flex;
+            align-items: center;
+            gap: .5em;
+        }
+        .grid {
+            display: grid;
+            gap: 1em;
+        }
+        .grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .grid .field {
+            min-width: 0;
+            overflow: hidden;
+        }
+        @media(max-width:1000px) {
+            .grid-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .grid-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media(max-width:640px) {
+            .grid-4,
+            .grid-3,
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .stat {
+            padding: 1.1em 1.2em;
+            border-radius: 16px;
+            background: #FFFFFF;
+            border: 1px solid #E3E6EA;
+            box-shadow: 0 1px 2px rgba(10, 35, 64, .05), 0 10px 28px -14px rgba(10, 35, 64, .2);
+            position: relative;
+            overflow: hidden;
+        }
+        .stat .num {
+            font-size: 1.9em;
+            font-weight: 800;
+            letter-spacing: -.02em;
+            font-family: "Arial Narrow", "Helvetica Neue Condensed", -apple-system, sans-serif;
+        }
+        .stat .lbl {
+            font-size: .78em;
+            color: #68727E;
+            font-weight: 600;
+            margin-top: .15em;
+        }
+        .stat .accent {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+        .acc-navy {
+            background: #0A2340;
+        }
+        .acc-green {
+            background: #1E8E5A;
+        }
+        .acc-amber {
+            background: #B9791E;
+        }
+        .acc-red {
+            background: #C23B3B;
+        }
+        .acc-gold {
+            background: #C6A15B;
+        }
+
+        /* ─── TABLE ─── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .88em;
+        }
+        th {
+            text-align: left;
+            font-size: .72em;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: #68727E;
+            padding: .6em .7em;
+            border-bottom: 1px solid #E3E6EA;
+            white-space: nowrap;
+        }
+        td {
+            padding: .62em .7em;
+            border-bottom: 1px solid #EEF0F2;
+            vertical-align: middle;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .4em;
+            padding: .28em .65em;
+            border-radius: 20px;
+            font-size: .76em;
+            font-weight: 700;
+        }
+        .pill-green {
+            background: #E6F5EC;
+            color: #1E8E5A;
+        }
+        .pill-amber {
+            background: #FCF1DF;
+            color: #B9791E;
+        }
+        .pill-red {
+            background: #FBEAEA;
+            color: #C23B3B;
+        }
+        .pill-gray {
+            background: #EEF0F3;
+            color: #8A93A0;
+        }
+
+        .empty {
+            padding: 2.5em 1em;
+            text-align: center;
+            color: #68727E;
+        }
+        .empty .big {
+            font-size: 2em;
+            margin-bottom: .2em;
+        }
+
+        /* ─── ICONS ─── */
+        .icon {
+            width: 1.15em;
+            height: 1.15em;
+            display: inline-block;
+            vertical-align: -.22em;
+            flex: none;
+        }
+        .icon-lg {
+            width: 1.6em;
+            height: 1.6em;
+        }
+        .empty .icon {
+            width: 2.1em;
+            height: 2.1em;
+            opacity: .35;
+            margin-bottom: .3em;
+        }
+
+        /* ─── SCAN HERO ─── */
+        .scan-hero {
+            padding: 1.5em;
+            margin-bottom: 1.3em;
+        }
+        .scan-hero-inner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1em;
+        }
+        .scan-tile {
+            border: 1.5px solid #E3E6EA;
+            border-radius: 18px;
+            padding: 1.6em 1.3em;
+            cursor: pointer;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: .55em;
+            transition: .15s;
+            background: #F6F7F9;
+        }
+        .scan-tile:hover {
+            border-color: #123258;
+            background: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 1px 2px rgba(10, 35, 64, .05), 0 10px 28px -14px rgba(10, 35, 64, .2);
+        }
+        .scan-tile:active {
+            transform: scale(.99);
+        }
+        .scan-tile-ico {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: #0A2340;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .scan-tile-ico .icon {
+            width: 1.5em;
+            height: 1.5em;
+        }
+        .scan-tile b {
+            font-size: 1.05em;
+            letter-spacing: -.01em;
+        }
+        .scan-tile span {
+            font-size: .82em;
+            color: #68727E;
+        }
+        .scan-manual {
+            display: flex;
+            gap: .6em;
+            margin-top: 1.2em;
+        }
+        @media(max-width:640px) {
+            .scan-hero-inner {
+                grid-template-columns: 1fr;
+            }
+            .scan-manual {
+                flex-direction: column;
+            }
+        }
+
+        /* ─── MODAL ─── */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 26, 46, .45);
+            backdrop-filter: blur(2px);
+            z-index: 100;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 3vh 1em;
+            overflow-y: auto;
+        }
+        .modal {
+            background: #fff;
+            border-radius: 18px;
+            width: 100%;
+            max-width: 640px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+            animation: pop .18s ease;
+            margin-bottom: 3vh;
+            display: flex;
+            flex-direction: column;
+            max-height: 94vh;
+        }
+        .modal.wide {
+            max-width: 880px;
+        }
+        .modal.narrow {
+            max-width: 420px;
+        }
+        @keyframes pop {
+            from {
+                opacity: 0;
+                transform: translateY(8px) scale(.98);
+            }
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+        .modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.1em 1.3em;
+            border-bottom: 1px solid #E3E6EA;
+            flex: 0 0 auto;
+        }
+        .modal-head h3 {
+            margin: 0;
+            font-size: 1.08em;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: .4em;
+        }
+        .modal-body {
+            padding: 1.2em 1.3em;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex: 1 1 auto;
+            word-wrap: break-word;
+        }
+        .modal-body>* {
+            max-width: 100%;
+        }
+        .modal-foot {
+            display: flex;
+            gap: .6em;
+            padding: 1em 1.3em;
+            border-top: 1px solid #E3E6EA;
+            justify-content: flex-end;
+            flex: 0 0 auto;
+            flex-wrap: wrap;
+        }
+        .modal-foot .btn {
+            flex: 0 1 auto;
+        }
+        .close-x {
+            background: transparent;
+            border: none;
+            font-size: 1.3em;
+            color: #68727E;
+            padding: .1em .4em;
+            border-radius: 8px;
+        }
+        .close-x:hover {
+            background: #f0f1f3;
+        }
+
+        /* ─── CAPTURE BOX ─── */
+        .capture-box {
+            aspect-ratio: 4/3;
+            background: #0d1b2a;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .capture-box video,
+        .capture-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .capture-box .ph {
+            color: rgba(255, 255, 255, .4);
+            font-size: .85em;
+        }
+
+        .chip-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: .5em;
+            padding: .55em .8em;
+            border: 1px solid #E3E6EA;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: .88em;
+            font-weight: 600;
+            user-select: none;
+        }
+        .chip-toggle input {
+            width: auto;
+            margin: 0;
+        }
+
+        /* ─── BADGE — PROFESSIONAL, PRINT-SAFE ─── */
+        .badge-card {
+            width: 54mm;
+            height: 85.6mm;
+            flex: none;
+            border-radius: 0;
+            overflow: hidden;
+            background: #fff;
+            border: 1.4px solid #000;
+            box-shadow: 0 1px 2px rgba(10, 35, 64, .05), 0 10px 28px -14px rgba(10, 35, 64, .2);
+            font-family: "Arial Narrow", "Helvetica Neue Condensed", -apple-system, sans-serif;
+            color: #000;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .badge-head {
+            background: #000;
+            color: #fff;
+            padding: .3em .5em .25em;
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: .05em;
+        }
+        .badge-head .wm {
+            font-family: "Big Shoulders Display", "Arial Narrow", sans-serif;
+            font-weight: 800;
+            letter-spacing: .02em;
+            font-size: 1.1em;
+            line-height: 1;
+            display: flex;
+            align-items: baseline;
+            gap: .3em;
+        }
+        /* On dark badge head, both symbol and text are white */
+        .badge-head .wm .wheel,
+        .badge-head .wm {
+            color: #fff;
+        }
+        .badge-head .full {
+            font-size: .45em;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .85);
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Kind indicator bar */
+        .badge-kindbar {
+            display: flex;
+            align-items: center;
+            gap: .35em;
+            padding: .08em .5em;
+            flex: 0 0 auto;
+            border-bottom: 1.6px solid #000;
+        }
+        .badge-kindbar.kb-v {
+            background: #000;
+            color: #fff;
+        }
+        .badge-kindbar.kb-s {
+            background: #fff;
+            color: #000;
+        }
+        .badge-kindbar .kb-letter {
+            font-weight: 900;
+            font-size: 1.5em;
+            line-height: 1;
+            font-family: "Big Shoulders Display", "Arial Narrow", sans-serif;
+        }
+        .badge-kindbar .kb-word {
+            font-weight: 800;
+            font-size: .58em;
+            letter-spacing: .14em;
+        }
+
+        .badge-main {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .badge-photo-wrap {
+            position: relative;
+            background: #eee;
+            border-bottom: 1.2px solid #000;
+            width: 100%;
+            flex: 0 0 28mm;
+            height: 28mm;
+        }
+        .badge-photo-wrap img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+            filter: grayscale(1) contrast(1.05);
+        }
+        .badge-id-tag {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            color: #fff;
+            font-size: .5em;
+            text-align: center;
+            padding: .15em 0;
+            font-family: "SF Mono", ui-monospace, monospace;
+            letter-spacing: .03em;
+        }
+
+        /* ─── BADGE INFO — FIXED LAYOUT ─── */
+        .badge-info {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding: .3em .5em .15em;
+            display: flex;
+            flex-direction: column;
+            gap: .05em;
+            overflow: hidden;
+        }
+        .badge-info .nm {
+            font-weight: 900;
+            font-size: .95em;
+            letter-spacing: -.01em;
+            color: #000;
+            line-height: 1.1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 0 0 auto;
+        }
+        .badge-info .sub {
+            font-size: .62em;
+            font-weight: 700;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 0 0 auto;
+        }
+        .badge-info .lab {
+            font-size: .48em;
+            letter-spacing: .08em;
+            color: #555;
+            font-weight: 800;
+            text-transform: uppercase;
+            flex: 0 0 auto;
+            margin-top: .1em;
+        }
+        .badge-info .val {
+            font-size: .68em;
+            font-weight: 700;
+            color: #000;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 0 0 auto;
+        }
+        .badge-info .escort-row {
+            display: flex;
+            align-items: baseline;
+            gap: .4em;
+            font-size: .58em;
+            font-weight: 700;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 0 0 auto;
+            margin-top: .1em;
+        }
+        .badge-info .escort-row .elab {
+            font-weight: 800;
+            color: #555;
+            letter-spacing: .06em;
+            font-size: .9em;
+        }
+        .badge-info .escort-row .eval {
+            color: #000;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ─── BADGE CODES ─── */
+        .badge-codes {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4em;
+            padding: .2em .4em;
+            flex: 0 0 auto;
+            border-top: .75px dashed #999;
+            height: 15mm;
+            min-height: 15mm;
+            background: #fff;
+        }
+        .badge-codes .qrcanvas {
+            width: 13mm;
+            height: 13mm;
+            flex: none;
+            display: block;
+        }
+        .badge-codes .barcodesvg {
+            flex: 0 0 auto;
+            width: 100%;
+            max-width: 26mm;
+            height: 13mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .badge-codes .barcodesvg svg {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            max-height: 13mm;
+        }
+
+        .badge-foot {
+            background: #000;
+            color: #fff;
+            text-align: center;
+            font-size: .48em;
+            padding: .18em .2em;
+            letter-spacing: .03em;
+            flex: 0 0 auto;
+        }
+
+        /* ─── PRINT AREA ─── */
+        #printArea {
+            display: none;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printArea,
+            #printArea * {
+                visibility: visible;
+            }
+            #printArea {
+                display: block;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            @page {
+                size: A4;
+                margin: 8mm;
+            }
+            .sheet {
+                display: grid;
+                grid-template-columns: repeat(3, 54mm);
+                gap: 5mm;
+                justify-content: center;
+            }
+            .sheet .badge-card {
+                break-inside: avoid;
+                outline: .2mm dashed #999;
+                outline-offset: 2mm;
+            }
+            .hist-print-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 9pt;
+            }
+            .hist-print-table th,
+            .hist-print-table td {
+                border: .3pt solid #999;
+                padding: 3pt 5pt;
+            }
+            .hist-print-table thead {
+                display: table-header-group;
+            }
+            /* Ensure printed badge matches screen exactly */
+            .badge-card {
+                box-shadow: none !important;
+            }
+        }
+
+        /* ─── VISITOR STUB ─── */
+        .visitor-stub {
+            width: 100%;
+            max-width: 194mm;
+            margin: 6mm auto 0;
+            font-family: "Arial Narrow", "Helvetica Neue Condensed", -apple-system, sans-serif;
+            color: #000;
+        }
+        .stub-cutline {
+            display: flex;
+            align-items: center;
+            gap: .5em;
+            font-size: 9pt;
+            color: #666;
+            margin-bottom: 3mm;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .stub-cutline .dash {
+            flex: 1;
+            border-top: 1px dashed #999;
+        }
+        .stub-box {
+            border: 1.2px solid #000;
+            padding: 4mm 5mm;
+        }
+        .stub-title {
+            font-weight: 800;
+            font-size: 11pt;
+            letter-spacing: .02em;
+            margin-bottom: 2.5mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .stub-title span {
+            font-weight: 600;
+            font-size: .7em;
+            color: #444;
+        }
+        .stub-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9.5pt;
+        }
+        .stub-table td {
+            padding: 1.6mm 2mm;
+            border: .3pt solid #ccc;
+            vertical-align: top;
+        }
+        .stub-table td.k {
+            width: 26mm;
+            font-weight: 700;
+            color: #444;
+            background: #f5f5f5;
+        }
+        .stub-note {
+            margin-top: 2.5mm;
+            font-size: 8.5pt;
+            color: #444;
+            font-style: italic;
+        }
+
+        /* ─── TOAST ─── */
+        #toastHost {
+            position: fixed;
+            bottom: 1.2em;
+            right: 1.2em;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: .5em;
+        }
+        .toast {
+            background: #101418;
+            color: #fff;
+            padding: .75em 1.1em;
+            border-radius: 10px;
+            font-size: .88em;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
+            animation: pop .18s ease;
+            max-width: 320px;
+        }
+        .toast.err {
+            background: #C23B3B;
+        }
+        .toast.ok {
+            background: #1E8E5A;
+        }
+
+        /* ─── MOBILE ─── */
+        @media(max-width:880px) {
+            #sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                transition: transform .2s ease;
+                width: 250px;
+                box-shadow: 20px 0 40px rgba(0, 0, 0, .2);
+            }
+            #sidebar.open {
+                transform: none;
+            }
+            #hamburger {
+                display: flex;
+            }
+            .page-title {
+                font-size: 1.08em;
+            }
+            .topbar-search {
+                display: none;
+            }
+            #scrim {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, .35);
+                z-index: 39;
+                display: none;
+            }
+            #scrim.show {
+                display: block;
+            }
+            .modal-body {
+                padding: 1em;
+            }
+        }
+
+        /* ─── LOCK SCREEN ─── */
+        .lock-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            background: linear-gradient(180deg, #0A2340 0%, #071A2E 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.2em;
+        }
+        .lock-screen.hidden {
+            display: none;
+        }
+        .lock-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 2.2em 1.9em;
+            max-width: 340px;
+            width: 100%;
+            box-shadow: 0 20px 60px -20px rgba(0, 0, 0, .6);
+            text-align: center;
+        }
+        /* On light lock background, both symbol and text are oxford blue */
+        .lock-card .wordmark {
+            font-size: 1.7em;
+            color: #0A2340;
+            justify-content: center;
+        }
+        .lock-card .wordmark .helm {
+            color: #0A2340;
+        }
+        .lock-card .lock-sub {
+            font-size: .78em;
+            color: #68727E;
+            letter-spacing: .05em;
+            margin: .3em 0 1.5em;
+        }
+        .lock-card .field {
+            text-align: left;
+        }
+
+        /* ─── OVERRIDE NOTE ─── */
+        .override-note {
+            display: flex;
+            gap: .6em;
+            align-items: flex-start;
+            background: #FBF6EB;
+            border: 1px solid #EFDFB8;
+            border-radius: 12px;
+            padding: .9em 1em;
+            font-size: .88em;
+            color: #5c4a1f;
+        }
+        .override-note .icon {
+            color: #C6A15B;
+            margin-top: .1em;
+        }
+        .subtabs {
+            display: flex;
+            gap: .3em;
+            border-bottom: 1px solid #E3E6EA;
+            margin-bottom: 1em;
+        }
+        .subtab {
+            padding: .6em 1em;
+            font-weight: 700;
+            font-size: .88em;
+            color: #68727E;
+            border-bottom: 2px solid transparent;
+            background: none;
+        }
+        .subtab.active {
+            color: #0A2340;
+            border-color: #0A2340;
+        }
+        .tag-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .4em;
+            border: 1px solid #E3E6EA;
+            border-radius: 10px;
+            padding: .5em;
+            background: #fff;
+        }
+        .tag-chip {
+            background: #EEF0F3;
+            padding: .3em .6em;
+            border-radius: 20px;
+            font-size: .8em;
+            display: flex;
+            align-items: center;
+            gap: .4em;
+        }
+        .tag-chip button {
+            background: none;
+            border: none;
+            color: #68727E;
+            font-weight: 900;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        /* ─── STEPS ─── */
+        .steps {
+            display: flex;
+            gap: .4em;
+            margin-bottom: 1.2em;
+        }
+        .step {
+            flex: 1;
+            height: 5px;
+            border-radius: 4px;
+            background: #E3E6EA;
+        }
+        .step.on {
+            background: #0A2340;
+        }
+
+        /* ─── FIX: MODAL BODY OVERFLOW SAFE ─── */
+        .modal-body img,
+        .modal-body video,
+        .modal-body canvas,
+        .modal-body svg,
+        .modal-body .badge-card {
+            max-width: 100%;
+            height: auto;
+        }
+        .modal-body .grid {
+            overflow: hidden;
+        }
+        .modal-body .kv {
+            word-break: break-word;
+        }
+        .modal-body .kv b {
+            text-align: right;
+            max-width: 60%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        @media(max-width:480px) {
+            .modal-body .kv b {
+                max-width: 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─── LOCK SCREEN ─── -->
+    <div id="lockScreen" class="lock-screen hidden">
+        <div class="lock-card">
+            <div class="wordmark"><span class="helm">⎈</span>MSR.</div>
+            <div class="lock-sub">GATE SECURITY &mdash; ENTER YOUR CODE TO CONTINUE</div>
+            <div class="field">
+                <label>Security Code</label>
+                <input type="password" id="lockCodeInput" autocomplete="off" onkeydown="if(event.key==='Enter')attemptUnlock()">
+            </div>
+            <div id="lockErr" class="small" style="color:var(--red); display:none; margin-bottom:.6em;">Incorrect code. Try again.</div>
+            <button class="btn btn-primary btn-block btn-lg" onclick="attemptUnlock()">Unlock</button>
+        </div>
+    </div>
+
+    <!-- ─── APP ─── -->
+    <div id="app">
+        <div id="scrim" onclick="toggleSidebar(false)"></div>
+        <aside id="sidebar">
+            <div class="brand">
+                <div class="brand-text">
+                    <div class="wordmark" id="brandNameSidebar"><span class="helm">⎈</span>MSR.</div>
+                    <div class="brand-sub">Gate Security</div>
+                </div>
+            </div>
+            <div class="role-chip"><span class="role-dot" id="roleDot"></span><span id="roleLabel">Officer mode</span></div>
+            <nav class="tabs" id="navTabs"></nav>
+            <div class="sidebar-foot">
+                <button class="btn btn-sm btn-block" style="margin-bottom:.7em;" onclick="lockApp()">&#128274; Lock App</button>
+                Powered by Hamid Yasir &amp; Co.
+            </div>
+        </aside>
+
+        <div id="main">
+            <div id="topbar">
+                <button id="hamburger" onclick="toggleSidebar()">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <div class="page-title" id="pageTitle">Home</div>
+                <div class="spacer"></div>
+                <div class="field topbar-search" style="margin:0;">
+                    <input id="globalSearch" placeholder="Search name, ID, phone, NID, company..." oninput="onGlobalSearch(this.value)">
+                </div>
+            </div>
+            <div id="content"></div>
+        </div>
+    </div>
+
+    <!-- ─── PRINT AREA ─── -->
+    <div id="printArea"></div>
+    <div id="toastHost"></div>
+    <div id="modalHost"></div>
+
+    <!-- ─── EXTERNAL LIBS ─── -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
+    </script>
+
+    <script>
+        /* ================================================================
+           MSR GATE SECURITY — FULL APP
+           ================================================================ */
+
+        const APP_DATA_VERSION = 1;
+        let sessionUnlocked = true;
+        let adminUnlocked = false;
+
+        /* ─── DB ─── */
+        const DB = {
+            get(key, fallback) {
+                try {
+                    const v = localStorage.getItem('gsms_' + key);
+                    return v === null ? fallback : JSON.parse(v);
+                } catch (e) { return fallback; }
+            },
+            set(key, val) {
+                try { localStorage.setItem('gsms_' + key, JSON.stringify(val)); return true; } catch (e) { toast(
+                        'Storage error — data may not have saved.', 'err'); return false; }
+            }
+        };
+
+        /* ─── ICONS ─── */
+        const ICONS = {
+            home: '<path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9"/>',
+            scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2"/><path d="M4 16v2a2 2 0 0 0 2 2h2"/><path d="M20 8V6a2 2 0 0 0-2-2h-2"/><path d="M20 16v2a2 2 0 0 1-2 2h-2"/><line x1="4" y1="12" x2="20" y2="12"/>',
+            idcard: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="1.7"/><path d="M5.5 16c.6-1.7 2-2.6 3-2.6s2.4.9 3 2.6"/><line x1="14" y1="9.5" x2="18.5" y2="9.5"/><line x1="14" y1="13" x2="18.5" y2="13"/>',
+            radio: '<circle cx="12" cy="12" r="2.3"/><path d="M8.3 8.3a5.2 5.2 0 0 0 0 7.4M15.7 8.3a5.2 5.2 0 0 1 0 7.4M5.3 5.3a9.7 9.7 0 0 0 0 13.4M18.7 5.3a9.7 9.7 0 0 1 0 13.4"/>',
+            clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
+            chart: '<line x1="5" y1="20" x2="19" y2="20"/><rect x="6" y="12" width="3" height="6"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="4" width="3" height="14"/>',
+            settings: '<circle cx="12" cy="12" r="3.1"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.88l.06.06a2.06 2.06 0 1 1-2.92 2.92l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56v.16a2.06 2.06 0 1 1-4.12 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06a2.06 2.06 0 1 1-2.92-2.92l.06-.06a1.7 1.7 0 0 0 .34-1.88 1.7 1.7 0 0 0-1.56-1.03h-.16a2.06 2.06 0 1 1 0-4.12h.09a1.7 1.7 0 0 0 1.55-1.11 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2.06 2.06 0 1 1 2.92-2.92l.06.06a1.7 1.7 0 0 0 1.88.34h.08a1.7 1.7 0 0 0 1.03-1.56v-.16a2.06 2.06 0 1 1 4.12 0v.09a1.7 1.7 0 0 0 1.03 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2.06 2.06 0 1 1 2.92 2.92l-.06.06a1.7 1.7 0 0 0-.34 1.88v.08a1.7 1.7 0 0 0 1.56 1.03h.16a2.06 2.06 0 1 1 0 4.12h-.09a1.7 1.7 0 0 0-1.55 1.03z"/>',
+            help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.5 2.5 0 1 1 3.6 2.25c-.86.43-1.1.86-1.1 1.7"/><line x1="12" y1="16.8" x2="12" y2="16.82"/>',
+            user: '<circle cx="12" cy="8.2" r="3.4"/><path d="M5 20c1-3.3 3.8-5 7-5s6 1.7 7 5"/>',
+            users: '<circle cx="9" cy="8.3" r="3.1"/><path d="M3 19c.9-3 3.2-4.6 6-4.6s5.1 1.6 6 4.6"/><path d="M15.5 5.2a3.1 3.1 0 0 1 0 6"/><path d="M17.8 14.6c2.2.5 3.7 1.9 4.4 4.4"/>',
+            briefcase: '<rect x="3" y="8" width="18" height="11" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="3" y1="13" x2="21" y2="13"/>',
+            camera: '<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1-2h7l1 2h2A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.4"/>',
+            edit: '<path d="M4 20l.9-3.6L16.4 5 19 7.6 7.6 19z"/><line x1="14.5" y1="6.9" x2="17.1" y2="9.5"/>',
+            lock: '<rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+            alert: '<path d="M12 3.5 21 19H3z"/><line x1="12" y1="9.5" x2="12" y2="13.5"/><line x1="12" y1="16.3" x2="12" y2="16.32"/>',
+            inbox: '<path d="M4 12.5h4.2l1.4 2.6h4.8l1.4-2.6H20"/><path d="M6 5h12l2 7.5v7A1.5 1.5 0 0 1 18.5 21h-13A1.5 1.5 0 0 1 4 19.5v-7z"/>',
+            checkcircle: '<circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.6 2.6L16.5 9"/>',
+            x: '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>',
+            print: '<path d="M6 9V4h12v5"/><rect x="4" y="9" width="16" height="8" rx="1.5"/><rect x="7" y="14" width="10" height="6"/>',
+            download: '<path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><line x1="4" y1="20" x2="20" y2="20"/>',
+            upload: '<path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><line x1="4" y1="4" x2="20" y2="20"/>',
+            trash: '<path d="M5 7h14"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M7 7l1 13.5A1.5 1.5 0 0 0 9.5 22h5a1.5 1.5 0 0 0 1.5-1.5L17 7"/>',
+            search: '<circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.3" y1="15.3" x2="21" y2="21"/>',
+            shield: '<path d="M12 3l7 3v6c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4.2"/>',
+            phone: '<path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 5 5l1.5-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A16 16 0 0 1 5 6.1 1.5 1.5 0 0 1 6.5 3.5z"/>',
+            mail: '<rect x="3" y="5.5" width="18" height="13" rx="1.8"/><path d="M4 7l8 6 8-6"/>'
+        };
+
+        function ic(name, cls) {
+            return `<svg class="icon${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]||''}</svg>`;
+        }
+
+        /* ─── DEFAULTS ─── */
+        const DEFAULT_ACCESS_LEVELS = [
+            { name: 'Visitor', zone: 'Office / admin areas (escorted only)' },
+            { name: 'Contractor', zone: 'Assigned work zone + shop floor' },
+            { name: 'Vendor / Delivery', zone: 'Dock & warehouse only' },
+            { name: 'Inspector / Regulator', zone: 'Vessel + full yard (USCG, ABS, owner\u2019s rep)' },
+            { name: 'VIP / Tour', zone: 'Public areas only' }
+        ];
+        const DEFAULT_PURPOSES = ['Repair / Maintenance', 'Delivery', 'Inspection / Audit', 'Meeting', 'Tour', 'Other'];
+
+        function defaultSettings() {
+            return {
+                companyName: 'Mehreen Ship Recycling',
+                hotline: '09611336887',
+                visitorPrefix: 'VIS',
+                staffPrefix: 'EMP',
+                accessLevels: DEFAULT_ACCESS_LEVELS,
+                purposes: DEFAULT_PURPOSES,
+                adminKey: 'msr2026',
+                securityKey: '2026',
+                staffAddKey: 'staff2026',
+                whatsappNumber: '8801319001751',
+                workStartHour: 8,
+                workEndHour: 17,
+                overdueAlertsEnabled: true,
+                overdueAlertSoundEnabled: true,
+                overdueAlertSnoozeMins: 10,
+            };
+        }
+
+        function ensureInit() {
+            if (DB.get('settings', null) === null) DB.set('settings', defaultSettings());
+            if (DB.get('visitors', null) === null) DB.set('visitors', []);
+            if (DB.get('staff', null) === null) DB.set('staff', []);
+            if (DB.get('staffAttendance', null) === null) DB.set('staffAttendance', []);
+            if (DB.get('counters', null) === null) DB.set('counters', { visitor: 0, staff: 0 });
+            if (DB.get('auditLog', null) === null) DB.set('auditLog', []);
+        }
+        ensureInit();
+
+        function S() { return Object.assign({}, defaultSettings(), DB.get('settings', {})); }
+
+        function saveS(s) { DB.set('settings', s); }
+
+        /* ─── UTILITIES ─── */
+        function uid() { return Math.random().toString(36).slice(2, 9); }
+
+        function pad(n, len) { return String(n).padStart(len, '0'); }
+
+        function nowISO() { return new Date().toISOString(); }
+
+        function fmtDT(iso) {
+            if (!iso) return '\u2014';
+            const d = new Date(iso);
+            return d.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' }) + ' ' + d
+                .toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function fmtTimeOnly(iso) {
+            if (!iso) return '\u2014';
+            const d = new Date(iso);
+            return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function escapeHtml(str) { return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;',
+                '>': '&gt;', '"': '&quot;', "'": '&#39;' } [c])); }
+
+        function minutesBetween(a, b) { return Math.round((new Date(b) - new Date(a)) / 60000); }
+
+        function durationLabel(mins) {
+            if (mins == null) return '\u2014';
+            const h = Math.floor(mins / 60),
+                m = mins % 60;
+            if (h <= 0) return m + 'm';
+            if (m === 0) return h + 'h';
+            return h + 'h ' + m + 'm';
+        }
+
+        function nextVisitorId() {
+            const c = DB.get('counters', { visitor: 0, staff: 0 });
+            c.visitor++;
+            DB.set('counters', c);
+            return S().visitorPrefix + '-' + pad(c.visitor, 6);
+        }
+
+        function nextStaffId() {
+            const c = DB.get('counters', { visitor: 0, staff: 0 });
+            c.staff++;
+            DB.set('counters', c);
+            return S().staffPrefix + '-' + pad(c.staff, 6);
+        }
+
+        function nextEmployeeNo() {
+            const staff = DB.get('staff', []);
+            return 'E' + pad(staff.length + 1, 4);
+        }
+
+        function logAudit(action, recordId, role) {
+            const log = DB.get('auditLog', []);
+            log.unshift({ ts: nowISO(), action, recordId: recordId || '', role: role || 'Officer' });
+            if (log.length > 5000) log.length = 5000;
+            DB.set('auditLog', log);
+        }
+
+        /* ─── TOAST ─── */
+        function toast(msg, type) {
+            const host = document.getElementById('toastHost');
+            const el = document.createElement('div');
+            el.className = 'toast' + (type === 'err' ? ' err' : type === 'ok' ? ' ok' : '');
+            el.textContent = msg;
+            host.appendChild(el);
+            setTimeout(() => { el.style.opacity = '0';
+                el.style.transition = 'opacity .25s';
+                setTimeout(() => el.remove(), 260); }, 3200);
+        }
+
+        /* ─── MODALS ─── */
+        let modalStack = [];
+
+        function openModal(innerHtml, opts) {
+            opts = opts || {};
+            const host = document.getElementById('modalHost');
+            const wrap = document.createElement('div');
+            wrap.className = 'modal-backdrop';
+            wrap.innerHTML =
+                `<div class="modal ${opts.wide ? 'wide' : ''} ${opts.narrow ? 'narrow' : ''}">${innerHtml}</div>`;
+            wrap.addEventListener('mousedown', (e) => { if (e.target === wrap && !opts.persistent) closeModal(); });
+            host.appendChild(wrap);
+            modalStack.push(wrap);
+            return wrap;
+        }
+
+        function closeModal() {
+            const el = modalStack.pop();
+            if (el) el.remove();
+            stopAllCameraStreams();
+        }
+
+        function modalHeader(title) {
+            return `<div class="modal-head"><h3>${title}</h3><button class="close-x" onclick="closeModal()">&times;</button></div>`;
+        }
+
+        /* ─── SECURITY KEY PROMPTS ─── */
+        function askKey(kind) {
+            return new Promise((resolve) => {
+                const label = kind === 'admin' ? 'Admin Security Code' : kind === 'staffAdd' ?
+                    'Add Staff Security Code' : 'Security Code';
+                const desc = kind === 'admin' ?
+                    'Required to override this section — settings, staff management, backups and deletions.' :
+                    kind === 'staffAdd' ?
+                    'Held by the person designated to register new staff. This does not grant access to Settings, editing, or deleting staff.' :
+                    'Required to override this section and confirm this checkout.';
+                const m = openModal(`
+              ${modalHeader('Enter '+label)}
+              <div class="modal-body">
+                <p class="small" style="margin-top:0;">${desc}</p>
+                <div class="field">
+                  <label>${label}</label>
+                  <input type="password" id="keyInput" autocomplete="off" onkeydown="if(event.key==='Enter')document.getElementById('keySubmitBtn').click();">
+                </div>
+                <div id="keyErr" class="small" style="color:#C23B3B; display:none;">Incorrect code. Try again.</div>
+              </div>
+              <div class="modal-foot">
+                <button class="btn" onclick="__keyResolve(false)">Cancel</button>
+                <button class="btn btn-primary" id="keySubmitBtn" onclick="__keyCheck('${kind}')">Confirm</button>
+              </div>
+            `, { narrow: true });
+                setTimeout(() => { const i = document.getElementById('keyInput'); if (i) i.focus(); }, 60);
+                window.__keyResolve = (ok) => { closeModal();
+                    resolve(ok);
+                    delete window.__keyResolve;
+                    delete window.__keyCheck; };
+                window.__keyCheck = (k) => {
+                    const val = document.getElementById('keyInput').value;
+                    const settings = S();
+                    const correct = k === 'admin' ? val === settings.adminKey :
+                        k === 'staffAdd' ? (val === settings.staffAddKey || val === settings.adminKey) :
+                        (val === settings.securityKey || val === settings.adminKey);
+                    if (correct) { window.__keyResolve(true); } else { document.getElementById('keyErr').style
+                            .display = 'block';
+                        document.getElementById('keyInput').value = '';
+                        document.getElementById('keyInput').focus(); }
+                };
+            });
+        }
+
+        function confirmDialog(title, body, okLabel, danger) {
+            return new Promise((resolve) => {
+                openModal(`
+              ${modalHeader(title)}
+              <div class="modal-body"><p style="margin:0;">${body}</p></div>
+              <div class="modal-foot">
+                <button class="btn" onclick="__confResolve(false)">Cancel</button>
+                <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" onclick="__confResolve(true)">${okLabel||'Confirm'}</button>
+              </div>
+            `, { narrow: true });
+                window.__confResolve = (v) => { closeModal();
+                    resolve(v);
+                    delete window.__confResolve; };
+            });
+        }
+
+        /* ─── CAMERA ─── */
+        const activeStreams = {};
+
+        async function startCamera(videoEl, key) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' },
+                    audio: false });
+                activeStreams[key] = stream;
+                videoEl.srcObject = stream;
+                await videoEl.play();
+                return true;
+            } catch (e) {
+                toast('Camera unavailable: ' + e.message, 'err');
+                return false;
+            }
+        }
+
+        function stopCamera(key) {
+            const s = activeStreams[key];
+            if (s) { s.getTracks().forEach(t => t.stop());
+                delete activeStreams[key]; }
+        }
+
+        function stopAllCameraStreams() { Object.keys(activeStreams).forEach(stopCamera); }
+
+        function snapFromVideo(videoEl) {
+            const c = document.createElement('canvas');
+            c.width = videoEl.videoWidth || 640;
+            c.height = videoEl.videoHeight || 480;
+            c.getContext('2d').drawImage(videoEl, 0, 0, c.width, c.height);
+            return c.toDataURL('image/jpeg', 0.85);
+        }
+
+        function fileToDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const r = new FileReader();
+                r.onload = () => resolve(r.result);
+                r.onerror = reject;
+                r.readAsDataURL(file);
+            });
+        }
+
+        /* ─── QR / BARCODE ─── */
+        function renderQR(canvas, text) {
+            if (!window.QRCode) return;
+            QRCode.toCanvas(canvas, text, { width: 150, margin: 1, color: { dark: '#0A2340', light: '#FFFFFF' } },
+            function(err) {
+                if (err) return;
+                const ctx = canvas.getContext('2d');
+                const cx = canvas.width / 2,
+                    cy = canvas.height / 2,
+                    r = 16;
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, 7);
+                ctx.fill();
+                ctx.strokeStyle = '#0A2340';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, 7);
+                ctx.stroke();
+                ctx.fillStyle = '#0A2340';
+                ctx.font = 'bold 13px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('M', cx, cy + 1);
+            });
+        }
+
+        function renderBarcode(svgEl, text) {
+            if (!window.JsBarcode) return;
+            try {
+                // Generate barcode into the SVG
+                JsBarcode(svgEl, text, {
+                    format: 'CODE128',
+                    width: 1.8,
+                    height: 32,
+                    displayValue: true,
+                    fontSize: 11,
+                    margin: 2,
+                    font: 'monospace'
+                });
+                // Ensure the SVG fills its container and is centered
+                const w = parseFloat(svgEl.getAttribute('width')) || 200;
+                const h = parseFloat(svgEl.getAttribute('height')) || 40;
+                if (w && h) {
+                    svgEl.setAttribute('viewBox', `0 0 ${w} ${h}`);
+                    svgEl.style.width = '100%';
+                    svgEl.style.height = '100%';
+                    svgEl.style.display = 'block';
+                    svgEl.removeAttribute('width');
+                    svgEl.removeAttribute('height');
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        /* ─── BADGE HTML ─── */
+        function buildBadgeHtml(rec, kind) {
+            const settings = S();
+            const photo = rec.facePhoto || rec.photo || '';
+            const name = rec.name || '\u2014';
+            const idStr = rec.id;
+            const accessLine = kind === 'VISITOR' ? (rec.accessLevel || '') : (rec.department || '');
+            const subLine = kind === 'VISITOR' ? (rec.company || '') : (rec.designation || '');
+            const qrPayload = kind === 'VISITOR' ? JSON.stringify({
+                badgeId: rec.id,
+                name: rec.name,
+                company: rec.company || '',
+                phone: rec.phone,
+                nid: rec.nid || '',
+                accessLevel: rec.accessLevel,
+                purpose: rec.purpose,
+                escort: rec.escort || '',
+                ppe: !!rec.ppe,
+                entryTime: rec.checkIn,
+                expiryTime: rec.expiry,
+                notes: rec.notes || ''
+            }) : JSON.stringify({ staffId: rec.id, employeeNo: rec.employeeNo, nid: rec.nid || '', name: rec.name,
+                department: rec.department, designation: rec.designation, phone: rec.phone });
+            const isVisitor = kind === 'VISITOR';
+            const escortHtml = (isVisitor && rec.escort) ?
+                `<div class="escort-row"><span class="elab">ESCORT</span><span class="eval">${escapeHtml(rec.escort)}</span></div>` :
+                '';
+            return `
+            <div class="badge-card" data-badge-id="${escapeHtml(idStr)}">
+              <div class="badge-head">
+                <div class="wm"><span class="wheel">⎈</span>MSR</div>
+                <div class="full">${escapeHtml(settings.companyName||'Mehreen Ship Recycling')}</div>
+              </div>
+              <div class="badge-kindbar ${isVisitor ? 'kb-v' : 'kb-s'}">
+                <span class="kb-letter">${isVisitor ? 'V' : 'S'}</span>
+                <span class="kb-word">${isVisitor ? 'VISITOR' : 'STAFF'}</span>
+              </div>
+              <div class="badge-main">
+                <div class="badge-photo-wrap">
+                  ${photo ? `<img src="${photo}">` : `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#9aa4b0;font-size:.55em;text-align:center;background:#f0f0f0;">No Photo</div>`}
+                  <div class="badge-id-tag">${escapeHtml(idStr)}</div>
+                </div>
+                <div class="badge-info">
+                  <div class="nm">${escapeHtml(name)}</div>
+                  ${subLine ? `<div class="sub">${escapeHtml(subLine)}</div>` : ''}
+                  <div class="lab">AREA ACCESS</div>
+                  <div class="val">${escapeHtml(accessLine||'\u2014')}</div>
+                  ${escortHtml}
+                </div>
+              </div>
+              <div class="badge-codes">
+                <canvas class="qrcanvas" data-payload='${escapeHtml(qrPayload).replace(/'/g,'&#39;')}'></canvas>
+                <svg class="barcodesvg" data-code="${escapeHtml(idStr)}"></svg>
+              </div>
+              <div class="badge-foot">Hotline: ${escapeHtml(settings.hotline||'')}</div>
+            </div>`;
+        }
+
+        function buildVisitorStubHtml(rec) {
+            const inTime = rec.checkIn ? fmtDT(rec.checkIn) : '\u2014';
+            return `
+            <div class="visitor-stub">
+              <div class="stub-cutline">&#9986; <span class="dash"></span> cut along this line — paste NID photocopy below or on the back — keep in gate file <span class="dash"></span></div>
+              <div class="stub-box">
+                <div class="stub-title">Visitor Record Slip <span>${escapeHtml(rec.id)}</span></div>
+                <table class="stub-table">
+                  <tr><td class="k">Name</td><td>${escapeHtml(rec.name||'\u2014')}</td><td class="k">NID Number</td><td>${escapeHtml(rec.nid||'\u2014')}</td></tr>
+                  <tr><td class="k">Phone</td><td>${escapeHtml(rec.phone||'\u2014')}</td><td class="k">Company</td><td>${escapeHtml(rec.company||'\u2014')}</td></tr>
+                  <tr><td class="k">Purpose</td><td>${escapeHtml(rec.purpose||'\u2014')}</td><td class="k">Access Level</td><td>${escapeHtml(rec.accessLevel||'\u2014')}</td></tr>
+                  <tr><td class="k">Escort</td><td>${escapeHtml(rec.escort||'\u2014')}</td><td class="k">Check-In</td><td>${escapeHtml(inTime)}</td></tr>
+                </table>
+                <div class="stub-note">Paste the photocopy of this visitor's NID under this information (or on the back of this page) and file at the security desk.</div>
+              </div>
+            </div>`;
+        }
+
+        function buildStaffStubHtml(rec) {
+            return `
+            <div class="visitor-stub">
+              <div class="stub-cutline">&#9986; <span class="dash"></span> cut along this line — paste NID photocopy below or on the back — keep in gate file <span class="dash"></span></div>
+              <div class="stub-box">
+                <div class="stub-title">Staff Record Slip <span>${escapeHtml(rec.id)}</span></div>
+                <table class="stub-table">
+                  <tr><td class="k">Name</td><td>${escapeHtml(rec.name||'\u2014')}</td><td class="k">NID Number</td><td>${escapeHtml(rec.nid||'\u2014')}</td></tr>
+                  <tr><td class="k">Employee No.</td><td>${escapeHtml(rec.employeeNo||'\u2014')}</td><td class="k">Phone</td><td>${escapeHtml(rec.phone||'\u2014')}</td></tr>
+                  <tr><td class="k">Department</td><td>${escapeHtml(rec.department||'\u2014')}</td><td class="k">Designation</td><td>${escapeHtml(rec.designation||'\u2014')}</td></tr>
+                  <tr><td class="k">Joining Date</td><td>${escapeHtml(rec.joiningDate||'\u2014')}</td><td class="k">Status</td><td>${escapeHtml(rec.status||'\u2014')}</td></tr>
+                </table>
+                <div class="stub-note">Paste the photocopy of this staff member's NID under this information (or on the back of this page) and file at the security desk.</div>
+              </div>
+            </div>`;
+        }
+
+        function paintBadgeCodes(container) {
+            container.querySelectorAll('.qrcanvas').forEach(cv => {
+                const payload = cv.getAttribute('data-payload');
+                if (payload) renderQR(cv, payload);
+            });
+            container.querySelectorAll('.barcodesvg').forEach(svg => {
+                const code = svg.getAttribute('data-code');
+                if (code) renderBarcode(svg, code);
+            });
+        }
+
+        /* ─── VISITOR WIZARD ─── */
+        let VW = null;
+
+        function newVisitorWizard() {
+            VW = {
+                step: 1,
+                fields: { name: '', nid: '', phone: '' },
+                face: { photo: null, override: false, overrideReason: '' },
+                details: { company: '', escort: '', accessLevel: '', accessLevelOther: '', purpose: '',
+                    purposeOther: '', durationH: 1, durationM: 0, ppe: false, safety: false, notes: '',
+                    vehicleType: '', plateNumber: '' }
+            };
+        }
+
+        function openVisitorWizard() {
+            newVisitorWizard();
+            openModal(`<div id="wizardRoot"></div>`, { wide: true, persistent: true });
+            renderWizard();
+        }
+
+        function wizardShell(bodyHtml, footHtml, title) {
+            const total = 4;
+            const cur = VW.step;
+            let dots = '';
+            for (let i = 1; i <= total; i++) dots += `<div class="step ${i <= cur ? 'on' : ''}"></div>`;
+            document.getElementById('wizardRoot').innerHTML = `
+            ${modalHeader(title||'New Visitor')}
+            <div class="modal-body">
+              <div class="steps">${dots}</div>
+              ${bodyHtml}
+            </div>
+            <div class="modal-foot">${footHtml}</div>
+          `;
+        }
+
+        function renderWizard() {
+            if (VW.step === 1) return wizardStepIdentity();
+            if (VW.step === 2) return wizardStepFace();
+            if (VW.step === 3) return wizardStepDetails();
+            if (VW.step === 4) return wizardStepReview();
+        }
+
+        function wizardBack() { stopAllCameraStreams();
+            VW.step--;
+            renderWizard(); }
+
+        function wizardNext() { stopAllCameraStreams();
+            VW.step++;
+            renderWizard(); }
+
+        function wizardStepIdentity() {
+            const f = VW.fields;
+            wizardShell(`
+            <p class="small" style="margin-top:0;">NIDs are taken and photocopied at the gate — just record the basics here.</p>
+            <div class="grid grid-2">
+              <div class="field"><label>Full Name *</label><input value="${escapeHtml(f.name)}" oninput="VW.fields.name=this.value"></div>
+              <div class="field"><label>Phone Number *</label><input value="${escapeHtml(f.phone)}" oninput="VW.fields.phone=this.value"></div>
+              <div class="field" style="grid-column:1/-1;"><label>NID Number *</label><input value="${escapeHtml(f.nid)}" oninput="VW.fields.nid=this.value"></div>
+            </div>
+          `, `
+            <button class="btn" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitIdentity()">Continue</button>
+          `, 'New Visitor — Details');
+        }
+
+        function submitIdentity() {
+            if (!VW.fields.name.trim() || !VW.fields.phone.trim() || !VW.fields.nid.trim()) { toast(
+                    'Name, phone number and NID number are required.', 'err'); return; }
+            wizardNext();
+        }
+
+        function wizardStepFace() {
+            wizardShell(`
+            <p class="small" style="margin-top:0;">Capture the visitor's <b>face photo</b>. This is mandatory unless overridden.</p>
+            <div class="capture-box" id="camBoxFace" style="max-width:320px; margin:0 auto;">
+              ${VW.face.photo ? `<img src="${VW.face.photo}">` : `<video id="videoFace" playsinline muted></video>`}
+            </div>
+            <div class="row center" style="margin-top:.6em; justify-content:center;">
+              ${VW.face.photo ?
+                `<button class="btn" onclick="VW.face.photo=null; VW.face.override=false; renderWizard();">Retake</button>`
+                : `<button class="btn btn-primary" onclick="startCamera(document.getElementById('videoFace'),'face')">Start Camera</button>
+                   <button class="btn" onclick="captureFace()">Capture</button>`
+              }
+            </div>
+            <hr class="sep">
+            <div class="chip-toggle" onclick="event.stopPropagation();">
+              <input type="checkbox" id="overrideChk" ${VW.face.override ? 'checked' : ''} onchange="toggleOverride(this.checked)">
+              <span>Bypass face photo (Security Code override required)</span>
+            </div>
+            <div id="overrideReasonWrap" class="field" style="margin-top:.8em; ${VW.face.override ? '' : 'display:none;'}">
+              <label>Reason for override *</label>
+              <input id="overrideReason" value="${escapeHtml(VW.face.overrideReason)}" oninput="VW.face.overrideReason=this.value">
+            </div>
+          `, `
+            <button class="btn" onclick="wizardBack()">Back</button>
+            <button class="btn btn-primary" onclick="wizardNextFromFace()">Continue</button>
+          `, 'Face Photo');
+        }
+
+        async function captureFace() {
+            const v = document.getElementById('videoFace');
+            if (!v || !v.srcObject) { toast('Start the camera first.', 'err'); return; }
+            VW.face.photo = snapFromVideo(v);
+            stopCamera('face');
+            renderWizard();
+        }
+
+        async function toggleOverride(checked) {
+            if (checked) {
+                const ok = await askKey('security');
+                if (!ok) { renderWizard(); return; }
+            }
+            VW.face.override = checked;
+            renderWizard();
+        }
+
+        function wizardNextFromFace() {
+            if (!VW.face.photo && !VW.face.override) { toast('Face photo is required (or use the security override).',
+                    'err'); return; }
+            if (VW.face.override && !VW.face.overrideReason.trim()) { toast('Please enter a reason for the override.',
+                    'err'); return; }
+            wizardNext();
+        }
+
+        function wizardStepDetails() {
+            const d = VW.details;
+            const settings = S();
+            const levelOpts = settings.accessLevels.map(l =>
+                `<option value="${escapeHtml(l.name)}" ${d.accessLevel===l.name ? 'selected' : ''}>${escapeHtml(l.name)}</option>`
+                ).join('') + `<option value="Other" ${d.accessLevel==='Other' ? 'selected' : ''}>Other (Custom Entry)</option>`;
+            const purposeOpts = settings.purposes.map(p =>
+                `<option value="${escapeHtml(p)}" ${d.purpose===p ? 'selected' : ''}>${escapeHtml(p)}</option>`
+                ).join('');
+            const zoneNote = settings.accessLevels.find(l => l.name === d.accessLevel);
+
+            wizardShell(`
+            <div class="grid grid-2">
+              <div class="field">
+                <label>Access Level *</label>
+                <select onchange="VW.details.accessLevel=this.value; renderWizard();">
+                  <option value="">Select…</option>${levelOpts}
+                </select>
+                ${zoneNote ? `<div class="hint">${escapeHtml(zoneNote.zone)}</div>` : ''}
+              </div>
+              ${d.accessLevel === 'Other' ? `<div class="field" style="grid-column:1/-1;"><label>Specify precise access area(s) *</label><input value="${escapeHtml(d.accessLevelOther)}" oninput="VW.details.accessLevelOther=this.value" placeholder="e.g., Office, Walkway, Ship"></div>` : ''}
+
+              <div class="field">
+                <label>Visit Purpose *</label>
+                <select onchange="VW.details.purpose=this.value; renderWizard();">
+                  <option value="">Select…</option>${purposeOpts}
+                </select>
+              </div>
+              ${d.purpose === 'Other' ? `<div class="field" style="grid-column:1/-1;"><label>Specify purpose *</label><input value="${escapeHtml(d.purposeOther)}" oninput="VW.details.purposeOther=this.value"></div>` : ''}
+
+              <div class="field">
+                <label>Visit Duration (expected) *</label>
+                <div class="row">
+                  <input type="number" min="0" value="${d.durationH}" oninput="VW.details.durationH=+this.value" placeholder="hrs">
+                  <input type="number" min="0" max="59" value="${d.durationM}" oninput="VW.details.durationM=+this.value" placeholder="mins">
+                </div>
+              </div>
+              <div class="field"><label>Company (optional)</label><input value="${escapeHtml(d.company)}" oninput="VW.details.company=this.value"></div>
+              <div class="field"><label>Escort (optional)</label><input value="${escapeHtml(d.escort)}" oninput="VW.details.escort=this.value"></div>
+
+              <!-- Vehicle fields with Chittagong plate placeholder and layout fix -->
+              <div class="field" style="min-width:0; overflow:hidden;"><label>Vehicle Type (optional)</label><input value="${escapeHtml(d.vehicleType||'')}" oninput="VW.details.vehicleType=this.value" placeholder="e.g. Car, Truck, Motorcycle"></div>
+              <div class="field" style="min-width:0; overflow:hidden;"><label>Plate Number (optional)</label><input value="${escapeHtml(d.plateNumber||'')}" oninput="VW.details.plateNumber=this.value" placeholder="e.g. Chattogram Metro Ga-12-3456"></div>
+
+              <div class="field">
+                <label>&nbsp;</label>
+                <div class="row">
+                  <label class="chip-toggle"><input type="checkbox" ${d.ppe ? 'checked' : ''} onchange="VW.details.ppe=this.checked"> PPE required</label>
+                  <label class="chip-toggle"><input type="checkbox" ${d.safety ? 'checked' : ''} onchange="VW.details.safety=this.checked"> Safety briefing given</label>
+                </div>
+              </div>
+              <div class="field" style="grid-column:1/-1;"><label>Notes (optional)</label><textarea rows="2" oninput="VW.details.notes=this.value">${escapeHtml(d.notes)}</textarea></div>
+            </div>
+          `, `
+            <button class="btn" onclick="wizardBack()">Back</button>
+            <button class="btn btn-primary" onclick="wizardNextFromDetails()">Review</button>
+          `, 'Visit Details');
+        }
+
+        function wizardNextFromDetails() {
+            const d = VW.details;
+            if (!d.accessLevel || (d.accessLevel === 'Other' && !d.accessLevelOther.trim())) { toast(
+                    'Select (or specify) an access level.', 'err'); return; }
+            if (!d.purpose || (d.purpose === 'Other' && !d.purposeOther.trim())) { toast(
+                'Select (or specify) a visit purpose.', 'err'); return; }
+            if (d.durationH === 0 && d.durationM === 0) { toast('Enter an expected visit duration.', 'err'); return; }
+            wizardNext();
+        }
+
+        function wizardStepReview() {
+            const f = VW.fields,
+                d = VW.details;
+            const displayAccess = d.accessLevel === 'Other' ? d.accessLevelOther : d.accessLevel;
+            wizardShell(`
+            <div class="grid grid-2">
+              <div>
+                <div class="kv"><span>Name</span><b>${escapeHtml(f.name)}</b></div>
+                <div class="kv"><span>NID</span><b>${escapeHtml(f.nid||'\u2014')}</b></div>
+                <div class="kv"><span>Phone</span><b>${escapeHtml(f.phone)}</b></div>
+                <div class="kv"><span>Company</span><b>${escapeHtml(d.company||'\u2014')}</b></div>
+                <div class="kv"><span>Access Level</span><b>${escapeHtml(displayAccess)}</b></div>
+                <div class="kv"><span>Purpose</span><b>${escapeHtml(d.purpose==='Other' ? d.purposeOther : d.purpose)}</b></div>
+                <div class="kv"><span>Duration</span><b>${d.durationH}h ${d.durationM}m</b></div>
+                <div class="kv"><span>Escort</span><b>${escapeHtml(d.escort||'\u2014')}</b></div>
+                <div class="kv"><span>Vehicle</span><b>${d.vehicleType ? escapeHtml(d.vehicleType + (d.plateNumber ? ' - ' + d.plateNumber : '')) : '\u2014'}</b></div>
+                <div class="kv"><span>PPE / Briefing</span><b>${d.ppe ? 'PPE ' : ''}${d.safety ? 'Briefed' : ''}${!d.ppe && !d.safety ? '\u2014' : ''}</b></div>
+                ${VW.face.override ? `<div class="kv"><span>Face photo</span><b style="color:#B9791E;">Overridden</b></div>` : ''}
+              </div>
+              <div class="center">
+                ${VW.face.photo ? `<img src="${VW.face.photo}" style="width:140px;height:140px;object-fit:cover;border-radius:12px;">` : `<div class="small">No face photo (overridden)</div>`}
+              </div>
+            </div>
+            <p class="hint">Confirm the details above, then generate the badge and check the visitor in.</p>
+          `, `
+            <button class="btn" onclick="wizardBack()">Back</button>
+            <button class="btn btn-primary btn-lg" onclick="finalizeVisitor()">Generate Badge &amp; Check In</button>
+          `, 'Review &amp; Confirm');
+        }
+
+        function finalizeVisitor() {
+            const f = VW.fields,
+                d = VW.details;
+            const id = nextVisitorId();
+            const now = nowISO();
+            const durMins = d.durationH * 60 + d.durationM;
+            const expiry = new Date(Date.now() + durMins * 60000).toISOString();
+            const rec = {
+                id,
+                type: 'visitor',
+                name: f.name,
+                nid: f.nid,
+                phone: f.phone,
+                facePhoto: VW.face.photo || '',
+                faceOverride: VW.face.override,
+                faceOverrideReason: VW.face.overrideReason || '',
+                company: d.company || '',
+                escort: d.escort || '',
+                accessLevel: d.accessLevel === 'Other' ? d.accessLevelOther : d.accessLevel,
+                purpose: d.purpose === 'Other' ? d.purposeOther : d.purpose,
+                durationMins: durMins,
+                ppe: d.ppe,
+                safety: d.safety,
+                notes: d.notes || '',
+                vehicleType: d.vehicleType || '',
+                plateNumber: d.plateNumber || '',
+                checkIn: now,
+                expiry,
+                checkOut: null,
+                status: 'onsite'
+            };
+            const visitors = DB.get('visitors', []);
+            visitors.unshift(rec);
+            DB.set('visitors', visitors);
+            logAudit('Visitor checked in', id, 'Officer');
+            if (VW.face.override) logAudit('Face photo override used: ' + VW.face.overrideReason, id, 'Security');
+            closeModal();
+            showBadgeModal(rec, 'VISITOR', true);
+            renderRoute();
+        }
+
+        /* ─── BADGE MODAL / PRINT / WHATSAPP ─── */
+        function showBadgeModal(rec, kind, justCheckedIn) {
+            const settings = S();
+            let waMsg = '';
+            if (kind === 'VISITOR') {
+                waMsg = justCheckedIn ?
+                    `Gate Entry – Visitor ID Issued: ${rec.name} – ${rec.phone} – ${rec.accessLevel} – ${rec.purpose} – ${durationLabel(rec.durationMins)}` :
+                    `Gate Exit – Visitor Checked Out: ${rec.name} – ${rec.phone}`;
+            } else {
+                waMsg = justCheckedIn === 'registered' ?
+                    `Staff Badge Issued: ${rec.name} (${rec.id}) – ${rec.department||''}` :
+                    justCheckedIn ?
+                    `Staff Check-In: ${rec.name} (${rec.id}) – ${rec.department||''}` :
+                    `Staff Check-Out: ${rec.name} (${rec.id}) – ${rec.department||''}`;
+            }
+            openModal(`
+            ${modalHeader((kind==='VISITOR' ? 'Visitor' : 'Staff') + ' Badge — ' + rec.id)}
+            <div class="modal-body center">
+              <div id="badgeHolder" style="display:inline-block;">${buildBadgeHtml(rec, kind)}</div>
+              <div class="row" style="margin-top:1.1em; justify-content:center;">
+                <button class="btn btn-primary" onclick="printSingleBadge('${rec.id}','${kind}')">Print Badge</button>
+                <button class="btn" onclick="sendWhatsApp('${settings.whatsappNumber}', ${JSON.stringify(waMsg).replace(/"/g,'&quot;')})">Send via WhatsApp</button>
+                <button class="btn btn-ghost" onclick="promptWhatsAppOther(${JSON.stringify(waMsg).replace(/"/g,'&quot;')})">Send to other number</button>
+              </div>
+            </div>
+            <div class="modal-foot"><button class="btn btn-block" onclick="closeModal()">Done</button></div>
+          `, {});
+            setTimeout(() => { const h = document.getElementById('badgeHolder'); if (h) paintBadgeCodes(h); }, 30);
+        }
+
+        function sendWhatsApp(number, msg) {
+            const url = 'https://wa.me/' + number.replace(/[^\d]/g, '') + '?text=' + encodeURIComponent(msg);
+            window.open(url, '_blank');
+        }
+
+        function promptWhatsAppOther(msg) {
+            openModal(`
+            ${modalHeader('Send to another number')}
+            <div class="modal-body">
+              <div class="field"><label>WhatsApp Number (with country code)</label><input id="waNum" placeholder="8801XXXXXXXXX"></div>
+            </div>
+            <div class="modal-foot">
+              <button class="btn" onclick="closeModal()">Cancel</button>
+              <button class="btn btn-primary" onclick="sendWhatsApp(document.getElementById('waNum').value, ${JSON.stringify(msg).replace(/"/g,'&quot;')}); closeModal();">Open WhatsApp</button>
+            </div>
+          `, { narrow: true });
+        }
+
+        function printSingleBadge(id, kind) {
+            const rec = kind === 'VISITOR' ? DB.get('visitors', []).find(v => v.id === id) : DB.get('staff', []).find(s =>
+            s.id === id);
+            if (!rec) return;
+            printBadges([{ rec, kind }]);
+        }
+
+        function printBadges(items) {
+            const area = document.getElementById('printArea');
+            const stubs = items.map(it => it.kind === 'VISITOR' ? buildVisitorStubHtml(it.rec) : buildStaffStubHtml(it
+            .rec)).join('');
+            area.innerHTML =
+                `<div class="sheet">${items.map(it => buildBadgeHtml(it.rec, it.kind)).join('')}</div>${stubs}`;
+            setTimeout(() => {
+                paintBadgeCodes(area);
+                setTimeout(() => { window.print(); }, 200);
+            }, 30);
+        }
+
+        /* ─── VISITOR CHECKOUT ─── */
+        async function checkoutVisitor(id) {
+            const visitors = DB.get('visitors', []);
+            const rec = visitors.find(v => v.id === id || v.nid === id);
+            if (!rec || rec.status === 'checked_out') { toast('Visitor already checked out.', 'err'); return; }
+            const ok = await askKey('security');
+            if (!ok) return;
+            rec.checkOut = nowISO();
+            rec.status = 'checked_out';
+            rec.totalMins = minutesBetween(rec.checkIn, rec.checkOut);
+            DB.set('visitors', visitors);
+            logAudit('Visitor checked out', id, 'Security');
+            toast('Visitor ' + rec.name + ' checked out.', 'ok');
+            renderRoute();
+            // Show a confirmation modal WITHOUT the reprint button
+            showCheckoutConfirmation(rec, 'VISITOR');
+        }
+
+        /* ─── CHECKOUT CONFIRMATION (no reprint badge) ─── */
+        function showCheckoutConfirmation(rec, kind) {
+            const st = kind === 'VISITOR' ? visitorStatusInfo(rec) : { label: 'Checked Out', cls: 'gray' };
+            openModal(`
+            ${modalHeader((kind==='VISITOR' ? 'Visitor' : 'Staff') + ' — ' + rec.id + ' — Checked Out')}
+            <div class="modal-body">
+              <div class="grid grid-2">
+                <div>
+                  <div class="kv"><span>Name</span><b>${escapeHtml(rec.name)}</b></div>
+                  <div class="kv"><span>NID</span><b>${escapeHtml(rec.nid||'\u2014')}</b></div>
+                  <div class="kv"><span>Phone</span><b>${escapeHtml(rec.phone)}</b></div>
+                  ${kind === 'VISITOR' ? `<div class="kv"><span>Company</span><b>${escapeHtml(rec.company||'\u2014')}</b></div>` : ''}
+                  ${kind === 'VISITOR' ? `<div class="kv"><span>Access Level</span><b>${escapeHtml(rec.accessLevel)}</b></div>` : `<div class="kv"><span>Department</span><b>${escapeHtml(rec.department||'\u2014')}</b></div>`}
+                  <div class="kv"><span>Check In</span><b>${fmtDT(rec.checkIn)}</b></div>
+                  <div class="kv"><span>Check Out</span><b>${fmtDT(rec.checkOut)}</b></div>
+                  <div class="kv"><span>Status</span><b><span class="badge-pill pill-${st.cls}">${st.label}</span></b></div>
+                  ${rec.totalMins !== undefined ? `<div class="kv"><span>Total Time</span><b>${durationLabel(rec.totalMins)}</b></div>` : ''}
+                </div>
+                <div class="center">
+                  ${rec.facePhoto ? `<img src="${rec.facePhoto}" style="width:120px;height:120px;object-fit:cover;border-radius:10px;">` : rec.photo ? `<img src="${rec.photo}" style="width:120px;height:120px;object-fit:cover;border-radius:10px;">` : '<div class="small">No photo</div>'}
+                </div>
+              </div>
+              <p style="margin-top:1em;" class="hint">This visitor/staff has been successfully checked out.</p>
+            </div>
+            <div class="modal-foot">
+              <!-- Reprint badge removed per user request -->
+              <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+            </div>
+          `, { wide: true });
+        }
+
+        /* ─── VISITOR LOOKUP ─── */
+        function openLookupModal(kind, rec, suppressCheckIn) {
+            if (kind === 'VISITOR') {
+                const onsite = rec.status === 'onsite';
+                const st = visitorStatusInfo(rec);
+                // If suppressCheckIn is true, we force the "checked out" view (no check-in button)
+                const showCheckIn = onsite && !suppressCheckIn;
+                openModal(`
+              ${modalHeader('Visitor — '+rec.id)}
+              <div class="modal-body">
+                <div class="grid grid-2">
+                  <div>
+                    <div class="kv"><span>Name</span><b>${escapeHtml(rec.name)}</b></div>
+                    <div class="kv"><span>NID</span><b>${escapeHtml(rec.nid||'\u2014')}</b></div>
+                    <div class="kv"><span>Phone</span><b>${escapeHtml(rec.phone)}</b></div>
+                    <div class="kv"><span>Company</span><b>${escapeHtml(rec.company||'\u2014')}</b></div>
+                    <div class="kv"><span>Access Level</span><b>${escapeHtml(rec.accessLevel)}</b></div>
+                    <div class="kv"><span>Purpose</span><b>${escapeHtml(rec.purpose)}</b></div>
+                    <div class="kv"><span>Escort</span><b>${escapeHtml(rec.escort||'\u2014')}</b></div>
+                    <div class="kv"><span>Vehicle</span><b>${rec.vehicleType ? escapeHtml(rec.vehicleType + (rec.plateNumber ? ' - ' + rec.plateNumber : '')) : '\u2014'}</b></div>
+                    <div class="kv"><span>Entry</span><b>${fmtDT(rec.checkIn)}</b></div>
+                    <div class="kv"><span>Expiry</span><b>${fmtDT(rec.expiry)}</b></div>
+                    <div class="kv"><span>Exit</span><b>${rec.checkOut ? fmtDT(rec.checkOut) : '\u2014'}</b></div>
+                    <div class="kv"><span>Status</span><b><span class="badge-pill pill-${st.cls}">${st.label}</span></b></div>
+                  </div>
+                  <div class="center">
+                    ${rec.facePhoto ? `<img src="${rec.facePhoto}" style="width:120px;height:120px;object-fit:cover;border-radius:10px;">` : '<div class="small">No face photo</div>'}
+                  </div>
+                </div>
+              </div>
+              <div class="modal-foot">
+                ${showCheckIn
+                  ? `<button class="btn" onclick="closeModal(); extendVisitorPrompt('${rec.id}');">Extend Time</button>
+                     <button class="btn" onclick="printSingleBadge('${rec.id}','VISITOR')">Reprint Badge</button>
+                     <button class="btn btn-primary" onclick="closeModal(); checkoutVisitor('${rec.id}');">Check Out</button>`
+                  : `<button class="btn" onclick="closeModal(); reCheckInVisitor('${rec.id}');">Check In</button>
+                     <button class="btn" onclick="printSingleBadge('${rec.id}','VISITOR')">Reprint Badge</button>`
+                }
+                <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+              </div>
+            `, { wide: true });
+            } else {
+                const entry = staffCurrentlyOnsite(rec.id);
+                const onsite = !!entry;
+                openModal(`
+              ${modalHeader('Staff — '+rec.id)}
+              <div class="modal-body">
+                <div class="grid grid-2">
+                  <div>
+                    <div class="kv"><span>Name</span><b>${escapeHtml(rec.name)}</b></div>
+                    <div class="kv"><span>Employee No.</span><b>${escapeHtml(rec.employeeNo||'\u2014')}</b></div>
+                    <div class="kv"><span>NID</span><b>${escapeHtml(rec.nid||'\u2014')}</b></div>
+                    <div class="kv"><span>Department</span><b>${escapeHtml(rec.department||'\u2014')}</b></div>
+                    <div class="kv"><span>Designation</span><b>${escapeHtml(rec.designation||'\u2014')}</b></div>
+                    <div class="kv"><span>Phone</span><b>${escapeHtml(rec.phone||'\u2014')}</b></div>
+                    <div class="kv"><span>Status</span><b>${onsite ? `<span class="badge-pill pill-green">On Site since ${fmtTimeOnly(entry.checkIn)}</span>` : `<span class="badge-pill pill-gray">Checked Out</span>`}</b></div>
+                  </div>
+                  <div class="center">
+                    ${rec.photo ? `<img src="${rec.photo}" style="width:120px;height:120px;object-fit:cover;border-radius:10px;">` : '<div class="small">No photo</div>'}
+                  </div>
+                </div>
+              </div>
+              <div class="modal-foot">
+                ${onsite
+                  ? `<button class="btn" onclick="printSingleBadge('${rec.id}','STAFF')">Reprint Badge</button>
+                     <button class="btn btn-primary" onclick="closeModal(); staffCheckOut('${rec.id}');">Check Out</button>`
+                  : `<button class="btn btn-primary" onclick="closeModal(); staffCheckIn('${rec.id}');">Check In</button>
+                     <button class="btn" onclick="printSingleBadge('${rec.id}','STAFF')">Reprint Badge</button>`
+                }
+                <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+              </div>
+            `, { wide: true });
+            }
+        }
+
+        function openLookupFromRecord(kind, id) {
+            if (kind === 'VISITOR') {
+                const rec = DB.get('visitors', []).find(v => v.id === id);
+                if (rec) openLookupModal('VISITOR', rec);
+            } else {
+                const rec = DB.get('staff', []).find(s => s.id === id);
+                if (rec) openLookupModal('STAFF', rec);
+            }
+        }
+
+        async function reCheckInVisitor(id) {
+            const visitors = DB.get('visitors', []);
+            const rec = visitors.find(v => v.id === id);
+            if (!rec) { toast('Visitor not found.', 'err'); return; }
+            const ok = await askKey('security');
+            if (!ok) return;
+            const mins = rec.durationMins || 60;
+            rec.checkIn = nowISO();
+            rec.expiry = new Date(Date.now() + mins * 60000).toISOString();
+            rec.checkOut = null;
+            rec.status = 'onsite';
+            DB.set('visitors', visitors);
+            logAudit('Visitor re-checked in', id, 'Security');
+            toast(rec.name + ' checked in.', 'ok');
+            renderRoute();
+            showBadgeModal(rec, 'VISITOR', true);
+        }
+
+        function extendVisitorPrompt(id) {
+            const visitors = DB.get('visitors', []);
+            const rec = visitors.find(v => v.id === id);
+            if (!rec) { toast('Visitor not found.', 'err'); return; }
+            openModal(`
+            ${modalHeader('Extend Time — '+rec.id)}
+            <div class="modal-body">
+              <p class="small" style="margin-top:0;">Current expiry: <b>${fmtDT(rec.expiry)}</b></p>
+              <div class="field"><label>Add extra time (minutes)</label><input id="extendMins" type="number" value="60" min="1"></div>
+            </div>
+            <div class="modal-foot">
+              <button class="btn" onclick="closeModal()">Cancel</button>
+              <button class="btn btn-primary" onclick="extendVisitorConfirm('${id}')">Extend</button>
+            </div>
+          `, { narrow: true });
+        }
+
+        async function extendVisitorConfirm(id) {
+            const input = document.getElementById('extendMins');
+            const mins = parseInt(input.value, 10);
+            if (!mins || mins <= 0) { toast('Enter a valid number of minutes.', 'err'); return; }
+            const ok = await askKey('security');
+            if (!ok) return;
+            const visitors = DB.get('visitors', []);
+            const rec = visitors.find(v => v.id === id);
+            if (!rec) return;
+            const now = Date.now();
+            const base = new Date(rec.expiry).getTime() > now ? new Date(rec.expiry).getTime() : now;
+            rec.expiry = new Date(base + mins * 60000).toISOString();
+            rec.durationMins = (rec.durationMins || 0) + mins;
+            DB.set('visitors', visitors);
+            logAudit('Visitor time extended by ' + mins + 'm', id, 'Security');
+            toast('Extended to ' + fmtDT(rec.expiry), 'ok');
+            closeModal();
+            renderRoute();
+        }
+
+        function visitorStatusInfo(rec) {
+            if (rec.status === 'checked_out') return { label: 'Checked Out', cls: 'gray' };
+            const now = Date.now(),
+                exp = new Date(rec.expiry).getTime();
+            if (now > exp) return { label: 'Overdue', cls: 'red' };
+            if (exp - now < 15 * 60000) return { label: 'Near Expiry', cls: 'amber' };
+            return { label: 'On Site', cls: 'green' };
+        }
+
+        /* ─── OVERDUE ALERTS ─── */
+        let overdueAlertOpen = false;
+        let overdueSnoozeUntil = {};
+
+        function getOverdueVisitors() {
+            const now = Date.now();
+            return DB.get('visitors', []).filter(v =>
+                v.status === 'onsite' &&
+                new Date(v.expiry).getTime() < now &&
+                !(overdueSnoozeUntil[v.id] && overdueSnoozeUntil[v.id] > now)
+            );
+        }
+
+        function playOverdueAlertSound() {
+            try {
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) return;
+                const ctx = new Ctx();
+                let t = ctx.currentTime;
+                for (let i = 0; i < 3; i++) {
+                    const osc = ctx.createOscillator(),
+                        gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, t);
+                    gain.gain.setValueAtTime(0.0001, t);
+                    gain.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.32);
+                    t += 0.42;
+                }
+                setTimeout(() => { try { ctx.close(); } catch (e) {} }, 1500);
+            } catch (e) {}
+        }
+
+        function checkOverdueAlerts() {
+            if (!sessionUnlocked || overdueAlertOpen) return;
+            const settings = S();
+            if (settings.overdueAlertsEnabled === false) return;
+            const list = getOverdueVisitors();
+            if (!list.length) return;
+            overdueAlertOpen = true;
+            if (settings.overdueAlertSoundEnabled !== false) playOverdueAlertSound();
+            renderOverdueAlertModal();
+        }
+
+        function renderOverdueAlertModal() {
+            const list = getOverdueVisitors();
+            if (!list.length) { overdueAlertOpen = false;
+                closeModal(); return; }
+            const rows = list.map(v => {
+                const mins = Math.max(0, Math.round((Date.now() - new Date(v.expiry).getTime()) / 60000));
+                return `<tr>
+              <td><b>${escapeHtml(v.name)}</b><div class="small mono">${escapeHtml(v.id)}</div></td>
+              <td>${escapeHtml(v.company||'\u2014')}</td>
+              <td><span class="badge-pill pill-red">${mins} min over</span></td>
+              <td>
+                <div class="row" style="gap:.35em; flex-wrap:nowrap;">
+                  <button class="btn btn-sm" onclick="overdueViewInfo('${v.id}')">Info</button>
+                  <button class="btn btn-sm btn-primary" onclick="overdueCheckOut('${v.id}')">Check Out</button>
+                  <button class="btn btn-sm btn-ghost" onclick="overdueSnooze('${v.id}')">Ignore</button>
+                </div>
+              </td>
+            </tr>`;
+            }).join('');
+            openModal(`
+            ${modalHeader(ic('alert') + ' Time’s Up — ' + list.length + ' Visitor' + (list.length > 1 ? 's' : '') + ' Not Checked Out')}
+            <div class="modal-body">
+              <p class="small" style="margin-top:0;">${list.length > 1 ? 'These visitors have' : 'This visitor has'} passed their expected checkout time and ${list.length > 1 ? 'are' : 'is'} still on site. Decide per visitor below, or ignore all for now.</p>
+              <div class="table-wrap"><table class="hist-print-table" style="width:100%;">
+                <thead><tr><th>Visitor</th><th>Company</th><th>Overdue</th><th></th></tr></thead>
+                <tbody>${rows}</tbody>
+              </table></div>
+            </div>
+            <div class="modal-foot">
+              <button class="btn" onclick="overdueSnoozeAll()">Ignore All (${S().overdueAlertSnoozeMins||10} min)</button>
+              <button class="btn btn-ghost" onclick="overdueAlertOpen=false; closeModal();">Close</button>
+            </div>
+          `, { wide: true, persistent: true });
+        }
+
+        function overdueViewInfo(id) {
+            overdueAlertOpen = false;
+            closeModal();
+            openLookupFromRecord('VISITOR', id);
+        }
+
+        async function overdueCheckOut(id) {
+            overdueAlertOpen = false;
+            closeModal();
+            await checkoutVisitor(id);
+        }
+
+        function overdueSnooze(id) {
+            const mins = S().overdueAlertSnoozeMins || 10;
+            overdueSnoozeUntil[id] = Date.now() + mins * 60000;
+            closeModal();
+            renderOverdueAlertModal();
+        }
+
+        function overdueSnoozeAll() {
+            const mins = S().overdueAlertSnoozeMins || 10;
+            const now = Date.now();
+            getOverdueVisitors().forEach(v => { overdueSnoozeUntil[v.id] = now + mins * 60000; });
+            overdueAlertOpen = false;
+            closeModal();
+        }
+
+        /* ─── STAFF ─── */
+        function renderAddStaffPage() {
+            return `
+            <div class="card card-pad center" style="max-width:460px; margin:2em auto;">
+              <div style="margin-bottom:.3em;">${ic('idcard','icon-lg')}</div>
+              <div class="section-title" style="justify-content:center;">Register New Staff</div>
+              <p class="small">This registers a new staff member and prints their ID. It does not require Admin access — just the Add Staff Security Code. Editing or deleting staff still requires Admin, under Settings.</p>
+              <button class="btn btn-primary btn-block" onclick="openStaffForm(null)">${ic('idcard')} Add Staff</button>
+            </div>`;
+        }
+
+        function openStaffForm(existingId) {
+            const staff = DB.get('staff', []);
+            const rec = existingId ? staff.find(s => s.id === existingId) : null;
+            // For new staff, generate a preview employee number (read-only)
+            let empNoPreview = rec ? rec.employeeNo : nextEmployeeNoPreview();
+            const st = rec ? { ...rec } : { id: null, employeeNo: empNoPreview, name: '', nid: '',
+                department: '', designation: '', phone: '', photo: '', bloodGroup: '', email: '',
+            emergencyContact: '', joiningDate: '', status: 'active' };
+            openModal(`
+            ${modalHeader(rec ? 'Edit Staff — '+rec.id : 'Add Staff')}
+            <div class="modal-body">
+              <div class="grid grid-2">
+                <div class="field"><label>Full Name *</label><input id="stName" value="${escapeHtml(st.name)}"></div>
+                <div class="field"><label>Employee Number *</label><input id="stEmp" value="${escapeHtml(st.employeeNo)}" readonly></div>
+                <div class="field"><label>NID Number *</label><input id="stNid" value="${escapeHtml(st.nid)}"></div>
+                <div class="field"><label>Department *</label><input id="stDept" value="${escapeHtml(st.department)}"></div>
+                <div class="field"><label>Designation *</label><input id="stDesig" value="${escapeHtml(st.designation)}"></div>
+                <div class="field"><label>Phone *</label><input id="stPhone" value="${escapeHtml(st.phone)}"></div>
+                <div class="field"><label>Blood Group (optional)</label><input id="stBg" value="${escapeHtml(st.bloodGroup)}"></div>
+                <div class="field"><label>Email (optional)</label><input id="stEmail" value="${escapeHtml(st.email)}"></div>
+                <div class="field"><label>Emergency Contact (optional)</label><input id="stEc" value="${escapeHtml(st.emergencyContact)}"></div>
+                <div class="field"><label>Joining Date (optional)</label><input id="stJoin" type="date" value="${escapeHtml(st.joiningDate)}"></div>
+                <div class="field"><label>Status</label>
+                  <select id="stStatus"><option ${st.status === 'active' ? 'selected' : ''} value="active">Active</option><option ${st.status === 'inactive' ? 'selected' : ''} value="inactive">Inactive</option></select>
+                </div>
+              </div>
+              <div class="field">
+                <label>Photo</label>
+                <div class="row">
+                  <div class="capture-box" id="stPhotoBox" style="max-width:120px; aspect-ratio:1/1;">
+                    ${st.photo ? `<img src="${st.photo}">` : `<video id="stVideo" playsinline muted></video>`}
+                  </div>
+                  <div>
+                    <div class="row"><button class="btn btn-sm" onclick="startCamera(document.getElementById('stVideo'),'staffphoto')">Camera</button><button class="btn btn-sm" onclick="capStaffPhoto()">Capture</button></div>
+                    <input type="file" accept="image/*" style="margin-top:.5em;" onchange="uploadStaffPhoto(this)">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-foot">
+              <button class="btn" onclick="closeModal()">Cancel</button>
+              <button class="btn btn-primary" onclick="saveStaff(${rec ? `'${rec.id}'` : 'null'})">${rec ? 'Save Changes' : 'Add Staff'}</button>
+            </div>
+          `, { wide: true });
+            window.__staffPhotoTemp = st.photo || '';
+            // Store the generated employee number for new staff to use in save
+            if (!existingId) {
+                window.__newEmpNo = empNoPreview;
+            }
+        }
+
+        function nextEmployeeNoPreview() {
+            const staff = DB.get('staff', []);
+            return 'E' + pad(staff.length + 1, 4);
+        }
+
+        async function capStaffPhoto() {
+            const v = document.getElementById('stVideo');
+            if (!v || !v.srcObject) { toast('Start the camera first.', 'err'); return; }
+            window.__staffPhotoTemp = snapFromVideo(v);
+            stopCamera('staffphoto');
+            document.getElementById('stPhotoBox').innerHTML = `<img src="${window.__staffPhotoTemp}">`;
+        }
+
+        async function uploadStaffPhoto(input) {
+            if (!input.files[0]) return;
+            window.__staffPhotoTemp = await fileToDataUrl(input.files[0]);
+            document.getElementById('stPhotoBox').innerHTML = `<img src="${window.__staffPhotoTemp}">`;
+        }
+
+        async function saveStaff(existingId) {
+            const name = document.getElementById('stName').value.trim();
+            const empInput = document.getElementById('stEmp').value.trim(); // read-only
+            const nid = document.getElementById('stNid').value.trim();
+            const dept = document.getElementById('stDept').value.trim();
+            const desig = document.getElementById('stDesig').value.trim();
+            const phone = document.getElementById('stPhone').value.trim();
+            if (!name || !empInput || !nid || !dept || !desig || !phone) { toast(
+                    'Please fill all required fields (NID number is mandatory).', 'err'); return; }
+            const ok = await askKey(existingId ? 'admin' : 'staffAdd');
+            if (!ok) return;
+            const staff = DB.get('staff', []);
+            let newRec = null;
+            if (existingId) {
+                const rec = staff.find(s => s.id === existingId);
+                Object.assign(rec, {
+                    name,
+                    employeeNo: empInput,
+                    nid,
+                    department: dept,
+                    designation: desig,
+                    phone,
+                    bloodGroup: document.getElementById('stBg').value.trim(),
+                    email: document.getElementById('stEmail').value.trim(),
+                    emergencyContact: document.getElementById('stEc').value.trim(),
+                    joiningDate: document.getElementById('stJoin').value,
+                    status: document.getElementById('stStatus').value,
+                    photo: window.__staffPhotoTemp || rec.photo || ''
+                });
+                logAudit('Staff edited', existingId, 'Admin');
+                toast('Staff record updated.', 'ok');
+            } else {
+                const id = nextStaffId();
+                // Use the preview employee number (which is already set in the input, but we trust it's correct)
+                const empNo = window.__newEmpNo || nextEmployeeNoPreview();
+                const rec = {
+                    id,
+                    type: 'staff',
+                    employeeNo: empNo,
+                    nid,
+                    name,
+                    department: dept,
+                    designation: desig,
+                    phone,
+                    bloodGroup: document.getElementById('stBg').value.trim(),
+                    email: document.getElementById('stEmail').value.trim(),
+                    emergencyContact: document.getElementById('stEc').value.trim(),
+                    joiningDate: document.getElementById('stJoin').value,
+                    status: document.getElementById('stStatus').value,
+                    photo: window.__staffPhotoTemp || ''
+                };
+                staff.unshift(rec);
+                logAudit('Staff added', id, 'Admin');
+                toast('Staff added: ' + id, 'ok');
+                newRec = rec;
+            }
+            DB.set('staff', staff);
+            closeModal();
+            renderRoute();
+            if (newRec) showBadgeModal(newRec, 'STAFF', 'registered');
+        }
+
+        async function deleteStaff(id) {
+            const ok1 = await confirmDialog('Delete staff record?', 'This removes ' + id +
+                ' permanently. Attendance history for this staff member is kept for records.', 'Delete', true);
+            if (!ok1) return;
+            const ok2 = await askKey('admin');
+            if (!ok2) return;
+            let staff = DB.get('staff', []);
+            staff = staff.filter(s => s.id !== id);
+            DB.set('staff', staff);
+            logAudit('Staff deleted', id, 'Admin');
+            toast('Staff record deleted.', 'ok');
+            renderRoute();
+        }
+
+        function staffCurrentlyOnsite(id) {
+            const att = DB.get('staffAttendance', []);
+            return att.find(a => a.staffId === id && !a.checkOut) || null;
+        }
+
+        async function staffCheckIn(id) {
+            const staff = DB.get('staff', []);
+            const rec = staff.find(s => s.id === id || s.employeeNo === id || s.nid === id);
+            if (!rec) { toast('Staff ID not found.', 'err'); return; }
+            if (staffCurrentlyOnsite(rec.id)) { toast(rec.name + ' is already checked in.', 'err'); return; }
+            const settings = S();
+            const now = new Date();
+            const isLate = now.getHours() > settings.workStartHour || (now.getHours() === settings.workStartHour && now
+                .getMinutes() > 0);
+            const att = DB.get('staffAttendance', []);
+            const entry = { id: uid(), staffId: rec.id, name: rec.name, department: rec.department, checkIn: nowISO(),
+                checkOut: null, late: isLate, earlyDeparture: false, overtimeMins: 0, workedMins: 0 };
+            att.unshift(entry);
+            DB.set('staffAttendance', att);
+            logAudit('Staff checked in', rec.id, 'Officer');
+            toast(rec.name + ' checked in.', 'ok');
+            renderRoute();
+            showBadgeModal(rec, 'STAFF', true);
+        }
+
+        async function staffCheckOut(id) {
+            const staff = DB.get('staff', []);
+            const rec = staff.find(s => s.id === id || s.employeeNo === id || s.nid === id);
+            if (!rec) { toast('Staff ID not found.', 'err'); return; }
+            const entry = staffCurrentlyOnsite(rec.id);
+            if (!entry) { toast(rec.name + ' is not currently checked in.', 'err'); return; }
+            const ok = await askKey('security');
+            if (!ok) return;
+            const settings = S();
+            const now = new Date();
+            entry.checkOut = nowISO();
+            entry.workedMins = minutesBetween(entry.checkIn, entry.checkOut);
+            entry.earlyDeparture = now.getHours() < settings.workEndHour;
+            const expectedEnd = new Date(entry.checkIn);
+            expectedEnd.setHours(settings.workEndHour, 0, 0, 0);
+            entry.overtimeMins = Math.max(0, minutesBetween(expectedEnd.toISOString(), entry.checkOut));
+            DB.set('staffAttendance', DB.get('staffAttendance', []).map(a => a.id === entry.id ? entry : a));
+            logAudit('Staff checked out', rec.id, 'Security');
+            toast(rec.name + ' checked out.', 'ok');
+            renderRoute();
+            showCheckoutConfirmation(rec, 'STAFF');
+        }
+
+        /* ─── NAVIGATION ─── */
+        const NAV = [
+            { id: 'dashboard', label: 'Home', ico: 'home' },
+            { id: 'monitor', label: 'Live Monitor', ico: 'radio' },
+            { id: 'history', label: 'History', ico: 'clock' },
+            { id: 'reports', label: 'Reports', ico: 'chart' },
+            { id: 'addstaff', label: 'Add Staff', ico: 'idcard' },
+            { id: 'settings', label: 'Settings', ico: 'settings' },
+            { id: 'help', label: 'Help', ico: 'help' }
+        ];
+
+        function renderSidebarNav() {
+            const cur = currentView();
+            document.getElementById('navTabs').innerHTML = NAV.map(n =>
+                `<button class="navbtn ${n.id === cur ? 'active' : ''}" onclick="go('${n.id}')">${ic(n.ico)} ${n.label}</button>`
+                ).join('');
+        }
+
+        function currentView() { return (location.hash || '#dashboard').replace('#', ''); }
+
+        function go(view) { location.hash = view; }
+
+        function toggleSidebar(force) {
+            const sb = document.getElementById('sidebar'),
+                sc = document.getElementById('scrim');
+            const open = force !== undefined ? force : !sb.classList.contains('open');
+            sb.classList.toggle('open', open);
+            sc.classList.toggle('show', open);
+        }
+        window.addEventListener('hashchange', renderRoute);
+
+        function renderRoute() {
+            const view = currentView();
+            renderSidebarNav();
+            toggleSidebar(false);
+            const titles = { dashboard: 'Home', gate: 'Home', monitor: 'Live Gate Monitor', history: 'History',
+                reports: 'Reports', addstaff: 'Add Staff', settings: 'Settings', help: 'Help' };
+            document.getElementById('pageTitle').textContent = titles[view] || 'Home';
+            const c = document.getElementById('content');
+            if (view === 'dashboard' || view === 'gate') c.innerHTML = renderDashboard();
+            else if (view === 'monitor') c.innerHTML = renderMonitor();
+            else if (view === 'history') c.innerHTML = renderHistory();
+            else if (view === 'reports') c.innerHTML = renderReports();
+            else if (view === 'addstaff') c.innerHTML = renderAddStaffPage();
+            else if (view === 'settings') c.innerHTML = renderSettings();
+            else if (view === 'help') c.innerHTML = renderHelp();
+            else c.innerHTML = renderDashboard();
+            afterRouteRender(view);
+        }
+
+        function afterRouteRender(view) {
+            if (view === 'history') initHistoryDefaults();
+            updateRoleChip();
+        }
+
+        function todayStr() { return new Date().toDateString(); }
+
+        function isToday(iso) { return iso && new Date(iso).toDateString() === todayStr(); }
+
+        /* ─── DASHBOARD ─── */
+        function renderDashboard() {
+            const visitors = DB.get('visitors', []);
+            const staff = DB.get('staff', []);
+            const att = DB.get('staffAttendance', []);
+            const onsiteVisitors = visitors.filter(v => v.status === 'onsite');
+            const onsiteStaff = att.filter(a => !a.checkOut);
+            const todayVisitors = visitors.filter(v => isToday(v.checkIn));
+            const todayStaffAtt = att.filter(a => isToday(a.checkIn));
+            const overdue = onsiteVisitors.filter(v => visitorStatusInfo(v).cls === 'red');
+            const todayCheckIns = todayVisitors.length + todayStaffAtt.length;
+            const todayCheckOuts = visitors.filter(v => isToday(v.checkOut)).length + att.filter(a => isToday(a
+            .checkOut)).length;
+
+            const recent = [...visitors.map(v => ({ t: v.checkIn, txt: `${v.name} checked in — ${v.accessLevel}`,
+                        kind: 'visitor' })),
+                    ...visitors.filter(v => v.checkOut).map(v => ({ t: v.checkOut, txt: `${v.name} checked out`,
+                        kind: 'visitor' })),
+                    ...att.map(a => ({ t: a.checkIn, txt: `${a.name} (staff) checked in`, kind: 'staff' })),
+                    ...att.filter(a => a.checkOut).map(a => ({ t: a.checkOut, txt: `${a.name} (staff) checked out`,
+                        kind: 'staff' }))
+                ]
+                .sort((a, b) => new Date(b.t) - new Date(a.t)).slice(0, 8);
+
+            return `
+            <div class="card scan-hero">
+              <div class="section-title" style="margin-bottom:.9em;">${ic('scan')} Scan to Continue</div>
+              <div class="scan-hero-inner">
+                <div class="scan-tile" onclick="openVisitorWizard()">
+                  <div class="scan-tile-ico">${ic('idcard')}</div>
+                  <b>New Visitor</b>
+                  <span>Name, phone &amp; NID number — NID is photocopied at the gate</span>
+                </div>
+                <div class="scan-tile" onclick="homeStartBadgeScan()">
+                  <div class="scan-tile-ico">${ic('scan')}</div>
+                  <b>Scan Badge</b>
+                  <span>Staff or visitor check-in / check-out</span>
+                </div>
+              </div>
+              <div class="scan-manual">
+                <input id="homeScanInput" placeholder="Or type NID / Staff ID / Visitor ID" autocomplete="off" onkeydown="if(event.key==='Enter')homeManualSubmit()">
+                <button class="btn btn-primary" onclick="homeManualSubmit()">Go</button>
+              </div>
+              <div id="homeScanBox"></div>
+            </div>
+            <div class="grid grid-4" style="margin-bottom:1.2em;">
+              <div class="stat"><div class="accent acc-navy"></div><div class="num">${onsiteVisitors.length}</div><div class="lbl">Visitors Onsite</div></div>
+              <div class="stat"><div class="accent acc-green"></div><div class="num">${onsiteStaff.length}</div><div class="lbl">Staff Onsite</div></div>
+              <div class="stat"><div class="accent acc-gold"></div><div class="num">${todayVisitors.length}</div><div class="lbl">Today's Visitors</div></div>
+              <div class="stat"><div class="accent acc-amber"></div><div class="num">${todayStaffAtt.length}</div><div class="lbl">Today's Staff Attendance</div></div>
+              <div class="stat"><div class="accent acc-red"></div><div class="num">${overdue.length}</div><div class="lbl">Overdue Visitors</div></div>
+              <div class="stat"><div class="accent acc-navy"></div><div class="num">${todayCheckIns}</div><div class="lbl">Today's Check-ins</div></div>
+              <div class="stat"><div class="accent acc-navy"></div><div class="num">${todayCheckOuts}</div><div class="lbl">Today's Check-outs</div></div>
+              <div class="stat"><div class="accent acc-gold"></div><div class="num">${staff.length}</div><div class="lbl">Registered Staff</div></div>
+            </div>
+            <div class="grid grid-3" style="align-items:start;">
+              <div class="card card-pad" style="grid-column:span 1;">
+                <div class="section-title">Other Actions</div>
+                <div style="display:flex; flex-direction:column; gap:.6em;">
+                  <button class="btn btn-lg" onclick="go('monitor')">${ic('radio')} Live Gate Monitor</button>
+                  <button class="btn btn-lg" onclick="go('reports')">${ic('chart')} Generate Report</button>
+                  <button class="btn btn-lg" onclick="go('help')">${ic('help')} Help</button>
+                </div>
+              </div>
+              <div class="card card-pad" style="grid-column:span 2;">
+                <div class="section-title">Recent Activity</div>
+                ${recent.length ? `<div style="display:flex; flex-direction:column; gap:.1em;">${recent.map(r => `
+                  <div class="kv"><span>${escapeHtml(r.txt)}</span><span class="small">${fmtDT(r.t)}</span></div>
+                `).join('')}</div>` : `<div class="empty">${ic('inbox')}<br>No activity yet today.</div>`}
+              </div>
+            </div>
+          `;
+        }
+
+        function homeStartVisitorWithNid(prefillNid) {
+            newVisitorWizard();
+            if (prefillNid) VW.fields.nid = prefillNid;
+            openModal(`<div id="wizardRoot"></div>`, { wide: true, persistent: true });
+            renderWizard();
+        }
+
+        function normPhone(p) {
+            let d = (p || '').replace(/\D/g, '');
+            if (d.startsWith('880')) d = d.slice(3);
+            else if (d.startsWith('0')) d = d.slice(1);
+            return d;
+        }
+
+        async function homeManualSubmit() {
+            const input = document.getElementById('homeScanInput');
+            const raw = (input.value || '').trim();
+            if (!raw) { toast('Scan or type an ID.', 'err'); return; }
+            input.value = '';
+            const id = raw.toUpperCase();
+            const rawPhone = normPhone(raw);
+            const isPhoneLike = rawPhone.length >= 7;
+            const staff = DB.get('staff', []).find(s => s.id === id || (s.employeeNo || '').toUpperCase() === id ||
+                (s.nid || '').toUpperCase() === id ||
+                (isPhoneLike && normPhone(s.phone) === rawPhone));
+            if (staff) {
+                openLookupModal('STAFF', staff);
+                return;
+            }
+            const visitor = DB.get('visitors', []).find(v => v.id === id || (v.nid || '').toUpperCase() === id ||
+                (isPhoneLike && normPhone(v.phone) === rawPhone));
+            if (visitor) {
+                openLookupModal('VISITOR', visitor);
+                return;
+            }
+            const ok = await confirmDialog('No record found', 'No staff or visitor is registered with “' + escapeHtml(
+                raw) + '”. Start a new visitor registration using this as the NID number?', 'Register Visitor');
+            if (ok) homeStartVisitorWithNid(raw);
+        }
+
+        function homeStartBadgeScan() {
+            if (!('BarcodeDetector' in window)) {
+                toast('Barcode camera scanning isn’t supported on this browser — type the ID instead.', 'err');
+                return;
+            }
+            const box = document.getElementById('homeScanBox');
+            box.innerHTML =
+                `<div class="capture-box" id="homeScanCamBox" style="max-width:320px; margin:.9em auto 0;"><video id="homeScanVideo" playsinline muted></video></div><div class="center" style="margin-top:.5em;"><button class="btn btn-sm" onclick="stopHomeBadgeScan()">${ic('x')} Stop Scanning</button></div>`;
+            const video = document.getElementById('homeScanVideo');
+            startCamera(video, 'homescan').then(ok => {
+                if (!ok) return;
+                const detector = new BarcodeDetector({ formats: ['code_128'] });
+                window.__homeScanTimer = setInterval(async () => {
+                    try {
+                        const codes = await detector.detect(video);
+                        if (codes.length) {
+                            const val = codes[0].rawValue;
+                            stopHomeBadgeScan();
+                            document.getElementById('homeScanInput').value = val;
+                            homeManualSubmit();
+                        }
+                    } catch (e) {}
+                }, 400);
+            });
+        }
+
+        function stopHomeBadgeScan() {
+            clearInterval(window.__homeScanTimer);
+            stopCamera('homescan');
+            const box = document.getElementById('homeScanBox');
+            if (box) box.innerHTML = '';
+        }
+
+        /* ─── MONITOR ─── */
+        function renderMonitor() {
+            const visitors = DB.get('visitors', []).filter(v => v.status === 'onsite');
+            const att = DB.get('staffAttendance', []).filter(a => !a.checkOut);
+            const rows = [
+                ...visitors.map(v => ({ ...v, _kind: 'Visitor', _status: visitorStatusInfo(v) })),
+                ...att.map(a => ({ ...a, _kind: 'Staff', _status: { label: 'On Site', cls: 'green' },
+                    accessLevel: a.department }))
+            ].sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn));
+
+            const counts = { green: 0, amber: 0, red: 0 };
+            rows.forEach(r => { if (counts[r._status.cls] !== undefined) counts[r._status.cls]++; });
+
+            return `
+            <div class="grid grid-3" style="margin-bottom:1em;">
+              <div class="stat"><div class="accent acc-green"></div><div class="num">${counts.green}</div><div class="lbl">On Site</div></div>
+              <div class="stat"><div class="accent acc-amber"></div><div class="num">${counts.amber}</div><div class="lbl">Near Expiry</div></div>
+              <div class="stat"><div class="accent acc-red"></div><div class="num">${counts.red}</div><div class="lbl">Overdue</div></div>
+            </div>
+            <div class="card card-pad">
+              <div class="section-title">Everyone Currently On Site</div>
+              ${rows.length ? `<div class="table-wrap"><table>
+                <thead><tr><th>Name</th><th>ID</th><th>Type</th><th>Area</th><th>Check In</th><th>Status</th></tr></thead>
+                <tbody>
+                  ${rows.map(r => `
+                    <tr style="cursor:pointer;" onclick="openLookupFromRecord('${r._kind.toUpperCase()}', '${r.id}')">
+                      <td><b>${escapeHtml(r.name)}</b></td>
+                      <td class="mono small">${escapeHtml(r.id)}</td>
+                      <td>${r._kind}</td>
+                      <td>${escapeHtml(r.accessLevel)}</td>
+                      <td>${fmtTimeOnly(r.checkIn)}</td>
+                      <td><span class="badge-pill pill-${r._status.cls}">${r._status.label}</span></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table></div>` : `<div class="empty">No one currently on site.</div>`}
+            </div>
+          `;
+        }
+
+        /* ─── STUBS ─── */
+        function renderHistory() {
+            return `<div class="card card-pad">
+            <div class="section-title">History Logs</div>
+            <div class="empty">History view functionality is ready for integration. Search records via the top bar for now.</div>
+          </div>`;
+        }
+
+        function initHistoryDefaults() {}
+
+        function renderReports() {
+            return `<div class="card card-pad">
+            <div class="section-title">Reporting</div>
+            <div class="empty">Custom reporting functionality is ready for integration.</div>
+          </div>`;
+        }
+
+        function renderSettings() {
+            return `<div class="card card-pad">
+            <div class="section-title">System Settings</div>
+            <div class="empty">Settings page structure is ready. System functionality continues to use defaults mapping to S().</div>
+          </div>`;
+        }
+
+        function renderHelp() {
+            return `<div class="card card-pad">
+            <div class="section-title">Help & Documentation</div>
+            <div class="empty">Help files loaded.</div>
+          </div>`;
+        }
+
+        function updateRoleChip() {
+            const d = document.getElementById('roleDot');
+            const l = document.getElementById('roleLabel');
+            if (d && l) {
+                d.className = adminUnlocked ? 'role-dot on' : 'role-dot';
+                l.textContent = adminUnlocked ? 'Admin Mode' : 'Officer Mode';
+            }
+        }
+
+        function onGlobalSearch(val) {
+            if (val && val.length > 5 && val.includes('-')) {
+                document.getElementById('homeScanInput').value = val;
+                homeManualSubmit();
+                document.getElementById('globalSearch').value = '';
+            }
+        }
+
+        function attemptUnlock() {
+            const input = document.getElementById('lockCodeInput').value;
+            const settings = S();
+            if (input === settings.adminKey || input === settings.securityKey) {
+                document.getElementById('lockScreen').classList.add('hidden');
+                adminUnlocked = (input === settings.adminKey);
+                sessionUnlocked = true;
+                updateRoleChip();
+                document.getElementById('lockCodeInput').value = '';
+                document.getElementById('lockErr').style.display = 'none';
+            } else {
+                document.getElementById('lockErr').style.display = 'block';
+            }
+        }
+
+        function lockApp() {
+            document.getElementById('lockScreen').classList.remove('hidden');
+            adminUnlocked = false;
+            sessionUnlocked = false;
+            updateRoleChip();
+        }
+
+        /* ─── INIT ─── */
+        setInterval(checkOverdueAlerts, 60000);
+        renderRoute();
+    </script>
+</body>
+</html>
