@@ -1,0 +1,2911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MSR Gate Security</title>
+<meta name="theme-color" content="#0A2A43">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0A2340;
+  --navy-2:#123258;
+  --navy-deep:#071A2E;
+  --ink:#101418;
+  --paper:#F6F7F9;
+  --card:#FFFFFF;
+  --line:#E3E6EA;
+  --muted:#68727E;
+  --gold:#C6A15B;
+  --green:#1E8E5A;
+  --amber:#B9791E;
+  --red:#C23B3B;
+  --gray:#8A93A0;
+  --radius:16px;
+  --radius-sm:10px;
+  --shadow:0 1px 2px rgba(10,35,64,.05), 0 10px 28px -14px rgba(10,35,64,.2);
+  --font: -apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-cond: "Arial Narrow","Helvetica Neue Condensed",var(--font);
+  --font-logo: "Big Shoulders Display",var(--font-cond);
+  --mono: "SF Mono",ui-monospace,"Menlo","Consolas",monospace;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; font-family:var(--font); background:var(--paper); color:var(--ink);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  font-size:clamp(14px,1.4vw,16px);
+}
+button,input,select,textarea{font-family:inherit; font-size:inherit;}
+input,select,textarea{
+  border:1px solid var(--line); border-radius:var(--radius-sm); padding:.68em .85em;
+  background:#fff; color:var(--ink); width:100%; outline:none; transition:border-color .15s, box-shadow .15s;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--navy-2); box-shadow:0 0 0 3px rgba(10,35,64,.12);}
+label{display:block; font-size:.8em; font-weight:600; color:var(--muted); margin:0 0 .35em 2px; letter-spacing:.01em;}
+.field{margin-bottom:1em;}
+.hint{font-size:.78em; color:var(--muted); margin-top:.3em;}
+button{cursor:pointer; border:none; border-radius:var(--radius-sm); font-weight:600; letter-spacing:.01em; display:inline-flex; align-items:center; justify-content:center; gap:.5em;}
+.btn{padding:.7em 1.2em; background:#fff; border:1px solid var(--line); color:var(--ink); transition:.15s;}
+.btn:hover{border-color:var(--navy-2); background:#fbfbfc;}
+.btn:active{transform:scale(.98);}
+.btn-primary{background:var(--navy); color:#fff; border:1px solid var(--navy);}
+.btn-primary:hover{background:var(--navy-2); border-color:var(--navy-2);}
+.btn-gold{background:var(--gold); color:#2b210c; border:1px solid var(--gold);}
+.btn-danger{background:#fff; color:var(--red); border:1px solid #eecccc;}
+.btn-danger:hover{background:#fdf2f2;}
+.btn-ghost{background:transparent; border:1px solid transparent; color:var(--muted);}
+.btn-ghost:hover{background:#eef0f3;}
+.btn-block{width:100%;}
+.btn-sm{padding:.4em .8em; font-size:.82em; border-radius:9px;}
+.btn-lg{padding:.95em 1.4em; font-size:1.02em; border-radius:13px;}
+.row{display:flex; gap:.6em; flex-wrap:wrap;}
+.row > *{flex:1;}
+.spacer{flex:1;}
+
+/* App shell */
+#app{display:flex; min-height:100vh;}
+#sidebar{
+  width:236px; flex:none; background:linear-gradient(180deg,var(--navy) 0%, var(--navy-deep) 100%);
+  color:#fff; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; z-index:40;
+}
+.brand{display:flex; align-items:center; gap:.6em; padding:1.5em 1.2em 1.2em; border-bottom:1px solid rgba(255,255,255,.08);}
+.brand-text{line-height:1.15;}
+nav.tabs{padding:.8em .7em; display:flex; flex-direction:column; gap:.15em; overflow-y:auto; flex:1;}
+nav.tabs .navbtn{
+  display:flex; align-items:center; gap:.7em; padding:.65em .8em; border-radius:10px; color:rgba(255,255,255,.75);
+  background:transparent; text-align:left; font-weight:600; font-size:.92em;
+}
+nav.tabs .navbtn:hover{background:rgba(255,255,255,.06); color:#fff;}
+nav.tabs .navbtn.active{background:rgba(255,255,255,.12); color:#fff; box-shadow:inset 3px 0 0 var(--gold);}
+nav.tabs .navbtn .ico{width:18px; text-align:center; opacity:.9;}
+.sidebar-foot{padding:.9em 1.1em 1.1em; border-top:1px solid rgba(255,255,255,.08); font-size:.7em; color:rgba(255,255,255,.4);}
+.role-chip{display:inline-flex; align-items:center; gap:.4em; font-size:.72em; padding:.3em .6em; border-radius:20px; background:rgba(255,255,255,.08); color:#fff; margin:.6em 1.1em 0;}
+.role-dot{width:7px;height:7px;border-radius:50%;background:var(--gray);}
+.role-dot.on{background:var(--green);}
+
+#main{flex:1; min-width:0; display:flex; flex-direction:column;}
+#topbar{
+  position:sticky; top:0; z-index:30; background:rgba(246,247,249,.85); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line); padding:.85em 1.4em; display:flex; align-items:center; gap:.8em;
+}
+#hamburger{display:none;}
+.page-title{font-weight:800; font-size:1.25em; letter-spacing:-.01em;}
+.topbar-search{max-width:340px; flex:1;}
+#content{padding:1.4em; flex:1;}
+
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);}
+.card-pad{padding:1.2em 1.3em;}
+.section-title{font-weight:800; font-size:1.05em; margin:0 0 .8em; letter-spacing:-.01em; display:flex; align-items:center; gap:.5em;}
+.grid{display:grid; gap:1em;}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+@media(max-width:1000px){.grid-4{grid-template-columns:repeat(2,1fr);} .grid-3{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){.grid-4,.grid-3,.grid-2{grid-template-columns:1fr;}}
+
+.stat{padding:1.1em 1.2em; border-radius:var(--radius); background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow); position:relative; overflow:hidden;}
+.stat .num{font-size:1.9em; font-weight:800; letter-spacing:-.02em; font-family:var(--font-cond);}
+.stat .lbl{font-size:.78em; color:var(--muted); font-weight:600; margin-top:.15em;}
+.stat .accent{position:absolute; left:0; top:0; bottom:0; width:4px;}
+.acc-navy{background:var(--navy);} .acc-green{background:var(--green);} .acc-amber{background:var(--amber);} .acc-red{background:var(--red);} .acc-gold{background:var(--gold);}
+
+table{width:100%; border-collapse:collapse; font-size:.88em;}
+th{text-align:left; font-size:.72em; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:.6em .7em; border-bottom:1px solid var(--line); white-space:nowrap;}
+td{padding:.62em .7em; border-bottom:1px solid #EEF0F2; vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+.table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+.badge-pill{display:inline-flex; align-items:center; gap:.4em; padding:.28em .65em; border-radius:20px; font-size:.76em; font-weight:700;}
+.pill-green{background:#E6F5EC; color:var(--green);}
+.pill-amber{background:#FCF1DF; color:var(--amber);}
+.pill-red{background:#FBEAEA; color:var(--red);}
+.pill-gray{background:#EEF0F3; color:var(--gray);}
+.dot{width:8px;height:8px;border-radius:50%;}
+.dot-green{background:var(--green);} .dot-amber{background:var(--amber);} .dot-red{background:var(--red);} .dot-gray{background:var(--gray);}
+
+.empty{padding:2.5em 1em; text-align:center; color:var(--muted);}
+.empty .big{font-size:2em; margin-bottom:.2em;}
+
+/* Modal */
+.modal-backdrop{position:fixed; inset:0; background:rgba(7,26,46,.45); backdrop-filter:blur(2px); z-index:100; display:flex; align-items:flex-start; justify-content:center; padding:3vh 1em; overflow-y:auto;}
+.modal{background:#fff; border-radius:18px; width:100%; max-width:640px; box-shadow:0 20px 60px rgba(0,0,0,.3); animation:pop .18s ease; margin-bottom:3vh;}
+.modal.wide{max-width:880px;}
+.modal.narrow{max-width:420px;}
+@keyframes pop{from{opacity:0; transform:translateY(8px) scale(.98);} to{opacity:1; transform:none;}}
+.modal-head{display:flex; align-items:center; justify-content:space-between; padding:1.1em 1.3em; border-bottom:1px solid var(--line);}
+.modal-head h3{margin:0; font-size:1.08em; font-weight:800;}
+.modal-body{padding:1.2em 1.3em; max-height:72vh; overflow-y:auto;}
+.modal-foot{display:flex; gap:.6em; padding:1em 1.3em; border-top:1px solid var(--line); justify-content:flex-end;}
+.close-x{background:transparent; border:none; font-size:1.3em; color:var(--muted); padding:.1em .4em; border-radius:8px;}
+.close-x:hover{background:#f0f1f3;}
+
+.steps{display:flex; gap:.4em; margin-bottom:1.2em;}
+.step{flex:1; height:5px; border-radius:4px; background:var(--line);}
+.step.on{background:var(--navy);}
+
+.capture-box{aspect-ratio:4/3; background:#0d1b2a; border-radius:12px; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center;}
+.capture-box video, .capture-box img{width:100%; height:100%; object-fit:cover;}
+.capture-box .ph{color:rgba(255,255,255,.4); font-size:.85em;}
+
+.chip-toggle{display:inline-flex; align-items:center; gap:.5em; padding:.55em .8em; border:1px solid var(--line); border-radius:10px; cursor:pointer; font-size:.88em; font-weight:600; user-select:none;}
+.chip-grid{display:flex; flex-wrap:wrap; gap:.5em; grid-column:1/-1;}
+.chip-toggle input{width:auto; margin:0;}
+
+/* Badge \u2014 professional, print-safe monochrome (no color; prints clean in B&W) */
+/* Portrait CR80 card, exact size 2.125in x 3.375in (54mm x 85.6mm), square corners (no border-radius) */
+/* height is a floor (min-height), never a ceiling \u2014 the card grows taller instead of
+   clipping content whenever a record has more fields or longer values than the base
+   CR80 size allows. Nothing on this badge is ever cut off. */
+.badge-card{
+  width:54mm; height:85.6mm; flex:none; box-sizing:border-box; font-size:2.6mm;
+  border-radius:0; background:#fff; border:1.4px solid #000; box-shadow:var(--shadow);
+  font-family:var(--font-cond); position:relative; color:#000;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+/* Front header is deliberately UNFILLED (white paper, black ink) so a full A4 sheet of badges
+   costs almost no toner. Wordmark left, kind letter right, one solid black rule underneath.
+   The full company name lives on the back panel only, so it is not repeated here. */
+.badge-head{background:#fff; color:#000; padding:.32em .5em .26em; flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; gap:.4em; border-bottom:1.4px solid #000;}
+.badge-head .wm{font-family:var(--font-logo); font-weight:800; letter-spacing:.02em; font-size:1.36em; line-height:1; display:flex; align-items:baseline; gap:.16em; min-width:0; color:#000;}
+.badge-head .wm .wheel{color:#000;}
+.badge-head .kind{display:flex; align-items:center; gap:.32em; flex:none;}
+.badge-head .kind-word{font-weight:800; font-size:.5em; letter-spacing:.12em; color:#000; white-space:nowrap;}
+.badge-head .kind-letter{font-family:var(--font-logo); font-weight:800; font-size:1.3em; line-height:1; color:#000; border:1.2px solid #000; padding:0 .24em;}
+/* Kind indicator bar \u2014 big bold letter + word, high-contrast so it reads instantly at a glance.
+   The small record reference on the right is for internal filing only (not the person's ID). */
+.badge-main{flex:1 1 auto; display:flex; flex-direction:column; min-height:0;}
+/* Stamp-size photo box \u2014 fixed small footprint, but object-fit:contain on a white backdrop
+   guarantees the WHOLE photo is always visible, never cropped/cut off on any side. */
+.badge-photo-wrap{
+  width:24mm; height:30mm; margin:2mm auto 0; flex:0 0 auto;
+  background:#fff; border:1px solid #000; display:flex; align-items:center; justify-content:center; overflow:hidden;
+}
+.badge-photo-wrap img{max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; display:block; filter:grayscale(1) contrast(1.05);}
+.badge-photo-wrap .no-photo{color:#9aa4b0; font-size:.62em; text-align:center; padding:0 2mm;}
+/* The card size is fixed and never grows. badge-info has flex-shrink:0 so it is NEVER squeezed
+   smaller than its own content \u2014 it still grows to fill any leftover space (flex-grow:1) so
+   the NID box/footer stay pinned to the bottom, but it can't be crushed to the point of hiding
+   whole rows. overflow:hidden on the card is a last-resort clip only, not the normal fit path;
+   the fixed font-size + compact grid above are sized to fit real records without ever reaching it. */
+.badge-info{flex:1 0 auto; min-width:0; padding:.3em .55em .25em; display:flex; flex-direction:column;}
+.badge-info .nm{flex:0 0 auto; font-weight:900; font-size:1.02em; letter-spacing:-.01em; color:#000; line-height:1.22; text-align:center; white-space:normal; overflow-wrap:break-word;}
+.badge-info .sub{flex:0 0 auto; font-size:.7em; font-weight:700; color:#333; margin-top:.12em; text-align:center; white-space:normal; overflow-wrap:break-word;}
+/* Compact 2-column field grid \u2014 stacked label-over-value cells pack two fields per row instead
+   of one, roughly halving the vertical space the old single-column list needed, so everything
+   fits inside the fixed card height without clipping. Area Access is a must-show field, so it
+   always gets its own full-width, visually distinct row (never squeezed into a 2-up cell). */
+.badge-table{flex:0 0 auto; margin-top:.3em; display:grid; grid-template-columns:1fr 1fr; gap:.3em .5em;}
+.badge-table .row-field{display:flex; flex-direction:column; gap:.06em; min-width:0;}
+.badge-table .lab{font-size:.42em; letter-spacing:.04em; color:#555; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.badge-table .val{font-size:.6em; font-weight:700; color:#000; line-height:1.18; white-space:normal; overflow-wrap:break-word; word-break:break-word;}
+.badge-table .row-wide{grid-column:1/-1; background:#fff; border-left:2px solid #000; padding:.14em .35em; margin:.03em 0;}
+.badge-table .row-wide .lab{font-size:.46em;}
+.badge-table .row-wide .val{font-size:.74em;}
+/* Free-text notes can be any length. On the fixed-size card the value is clamped to 3 lines so
+   it can never shove the NID box or hotline off the bottom; the untruncated text is always on
+   the record slip, the info popups and every export. */
+.badge-table .row-wide .val.clamp3{display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;}
+/* Big, centered ID block replacing the old QR code \u2014 the NID number IS the person's ID
+   number; security reads it (or the gate clerk types it) instead of scanning anything. */
+.badge-nidbox{flex:0 0 auto; border-top:1.4px solid #000; border-bottom:1.4px solid #000; background:#fff; text-align:center; padding:.4em .3em;}
+.badge-nidbox .nid-lab{font-size:.5em; letter-spacing:.14em; color:#000; font-weight:800;}
+.badge-nidbox .nid-val{font-size:1.2em; font-weight:900; letter-spacing:.03em; color:#000; font-family:var(--mono); word-break:break-all; margin-top:.08em;}
+.badge-foot{background:#fff; color:#000; text-align:center; font-size:.58em; font-weight:700; padding:.26em .3em; letter-spacing:.02em; flex:0 0 auto; border-top:1.4px solid #000;}
+
+/* Fold-over badge pair \u2014 front (buildBadgeHtml) + back (buildBadgeBackHtml) side by side,
+   touching at the center fold seam. Both panels print normally (no rotation, no mirroring) since
+   they land on the same side of the same sheet of paper \u2014 the fold seam is just a visual guide
+   for where to fold, not a print-orientation flip. Card size is fixed on both sides (never grows). */
+.badge-pair{display:flex; align-items:flex-start; justify-content:center;}
+.fold-seam{width:0; flex:none; align-self:stretch; position:relative; border-left:1px dashed #999;}
+.fold-seam .fold-tag{position:absolute; top:-3.4mm; left:50%; transform:translateX(-50%); background:#fff; font-size:6pt; color:#777; white-space:nowrap; padding:0 1mm;}
+.badge-back{
+  height:85.6mm; flex:none; box-sizing:border-box;
+  border-radius:0; background:#fff; border:1.4px solid #000; box-shadow:var(--shadow);
+  font-family:var(--font-cond); color:#000;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3mm;
+  padding:4mm 3mm; overflow:hidden;
+}
+.badge-back .bb-letter{font-weight:900; font-size:34mm; line-height:1; font-family:var(--font-logo);}
+.badge-back .bb-word{font-weight:800; font-size:7mm; letter-spacing:.14em;}
+.badge-back .bb-company{font-weight:700; font-size:4mm; text-align:center; letter-spacing:.02em;}
+.badge-back .bb-hotline{font-size:3mm; color:#333; text-align:center;}
+
+/* Print sheet \u2014 a front|back pair is ~108mm wide, nearly the full printable A4 width, so only
+   one column fits. Each printed record (badge pair + cut line + stub) is one self-contained
+   block; records stack down the page rather than grouping all badges then all stubs. */
+#printArea{display:none;}
+@media print{
+  html, body{margin:0; padding:0; height:auto; background:#fff !important;}
+  /* Removing the rest of the app from layout flow entirely (not just visibility:hidden) is what
+     stops stray blank pages \u2014 an invisible-but-still-in-flow #app of dashboard/table height was
+     previously inflating the printed page count. */
+  #lockScreen, #app, #toastHost, #modalHost{display:none !important;}
+  #printArea{display:block !important; position:static; width:100%; margin:0; padding:0;}
+  *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  @page{size:A4; margin:20mm;} /* 2cm fallback; JS overwrites this per-job from Settings > Printing */
+  /* INK SAVER: nothing in a print job carries a background fill. Every printed surface is bare
+     white paper with black rules and black text. Photos are <img> elements, so they are untouched. */
+  #printArea, #printArea *{background:transparent !important; box-shadow:none !important;}
+  #printArea .badge-card, #printArea .badge-back{background:#fff !important;}
+  /* position:fixed repeats on every printed sheet in Chrome/Firefox/Edge, so the credit +
+     source line lands at the foot of every page of every print job. */
+  #printFootLine{display:block !important; position:fixed; left:0; right:0; bottom:0;
+    font-family:var(--font-cond); font-size:7.5pt; color:#000; text-align:center;
+    padding-top:1mm; border-top:.4pt solid #000; background:#fff !important;}
+  #printArea{padding-bottom:9mm;}
+}
+#printFootLine{display:none;}
+.sheet{display:flex; flex-direction:column; align-items:center; gap:7mm;}
+.record-block{width:100%; max-width:100%; break-inside:avoid;}
+.sheet .badge-card{outline:.2mm dashed #999; outline-offset:2mm;}
+.sheet .badge-back{outline:.2mm dashed #999; outline-offset:2mm;}
+.hist-print-table{width:100%; max-width:100%; border-collapse:collapse; font-size:9pt; table-layout:auto;}
+.hist-print-table th, .hist-print-table td{border:.3pt solid #999; padding:3pt 5pt; word-break:break-word; overflow-wrap:anywhere;}
+.hist-print-table thead{display:table-header-group;}
+.hist-print-table tr{break-inside:avoid;}
+
+/* Visitor cut-and-keep stub \u2014 the NID photocopy is pasted under/behind this slip and filed by security */
+.visitor-stub{width:100%; max-width:100%; margin:6mm auto 0; font-family:var(--font-cond); color:#000;}
+.stub-cutline{display:flex; align-items:center; gap:.5em; font-size:9pt; color:#666; margin-bottom:3mm; white-space:nowrap; overflow:hidden;}
+.stub-cutline .dash{flex:1; border-top:1px dashed #999;}
+.stub-box{border:1.2px solid #000; padding:4mm 5mm;}
+.stub-title{font-weight:800; font-size:11pt; letter-spacing:.02em; margin-bottom:2.5mm; display:flex; justify-content:space-between; align-items:baseline;}
+.stub-title span{font-weight:600; font-size:.7em; color:#444;}
+.stub-table{width:100%; border-collapse:collapse; font-size:9.5pt;}
+.stub-table td{padding:1.6mm 2mm; border:.3pt solid #ccc; vertical-align:top;}
+.stub-table td.k{width:26mm; font-weight:700; color:#000; background:#fff;}
+.stub-note{margin-top:2.5mm; font-size:8.5pt; color:#444; font-style:italic;}
+
+/* toast */
+#toastHost{position:fixed; bottom:1.2em; right:1.2em; z-index:200; display:flex; flex-direction:column; gap:.5em;}
+.toast{background:var(--ink); color:#fff; padding:.75em 1.1em; border-radius:10px; font-size:.88em; box-shadow:0 8px 24px rgba(0,0,0,.3); animation:pop .18s ease; max-width:320px;}
+.toast.err{background:var(--red);}
+.toast.ok{background:var(--green);}
+
+/* mobile */
+@media(max-width:880px){
+  /* Universal no-overflow guard: nothing may push the page sideways on a phone. */
+  html, body{max-width:100%; overflow-x:hidden;}
+  .grid.grid-2, .grid.grid-3, .grid.grid-4{grid-template-columns:1fr !important;}
+  .table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .modal{width:100% !important; max-width:100% !important;}
+  .modal-foot{flex-wrap:wrap;}
+  .modal-foot .btn{flex:1 1 auto; min-width:44%;}
+  .row{flex-wrap:wrap;}
+  .kv{gap:.8em;}
+  .kv b{text-align:right; overflow-wrap:anywhere; min-width:0;}
+  .badge-pair{transform-origin:top left; max-width:100%;}
+  .sheet{width:100%; overflow-x:auto;}
+  .chip-grid .chip-toggle{flex:1 1 46%; min-width:0;}
+}
+@media(max-width:880px){
+  #sidebar{position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); transition:transform .2s ease; width:250px; box-shadow:20px 0 40px rgba(0,0,0,.2);}
+  #sidebar.open{transform:none;}
+  #hamburger{display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:10px; background:#fff; border:1px solid var(--line);}
+  .page-title{font-size:1.08em;}
+  .topbar-search{display:none;}
+  #scrim{position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:39; display:none;}
+  #scrim.show{display:block;}
+}
+.small{font-size:.8em; color:var(--muted);}
+.mono{font-family:var(--mono);}
+.center{text-align:center;}
+.hidden{display:none !important;}
+hr.sep{border:none; border-top:1px solid var(--line); margin:1.1em 0;}
+.kv{display:flex; justify-content:space-between; padding:.4em 0; border-bottom:1px solid #EEF0F2; font-size:.9em;}
+.kv b{font-weight:700;}
+.tag-input{display:flex; flex-wrap:wrap; gap:.4em; border:1px solid var(--line); border-radius:var(--radius-sm); padding:.5em; background:#fff;}
+.tag-chip{background:#EEF0F3; padding:.3em .6em; border-radius:20px; font-size:.8em; display:flex; align-items:center; gap:.4em;}
+.tag-chip button{background:none; border:none; color:var(--muted); font-weight:900; padding:0; cursor:pointer;}
+.subtabs{display:flex; gap:.3em; border-bottom:1px solid var(--line); margin-bottom:1em;}
+.subtab{padding:.6em 1em; font-weight:700; font-size:.88em; color:var(--muted); border-bottom:2px solid transparent; background:none;}
+.subtab.active{color:var(--navy); border-color:var(--navy);}
+
+/* ---------------------------- ICONS ---------------------------------- */
+.icon{width:1.15em; height:1.15em; display:inline-block; vertical-align:-.22em; flex:none;}
+.icon-lg{width:1.6em; height:1.6em;}
+nav.tabs .navbtn .icon{width:18px; height:18px; vertical-align:-.3em;}
+.empty .icon{width:2.1em; height:2.1em; opacity:.35; margin-bottom:.3em;}
+
+/* ---------------------------- WORDMARK / BRANDING ---------------------------------- */
+.wordmark{display:inline-flex; align-items:baseline; gap:.28em; font-family:var(--font-logo); font-weight:800; letter-spacing:.01em;}
+.wordmark .helm{color:var(--gold); font-weight:400;}
+.brand .wordmark{font-size:1.34em; color:#fff;}
+.brand-sub{font-size:.66em; color:rgba(255,255,255,.5); letter-spacing:.14em; text-transform:uppercase; margin-top:.2em;}
+
+/* ---------------------------- HOME / SCAN CONSOLE ---------------------------------- */
+.scan-hero{padding:1.5em; margin-bottom:1.3em;}
+.scan-hero-inner{display:grid; grid-template-columns:1fr 1fr; gap:1em;}
+.scan-tile{
+  border:1.5px solid var(--line); border-radius:18px; padding:1.6em 1.3em; cursor:pointer; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:.55em; transition:.15s; background:var(--paper);
+}
+.scan-tile:hover{border-color:var(--navy-2); background:#fff; transform:translateY(-1px); box-shadow:var(--shadow);}
+.scan-tile:active{transform:scale(.99);}
+.scan-tile-ico{width:52px; height:52px; border-radius:50%; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center;}
+.scan-tile-ico .icon{width:1.5em; height:1.5em;}
+.scan-tile b{font-size:1.05em; letter-spacing:-.01em;}
+.scan-tile span{font-size:.82em; color:var(--muted);}
+.scan-manual{display:flex; gap:.6em; margin-top:1.2em;}
+@media(max-width:640px){.scan-hero-inner{grid-template-columns:1fr;} .scan-manual{flex-direction:column;}}
+
+/* ---------------------------- HELP ---------------------------------- */
+.help-item{padding:1.1em 0; border-bottom:1px solid var(--line);}
+.help-item:last-child{border-bottom:none;}
+.help-item h4{margin:0 0 .35em; display:flex; align-items:center; gap:.55em; font-size:1em;}
+.help-item p{margin:0; color:var(--muted); font-size:.92em; line-height:1.55;}
+.override-note{display:flex; gap:.6em; align-items:flex-start; background:#FBF6EB; border:1px solid #EFDFB8; border-radius:12px; padding:.9em 1em; font-size:.88em; color:#5c4a1f;}
+.override-note .icon{color:var(--gold); margin-top:.1em;}
+
+/* ---------------------------- APP LOCK SCREEN ---------------------------------- */
+.lock-screen{
+  position:fixed; inset:0; z-index:500; background:linear-gradient(180deg,var(--navy) 0%, var(--navy-deep) 100%);
+  display:flex; align-items:center; justify-content:center; padding:1.2em;
+}
+.lock-screen.hidden{display:none;}
+.lock-card{background:#fff; border-radius:20px; padding:2.2em 1.9em; max-width:340px; width:100%; box-shadow:0 20px 60px -20px rgba(0,0,0,.6); text-align:center;}
+.lock-card .wordmark{font-size:1.7em; color:var(--navy); justify-content:center;}
+.lock-card .wordmark .helm{color:var(--gold);}
+.lock-card .lock-sub{font-size:.78em; color:var(--muted); letter-spacing:.05em; margin:.3em 0 1.5em;}
+.lock-card .field{text-align:left;}
+</style>
+</head>
+<body>
+
+<div id="lockScreen" class="lock-screen">
+  <div class="lock-card">
+    <div class="wordmark"><span class="helm">&#9096;</span>MSR.</div>
+    <div class="lock-sub">GATE SECURITY &mdash; ENTER YOUR CODE TO CONTINUE</div>
+    <div class="field">
+      <label>Security Code</label>
+      <input type="password" id="lockCodeInput" autocomplete="off" onkeydown="if(event.key==='Enter')attemptUnlock()">
+    </div>
+    <div id="lockErr" class="small" style="color:var(--red); display:none; margin-bottom:.6em;">Incorrect code. Try again.</div>
+    <button class="btn btn-primary btn-block btn-lg" onclick="attemptUnlock()">Unlock</button>
+  </div>
+</div>
+
+<div id="app">
+  <div id="scrim" onclick="toggleSidebar(false)"></div>
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="brand-text">
+        <div class="wordmark" id="brandNameSidebar"><span class="helm">&#9096;</span>MSR.</div>
+        <div class="brand-sub">Gate Security</div>
+      </div>
+    </div>
+    <div class="role-chip"><span class="role-dot" id="roleDot"></span><span id="roleLabel">Officer mode</span></div>
+    <nav class="tabs" id="navTabs"></nav>
+    <div class="sidebar-foot">
+      <button class="btn btn-sm btn-block" style="margin-bottom:.7em;" onclick="lockApp()">&#128274; Lock App</button>
+      Powered by Hamid Yasir &amp; Co.
+    </div>
+  </aside>
+
+  <div id="main">
+    <div id="topbar">
+      <button id="hamburger" onclick="toggleSidebar()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div class="page-title" id="pageTitle">Home</div>
+      <div class="spacer"></div>
+      <div class="field topbar-search" style="margin:0;">
+        <input id="globalSearch" placeholder="Search name, ID, phone, NID, company..." oninput="onGlobalSearch(this.value)">
+      </div>
+    </div>
+    <div id="content"></div>
+  </div>
+</div>
+
+<div id="printArea"></div>
+<div id="printFootLine"></div>
+<div id="toastHost"></div>
+<div id="modalHost"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+/* =========================================================================
+   MSR GATE SECURITY MANAGEMENT SYSTEM
+   Single-file, offline-first, vanilla JS. Data lives in localStorage only.
+   ========================================================================= */
+
+/* Bump this when a future update changes how data is stored, so the app (or a human) can
+   tell which shape a given backup file or browser's localStorage is in. Backups always
+   record the version they were exported from; nothing currently branches on it, but it's
+   here so an upgrade never has to guess. */
+const APP_DATA_VERSION = 1;
+
+/* ---------------------------- DB LAYER ---------------------------------- */
+const DB = {
+  get(key, fallback){
+    try{ const v = localStorage.getItem('gsms_'+key); return v===null? fallback : JSON.parse(v); }
+    catch(e){ return fallback; }
+  },
+  set(key, val){
+    try{ localStorage.setItem('gsms_'+key, JSON.stringify(val)); return true; }
+    catch(e){ toast('Storage error — data may not have saved.', 'err'); return false; }
+  }
+};
+
+/* ---------------------------- ICONS (inline SVG, stroke-style) ---------------------------------- */
+const ICONS = {
+  home: '<path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9"/>',
+  scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2"/><path d="M4 16v2a2 2 0 0 0 2 2h2"/><path d="M20 8V6a2 2 0 0 0-2-2h-2"/><path d="M20 16v2a2 2 0 0 1-2 2h-2"/><line x1="4" y1="12" x2="20" y2="12"/>',
+  idcard: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="1.7"/><path d="M5.5 16c.6-1.7 2-2.6 3-2.6s2.4.9 3 2.6"/><line x1="14" y1="9.5" x2="18.5" y2="9.5"/><line x1="14" y1="13" x2="18.5" y2="13"/>',
+  radio: '<circle cx="12" cy="12" r="2.3"/><path d="M8.3 8.3a5.2 5.2 0 0 0 0 7.4M15.7 8.3a5.2 5.2 0 0 1 0 7.4M5.3 5.3a9.7 9.7 0 0 0 0 13.4M18.7 5.3a9.7 9.7 0 0 1 0 13.4"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
+  chart: '<line x1="5" y1="20" x2="19" y2="20"/><rect x="6" y="12" width="3" height="6"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="4" width="3" height="14"/>',
+  settings: '<circle cx="12" cy="12" r="3.1"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.88l.06.06a2.06 2.06 0 1 1-2.92 2.92l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56v.16a2.06 2.06 0 1 1-4.12 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06a2.06 2.06 0 1 1-2.92-2.92l.06-.06a1.7 1.7 0 0 0 .34-1.88 1.7 1.7 0 0 0-1.56-1.03h-.16a2.06 2.06 0 1 1 0-4.12h.09a1.7 1.7 0 0 0 1.55-1.11 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2.06 2.06 0 1 1 2.92-2.92l.06.06a1.7 1.7 0 0 0 1.88.34h.08a1.7 1.7 0 0 0 1.03-1.56v-.16a2.06 2.06 0 1 1 4.12 0v.09a1.7 1.7 0 0 0 1.03 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2.06 2.06 0 1 1 2.92 2.92l-.06.06a1.7 1.7 0 0 0-.34 1.88v.08a1.7 1.7 0 0 0 1.56 1.03h.16a2.06 2.06 0 1 1 0 4.12h-.09a1.7 1.7 0 0 0-1.55 1.03z"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.5 2.5 0 1 1 3.6 2.25c-.86.43-1.1.86-1.1 1.7"/><line x1="12" y1="16.8" x2="12" y2="16.82"/>',
+  user: '<circle cx="12" cy="8.2" r="3.4"/><path d="M5 20c1-3.3 3.8-5 7-5s6 1.7 7 5"/>',
+  users: '<circle cx="9" cy="8.3" r="3.1"/><path d="M3 19c.9-3 3.2-4.6 6-4.6s5.1 1.6 6 4.6"/><path d="M15.5 5.2a3.1 3.1 0 0 1 0 6"/><path d="M17.8 14.6c2.2.5 3.7 1.9 4.4 4.4"/>',
+  briefcase: '<rect x="3" y="8" width="18" height="11" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="3" y1="13" x2="21" y2="13"/>',
+  camera: '<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1-2h7l1 2h2A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.4"/>',
+  edit: '<path d="M4 20l.9-3.6L16.4 5 19 7.6 7.6 19z"/><line x1="14.5" y1="6.9" x2="17.1" y2="9.5"/>',
+  lock: '<rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+  alert: '<path d="M12 3.5 21 19H3z"/><line x1="12" y1="9.5" x2="12" y2="13.5"/><line x1="12" y1="16.3" x2="12" y2="16.32"/>',
+  inbox: '<path d="M4 12.5h4.2l1.4 2.6h4.8l1.4-2.6H20"/><path d="M6 5h12l2 7.5v7A1.5 1.5 0 0 1 18.5 21h-13A1.5 1.5 0 0 1 4 19.5v-7z"/>',
+  checkcircle: '<circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.6 2.6L16.5 9"/>',
+  x: '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>',
+  print: '<path d="M6 9V4h12v5"/><rect x="4" y="9" width="16" height="8" rx="1.5"/><rect x="7" y="14" width="10" height="6"/>',
+  download: '<path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><line x1="4" y1="20" x2="20" y2="20"/>',
+  upload: '<path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><line x1="4" y1="4" x2="20" y2="4"/>',
+  trash: '<path d="M5 7h14"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M7 7l1 13.5A1.5 1.5 0 0 0 9.5 22h5a1.5 1.5 0 0 0 1.5-1.5L17 7"/>',
+  search: '<circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.3" y1="15.3" x2="21" y2="21"/>',
+  shield: '<path d="M12 3l7 3v6c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4.2"/>',
+  phone: '<path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 5 5l1.5-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A16 16 0 0 1 5 6.1 1.5 1.5 0 0 1 6.5 3.5z"/>',
+  mail: '<rect x="3" y="5.5" width="18" height="13" rx="1.8"/><path d="M4 7l8 6 8-6"/>'
+};
+function ic(name, cls){
+  return `<svg class="icon${cls?' '+cls:''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]||''}</svg>`;
+}
+
+const DEFAULT_ACCESS_LEVELS = [
+  {name:'Visitor', zone:'Office / admin areas (escorted only)'},
+  {name:'Contractor', zone:'Assigned work zone + shop floor'},
+  {name:'Vendor / Delivery', zone:'Dock & warehouse only'},
+  {name:'Inspector / Regulator', zone:'Vessel + full yard (USCG, ABS, owner\u2019s rep)'},
+  {name:'VIP / Tour', zone:'Public areas only'}
+];
+const DEFAULT_PURPOSES = ['Repair / Maintenance','Delivery','Inspection / Audit','Meeting','Tour','Other'];
+
+function defaultSettings(){
+  return {
+    companyName:'Mehreen Ship Recycling',
+    hotline:'09611336887',
+    accessLevels: DEFAULT_ACCESS_LEVELS,
+    purposes: DEFAULT_PURPOSES,
+    adminKey:'msr2026#*',
+    securityKey:'msrsecurity26*#',
+    staffAddKey:'staff2026',
+    whatsappNumber:'8801319001751',
+    workStartHour:8, // for late-arrival calc
+    workEndHour:17,  // for early-departure / overtime calc
+    overdueAlertsEnabled:true,   // pop up + sound when a visitor's time is up and they haven't checked out
+    overdueAlertSoundEnabled:true,
+    overdueAlertSnoozeMins:10,   // how long "Ignore" silences a given visitor for
+    badgeWidthMm:54, badgeHeightMm:85.6,   // CR80 card size \u2014 overridable in Settings > Printing
+    badgeFoldBack:true,                    // print a rotated back panel (V/S + hotline) below the front
+    badgeFields:{photo:true, hostedBy:true, areaAccess:true, purpose:true, escort:true, checkIn:true, expiry:true, subline:true, nid:true, notes:true},
+    printMarginMm:20,                      // page margin used by EVERY print job (badge sheet, history, reports), in mm (2cm default)
+    reportOrientation:'landscape',         // orientation for History and Reports prints \u2014 badges are always portrait (fixed card shape)
+  };
+}
+
+/* One-shot upgrade for browsers that already saved settings under an older build. S() layers
+   saved values ON TOP of defaults, so a stale saved adminKey/securityKey/margin would otherwise
+   silently outrank the new default forever. This rewrites only the legacy values, and only once. */
+function migrateSettings(){
+  const raw = DB.get('settings', null);
+  if(!raw) return;
+  let changed = false;
+  if(raw.adminKey === 'msr2026'){ raw.adminKey = 'msr2026#*'; changed = true; }
+  if(raw.securityKey === '2026' || raw.securityKey === 'msr2026'){ raw.securityKey = 'msrsecurity26*#'; changed = true; }
+  if(raw.printMarginMm == null){
+    // legacy inches value, or nothing at all -> land on the new 2cm default
+    raw.printMarginMm = (raw.printMarginIn != null && isFinite(parseFloat(raw.printMarginIn)) && parseFloat(raw.printMarginIn) !== 0.5)
+      ? Math.round(parseFloat(raw.printMarginIn) * 25.4 * 10) / 10
+      : 20;
+    delete raw.printMarginIn;
+    changed = true;
+  }
+  if(raw.badgeFields && raw.badgeFields.notes === undefined){ raw.badgeFields.notes = true; changed = true; }
+  if(changed) DB.set('settings', raw);
+}
+
+function ensureInit(){
+  if(DB.get('settings',null)===null) DB.set('settings', defaultSettings());
+  migrateSettings();
+  if(DB.get('visitors',null)===null) DB.set('visitors', []);
+  if(DB.get('staff',null)===null) DB.set('staff', []);
+  if(DB.get('staffAttendance',null)===null) DB.set('staffAttendance', []);
+  if(DB.get('auditLog',null)===null) DB.set('auditLog', []);
+}
+ensureInit();
+
+/* Always layer saved settings on top of the current defaults (never the other way round).
+   This means a browser that saved its settings under an older version of this tool will
+   automatically pick up any new settings fields added by a later version, instead of
+   ending up with them undefined and breaking. */
+function S(){ return Object.assign({}, defaultSettings(), DB.get('settings', {})); }
+function saveS(s){ DB.set('settings', s); }
+
+/* ---------------------------- UTILITIES ---------------------------------- */
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function pad(n,len){ return String(n).padStart(len,'0'); }
+function nowISO(){ return new Date().toISOString(); }
+function fmtDT(iso){ if(!iso) return '\u2014'; const d=new Date(iso); return d.toLocaleDateString(undefined,{month:'short',day:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
+function fmtDateOnly(iso){ if(!iso) return '\u2014'; const d=new Date(iso); return d.toLocaleDateString(undefined,{month:'short',day:'2-digit',year:'numeric'}); }
+function fmtTimeOnly(iso){ if(!iso) return '\u2014'; const d=new Date(iso); return d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
+function escapeHtml(str){ return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function minutesBetween(a,b){ return Math.round((new Date(b)-new Date(a))/60000); }
+function durationLabel(mins){
+  if(mins==null) return '\u2014';
+  const h=Math.floor(mins/60), m=mins%60;
+  if(h<=0) return m+'m';
+  if(m===0) return h+'h';
+  return h+'h '+m+'m';
+}
+/* There is no separate visitor/staff number, not even internally — the NID number itself
+   IS the person's record id everywhere in this app. idFromNid() just normalizes it (trim,
+   uppercase, strip internal whitespace) so lookups are consistent regardless of how the
+   digits were typed at the gate. */
+function idFromNid(nid){ return (nid||'').toString().trim().toUpperCase().replace(/\s+/g,''); }
+/* ---------------------------- AREA ACCESS (visitor + staff share this shape) ---------------------------- */
+/* VISITOR TYPE ------------------------------------------------------------------
+   The dropdown is fed from Settings > Visitor Types, plus a permanent "Other" entry that
+   reveals a free-text box so the gate can record a type nobody listed yet. What gets STORED
+   on the record is always the final plain-text type (never the literal word "Other"), so every
+   badge, slip, table, report and export shows the real thing.
+   splitVisitorType() runs that in reverse: given a stored type it works out whether the
+   dropdown should sit on a listed option or on "Other" with the text box pre-filled. */
+function visitorTypeOptions(settings){
+  return (settings.accessLevels||[]).map(l=>l.name).filter(x=>x && x.toLowerCase()!=='other');
+}
+function splitVisitorType(stored, settings){
+  const val = (stored||'').trim();
+  if(!val) return {sel:'', other:''};
+  return visitorTypeOptions(settings).indexOf(val) >= 0 ? {sel:val, other:''} : {sel:'Other', other:val};
+}
+function resolveVisitorType(d){
+  return d.accessLevel === 'Other' ? (d.accessLevelOther||'').trim() : d.accessLevel;
+}
+function defaultAreaAccess(){ return {office:false, ship:false, shipName:'', walkway:false, outdoorStorage:false, indoorStorage:false, other:false, otherText:''}; }
+function areaAccessAny(aa){ return !!(aa && (aa.office||aa.ship||aa.walkway||aa.outdoorStorage||aa.indoorStorage||aa.other)); }
+function formatAreaAccess(aa){
+  if(!aa) return '';
+  const parts = [];
+  if(aa.office) parts.push('Office');
+  if(aa.ship) parts.push('Ship'+(aa.shipName?' ('+aa.shipName+')':''));
+  if(aa.walkway) parts.push('Walkway');
+  if(aa.outdoorStorage) parts.push('Outdoor Open Storage');
+  if(aa.indoorStorage) parts.push('Indoor Storage');
+  if(aa.other) parts.push(aa.otherText? 'Other: '+aa.otherText : 'Other');
+  return parts.join(', ');
+}
+/* Renders the shared Area Access checkbox block. varPath is the literal JS path the inline
+   onchange handlers write to (e.g. "VW.details.areaAccess" or "window.__staffAA"), rerenderFn
+   is the literal JS call used to redraw after a checkbox toggle (so conditional Ship Name /
+   Other subfields appear immediately). */
+function areaAccessFieldsHtml(aa, varPath, rerenderFn){
+  return `
+    <div class="chip-grid">
+      <label class="chip-toggle"><input type="checkbox" ${aa.office?'checked':''} onchange="${varPath}.office=this.checked; ${rerenderFn}"> Office</label>
+      <label class="chip-toggle"><input type="checkbox" ${aa.ship?'checked':''} onchange="${varPath}.ship=this.checked; ${rerenderFn}"> Ship</label>
+      <label class="chip-toggle"><input type="checkbox" ${aa.walkway?'checked':''} onchange="${varPath}.walkway=this.checked; ${rerenderFn}"> Walkway</label>
+      <label class="chip-toggle"><input type="checkbox" ${aa.outdoorStorage?'checked':''} onchange="${varPath}.outdoorStorage=this.checked; ${rerenderFn}"> Outdoor Open Storage</label>
+      <label class="chip-toggle"><input type="checkbox" ${aa.indoorStorage?'checked':''} onchange="${varPath}.indoorStorage=this.checked; ${rerenderFn}"> Indoor Storage</label>
+      <label class="chip-toggle"><input type="checkbox" ${aa.other?'checked':''} onchange="${varPath}.other=this.checked; ${rerenderFn}"> Other</label>
+    </div>
+    ${aa.ship ? `<div class="field" style="grid-column:1/-1; margin-top:.6em;"><label>Ship Name *</label><input value="${escapeHtml(aa.shipName)}" oninput="${varPath}.shipName=this.value"></div>`:''}
+    ${aa.other ? `<div class="field" style="grid-column:1/-1; margin-top:.6em;"><label>Specify other area *</label><input value="${escapeHtml(aa.otherText)}" oninput="${varPath}.otherText=this.value" placeholder="e.g. Crane Bay B"></div>`:''}
+  `;
+}
+function logAudit(action, recordId, role){
+  const log = DB.get('auditLog',[]);
+  log.unshift({ts: nowISO(), action, recordId: recordId||'', role: role||'Officer'});
+  if(log.length>5000) log.length=5000;
+  DB.set('auditLog', log);
+}
+
+/* ---------------------------- TOASTS ---------------------------------- */
+function toast(msg, type){
+  const host = document.getElementById('toastHost');
+  const el = document.createElement('div');
+  el.className = 'toast'+(type==='err'?' err':type==='ok'?' ok':'');
+  el.textContent = msg;
+  host.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .25s'; setTimeout(()=>el.remove(),260); }, 3200);
+}
+
+/* ---------------------------- MODALS ---------------------------------- */
+let modalStack = [];
+function openModal(innerHtml, opts){
+  opts = opts||{};
+  const host = document.getElementById('modalHost');
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop';
+  wrap.innerHTML = `<div class="modal ${opts.wide?'wide':''} ${opts.narrow?'narrow':''}">${innerHtml}</div>`;
+  wrap.addEventListener('mousedown', (e)=>{ if(e.target===wrap && !opts.persistent) closeModal(); });
+  host.appendChild(wrap);
+  modalStack.push(wrap);
+  return wrap;
+}
+function closeModal(){
+  const el = modalStack.pop();
+  if(el) el.remove();
+  stopAllCameraStreams();
+}
+function modalHeader(title){
+  return `<div class="modal-head"><h3>${title}</h3><button class="close-x" onclick="closeModal()">&times;</button></div>`;
+}
+
+/* ---------------------------- SECURITY KEY PROMPTS ---------------------------------- */
+function askKey(kind){
+  // kind: 'admin' | 'security' | 'staffAdd'
+  return new Promise((resolve)=>{
+    const label = kind==='admin' ? 'Admin Security Code' : kind==='staffAdd' ? 'Add Staff Security Code' : 'Security Code';
+    const desc = kind==='admin' ? 'Required to override this section \u2014 settings, staff management, backups and deletions.'
+      : kind==='staffAdd' ? 'Held by the person designated to register new staff. This does not grant access to Settings, editing, or deleting staff.'
+      : 'Required to override this section and confirm this checkout.';
+    const m = openModal(`
+      ${modalHeader('Enter '+label)}
+      <div class="modal-body">
+        <p class="small" style="margin-top:0;">${desc}</p>
+        <div class="field">
+          <label>${label}</label>
+          <input type="password" id="keyInput" autocomplete="off" onkeydown="if(event.key==='Enter')document.getElementById('keySubmitBtn').click();">
+        </div>
+        <div id="keyErr" class="small" style="color:var(--red); display:none;">Incorrect code. Try again.</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" onclick="__keyResolve(false)">Cancel</button>
+        <button class="btn btn-primary" id="keySubmitBtn" onclick="__keyCheck('${kind}')">Confirm</button>
+      </div>
+    `, {narrow:true});
+    setTimeout(()=>{ const i=document.getElementById('keyInput'); if(i) i.focus(); }, 60);
+    window.__keyResolve = (ok)=>{ closeModal(); resolve(ok); delete window.__keyResolve; delete window.__keyCheck; };
+    window.__keyCheck = (k)=>{
+      const val = document.getElementById('keyInput').value;
+      const settings = S();
+      const correct = k==='admin' ? val===settings.adminKey
+        : k==='staffAdd' ? (val===settings.staffAddKey || val===settings.adminKey)
+        : (val===settings.securityKey || val===settings.adminKey);
+      if(correct){ window.__keyResolve(true); }
+      else { document.getElementById('keyErr').style.display='block'; document.getElementById('keyInput').value=''; document.getElementById('keyInput').focus(); }
+    };
+  });
+}
+
+function confirmDialog(title, body, okLabel, danger){
+  return new Promise((resolve)=>{
+    openModal(`
+      ${modalHeader(title)}
+      <div class="modal-body"><p style="margin:0;">${body}</p></div>
+      <div class="modal-foot">
+        <button class="btn" onclick="__confResolve(false)">Cancel</button>
+        <button class="btn ${danger?'btn-danger':'btn-primary'}" onclick="__confResolve(true)">${okLabel||'Confirm'}</button>
+      </div>
+    `, {narrow:true});
+    window.__confResolve = (v)=>{ closeModal(); resolve(v); delete window.__confResolve; };
+  });
+}
+
+/* ---------------------------- CAMERA ---------------------------------- */
+const activeStreams = {};
+async function startCamera(videoEl, key){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
+    activeStreams[key] = stream;
+    videoEl.srcObject = stream;
+    await videoEl.play();
+    return true;
+  }catch(e){
+    toast('Camera unavailable: '+e.message, 'err');
+    return false;
+  }
+}
+function stopCamera(key){
+  const s = activeStreams[key];
+  if(s){ s.getTracks().forEach(t=>t.stop()); delete activeStreams[key]; }
+}
+function stopAllCameraStreams(){ Object.keys(activeStreams).forEach(stopCamera); }
+function snapFromVideo(videoEl){
+  const c = document.createElement('canvas');
+  c.width = videoEl.videoWidth||640; c.height = videoEl.videoHeight||480;
+  c.getContext('2d').drawImage(videoEl,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg', 0.85);
+}
+function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = ()=>resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+
+
+/* ---------------------------- BADGE HTML BUILDER ---------------------------------- */
+function buildBadgeHtml(rec, kind){
+  // rec: visitor or staff record ; kind: 'VISITOR' or 'STAFF'
+  // No QR code, no scanning \u2014 the visible NID number IS this person's ID number.
+  // Security reads it (or the gate clerk types it into Home Scan Console) to check
+  // someone in or out. Every field below is a full, plainly-labeled row \u2014 nothing
+  // is abbreviated away or hidden behind a scan.
+  const settings = S();
+  const bf = settings.badgeFields || defaultSettings().badgeFields;
+  const photo = rec.facePhoto || rec.photo || '';
+  const name = rec.name || '\u2014';
+  const idStr = rec.id;
+  const isVisitor = kind==='VISITOR';
+  const subLine = bf.subline ? (isVisitor ? (rec.company||'') : (rec.designation||'')) : '';
+  const rows = [];
+  if(isVisitor){
+    if(bf.hostedBy) rows.push({l:'HOSTED BY', v:rec.hostName||'\u2014'});
+    rows.push({l:'VISITOR TYPE', v:rec.accessLevel||'\u2014'});
+    if(bf.areaAccess) rows.push({l:'AREA ACCESS', v:formatAreaAccess(rec.areaAccess)||'\u2014', wide:true});
+    if(bf.purpose) rows.push({l:'PURPOSE', v:rec.purpose||'\u2014'});
+    if(bf.escort && rec.escort) rows.push({l:'ESCORT', v:rec.escort});
+    if(bf.checkIn) rows.push({l:'CHECK-IN', v:fmtDT(rec.checkIn)});
+    if(bf.expiry) rows.push({l:'EXPIRY', v:fmtDT(rec.expiry)});
+    /* Items carried in are printed on the card itself so the gate officer on the way OUT can
+       check them off against what is being carried out, without opening the app. */
+    if(bf.notes!==false && rec.notes) rows.push({l:'ITEMS IN / NOTES', v:rec.notes, wide:true, clamp:true});
+  } else {
+    rows.push({l:'UNIT', v:rec.department||'\u2014'});
+    if(bf.areaAccess) rows.push({l:'AREA ACCESS', v:formatAreaAccess(rec.areaAccess)||'\u2014', wide:true});
+  }
+  const wMm = settings.badgeWidthMm || 54;
+  const hMm = settings.badgeHeightMm || 85.6;
+  const cardStyle = ` style="width:${wMm}mm; height:${hMm}mm;"`;
+  return `
+  <div class="badge-card" data-badge-id="${escapeHtml(idStr)}"${cardStyle}>
+    <div class="badge-head">
+      <div class="wm"><span class="wheel">&#9096;</span>MSR</div>
+      <div class="kind">
+        <span class="kind-word">${isVisitor?'VISITOR':'STAFF'}</span>
+        <span class="kind-letter">${isVisitor?'V':'S'}</span>
+      </div>
+    </div>
+    ${bf.photo!==false ? `<div class="badge-photo-wrap">
+      ${photo ? `<img src="${photo}">` : `<div class="no-photo">No Photo</div>`}
+    </div>` : ''}
+    <div class="badge-info">
+      <div class="nm">${escapeHtml(name)}</div>
+      ${subLine? `<div class="sub">${escapeHtml(subLine)}</div>`:''}
+      <div class="badge-table">
+        ${rows.map(r=>`<div class="row-field${r.wide?' row-wide':''}"><span class="lab">${escapeHtml(r.l)}</span><span class="val${r.clamp?' clamp3':''}">${escapeHtml(r.v)}</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="badge-nidbox">
+      <div class="nid-lab">NID NUMBER</div>
+      <div class="nid-val">${escapeHtml(rec.nid||'\u2014')}</div>
+    </div>
+    <div class="badge-foot">Hotline: ${escapeHtml(settings.hotline||'')}</div>
+  </div>`;
+}
+/* Back panel of the fold-over badge \u2014 sparse and bold on purpose (the "flip it over and
+   glance at it" panel): a large V/S visible at a glance, the company wordmark, and the hotline.
+   Prints normal/readable, same orientation as the front \u2014 no rotation, no mirroring, since both
+   panels land on the same side of the same printed page. */
+function buildBadgeBackHtml(rec, kind){
+  const settings = S();
+  const isVisitor = kind==='VISITOR';
+  const wMm = settings.badgeWidthMm || 54;
+  const hMm = settings.badgeHeightMm || 85.6;
+  return `
+  <div class="badge-back" style="width:${wMm}mm; height:${hMm}mm;">
+    <div class="bb-letter">${isVisitor?'V':'S'}</div>
+    <div class="bb-word">${isVisitor?'VISITOR':'STAFF'}</div>
+    <div class="bb-company">${escapeHtml(settings.companyName||'Mehreen Ship Recycling')}</div>
+    <div class="bb-hotline">Hotline: ${escapeHtml(settings.hotline||'')}</div>
+  </div>`;
+}
+/* One printed fold-over pair \u2014 front + back, side by side, touching at a vertical fold seam
+   (front on the left, back on the right, card size locked \u2014 no resizing, no rotating the card
+   itself). When settings.badgeFoldBack is off, prints the front panel alone (no seam, no back). */
+function buildBadgeUnitHtml(rec, kind){
+  const settings = S();
+  const foldBack = settings.badgeFoldBack !== false;
+  if(!foldBack){
+    return `<div class="badge-pair">${buildBadgeHtml(rec, kind)}</div>`;
+  }
+  return `
+  <div class="badge-pair">
+    ${buildBadgeHtml(rec, kind)}
+    <div class="fold-seam"><span class="fold-tag">&#9986; fold</span></div>
+    ${buildBadgeBackHtml(rec, kind)}
+  </div>`;
+}
+/* ---------------------------- VISITOR CUT-AND-KEEP STUB ---------------------------------- */
+/* Printed alongside the visitor badge on the A4 sheet. Security cuts this slip out, pastes the
+   photocopy of the visitor's NID onto this page (under the information, or on the back), then
+   keeps it on file at the gate. */
+function buildVisitorStubHtml(rec){
+  const inTime = rec.checkIn ? fmtDT(rec.checkIn) : '\u2014';
+  return `
+  <div class="visitor-stub">
+    <div class="stub-cutline">&#9986; <span class="dash"></span> Cut along this line \u2014 paste NID photocopies in the space below or on the reverse side of this page <span class="dash"></span></div>
+    <div class="stub-box">
+      <div class="stub-title">Visitor Record Slip <span>${escapeHtml(rec.id)}</span></div>
+      <table class="stub-table">
+        <tr><td class="k">Name</td><td>${escapeHtml(rec.name||'\u2014')}</td><td class="k">NID Number</td><td>${escapeHtml(rec.nid||'\u2014')}</td></tr>
+        <tr><td class="k">Hosted By</td><td>${escapeHtml(rec.hostName||'\u2014')}</td><td class="k">Company</td><td>${escapeHtml(rec.company||'\u2014')}</td></tr>
+        <tr><td class="k">Phone</td><td>${escapeHtml(rec.phone||'\u2014')}</td><td class="k">Purpose</td><td>${escapeHtml(rec.purpose||'\u2014')}</td></tr>
+        <tr><td class="k">Visitor Type</td><td>${escapeHtml(rec.accessLevel||'\u2014')}</td><td class="k">Escort</td><td>${escapeHtml(rec.escort||'\u2014')}</td></tr>
+        <tr><td class="k">Area Access</td><td colspan="3">${escapeHtml(formatAreaAccess(rec.areaAccess)||'\u2014')}</td></tr>
+        ${(rec.vehicleType||rec.plateNumber) ? `<tr><td class="k">Vehicle Type</td><td>${escapeHtml(rec.vehicleType||'\u2014')}</td><td class="k">Plate Number</td><td>${escapeHtml(rec.plateNumber||'\u2014')}</td></tr>` : ''}
+        <tr><td class="k">Check-In</td><td colspan="3">${escapeHtml(inTime)}</td></tr>
+        <tr><td class="k">Items In / Notes</td><td colspan="3">${escapeHtml(rec.notes||'\u2014')}</td></tr>
+        <tr><td class="k">Items Out<br>(verified at exit)</td><td colspan="3" style="height:11mm;"></td></tr>
+      </table>
+      <div class="stub-note">Paste the photocopy of this visitor's NID under this information (or on the back of this page) and file at the security desk.</div>
+    </div>
+  </div>`;
+}
+/* Printed alongside the staff badge on the A4 sheet, same as the visitor slip \u2014 security pastes
+   the staff member's NID photocopy onto this page (under the information, or on the back) and
+   keeps it on file. */
+function buildStaffStubHtml(rec){
+  return `
+  <div class="visitor-stub">
+    <div class="stub-cutline">&#9986; <span class="dash"></span> Cut along this line \u2014 paste NID photocopies in the space below or on the reverse side of this page <span class="dash"></span></div>
+    <div class="stub-box">
+      <div class="stub-title">Staff Record Slip <span>${escapeHtml(rec.id)}</span></div>
+      <table class="stub-table">
+        <tr><td class="k">Name</td><td>${escapeHtml(rec.name||'\u2014')}</td><td class="k">NID Number</td><td>${escapeHtml(rec.nid||'\u2014')}</td></tr>
+        <tr><td class="k">Phone</td><td>${escapeHtml(rec.phone||'\u2014')}</td><td class="k">Unit</td><td>${escapeHtml(rec.department||'\u2014')}</td></tr>
+        <tr><td class="k">Designation</td><td>${escapeHtml(rec.designation||'\u2014')}</td><td class="k">Area Access</td><td>${escapeHtml(formatAreaAccess(rec.areaAccess)||'\u2014')}</td></tr>
+        <tr><td class="k">Joining Date</td><td>${escapeHtml(rec.joiningDate||'\u2014')}</td><td class="k">Status</td><td>${escapeHtml(rec.status||'\u2014')}</td></tr>
+      </table>
+      <div class="stub-note">Paste the photocopy of this staff member's NID under this information (or on the back of this page) and file at the security desk.</div>
+    </div>
+  </div>`;
+}
+/* ========================================================================
+   VISITOR REGISTRATION WIZARD
+   ======================================================================== */
+let VW = null; // visitor wizard state
+function newVisitorWizard(){
+  VW = {
+    step: 1,
+    editingId: null, // set when we've pulled up an existing NID's profile — finalizeVisitor() updates that record in place instead of creating a new one
+    fields: {hostName:'', name:'', nid:'', phone:''},
+    face: {photo:null, override:false, overrideReason:''},
+    details: {company:'', escort:'', accessLevel:'', accessLevelOther:'', areaAccess: defaultAreaAccess(), purpose:'', purposeOther:'', durationH:1, durationM:0, ppe:false, safety:false, notes:'', vehicleType:'', plateNumber:''}
+  };
+}
+function openVisitorWizard(){
+  newVisitorWizard();
+  openModal(`<div id="wizardRoot"></div>`, {wide:true, persistent:true});
+  renderWizard();
+}
+function wizardShell(bodyHtml, footHtml, title){
+  const total = 4;
+  const cur = VW.step;
+  let dots='';
+  for(let i=1;i<=total;i++) dots += `<div class="step ${i<=cur?'on':''}"></div>`;
+  document.getElementById('wizardRoot').innerHTML = `
+    ${modalHeader(title||'New Visitor')}
+    <div class="modal-body">
+      <div class="steps">${dots}</div>
+      ${bodyHtml}
+    </div>
+    <div class="modal-foot">${footHtml}</div>
+  `;
+}
+function renderWizard(){
+  if(VW.step===1) return wizardStepIdentity();
+  if(VW.step===2) return wizardStepFace();
+  if(VW.step===3) return wizardStepDetails();
+  if(VW.step===4) return wizardStepReview();
+}
+function wizardBack(){ stopAllCameraStreams(); VW.step--; renderWizard(); }
+function wizardNext(){ stopAllCameraStreams(); VW.step++; renderWizard(); }
+
+function wizardStepIdentity(){
+  const f = VW.fields;
+  wizardShell(`
+    <p class="small" style="margin-top:0;">NIDs are taken and photocopied at the gate \u2014 just record the basics here.</p>
+    <div class="grid grid-2">
+      <div class="field" style="grid-column:1/-1;"><label>Hosted By (who is this visitor here to see) *</label><input value="${escapeHtml(f.hostName)}" oninput="VW.fields.hostName=this.value"></div>
+      <div class="field"><label>Full Name *</label><input value="${escapeHtml(f.name)}" oninput="VW.fields.name=this.value"></div>
+      <div class="field"><label>Phone Number *</label><input value="${escapeHtml(f.phone)}" oninput="VW.fields.phone=this.value"></div>
+      <div class="field" style="grid-column:1/-1;"><label>NID Number *</label><input value="${escapeHtml(f.nid)}" oninput="VW.fields.nid=this.value"></div>
+    </div>
+  `, `
+    <button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="submitIdentity()">Continue</button>
+  `, 'New Visitor \u2014 Details');
+}
+function submitIdentity(){
+  if(!VW.fields.hostName.trim()){ toast('Hosted By is required \u2014 enter who the visitor is here to see.','err'); return; }
+  if(!VW.fields.name.trim() || !VW.fields.phone.trim() || !VW.fields.nid.trim()){ toast('Name, phone number and NID number are required.','err'); return; }
+  VW.editingId = null; // always re-derive fresh from whatever NID is currently in the field
+  const nidKey = idFromNid(VW.fields.nid);
+  const visitors = DB.get('visitors',[]);
+  const existing = visitors.find(v=>v.id===nidKey);
+  if(existing){
+    if(existing.status==='onsite'){
+      toast(existing.name+' is already checked in with this NID. Use Check Out from their record instead of registering again.','err');
+      closeModal();
+      openLookupModal('VISITOR', existing);
+      return;
+    }
+    // Returning visitor, currently checked out — pull up their profile instead of creating a duplicate.
+    // Jump straight to the Details step so security can review/update access & purpose for this visit.
+    VW.editingId = existing.id;
+    VW.fields = {hostName: VW.fields.hostName||existing.hostName||'', name: existing.name, nid: existing.nid, phone: existing.phone};
+    VW.face.photo = existing.facePhoto || null;
+    VW.face.override = existing.faceOverride || false;
+    VW.face.overrideReason = existing.faceOverrideReason || '';
+    const vtE = splitVisitorType(existing.accessLevel, S());
+    VW.details = {
+      company: existing.company||'', escort: existing.escort||'', accessLevel: vtE.sel, accessLevelOther: vtE.other,
+      areaAccess: existing.areaAccess ? {...defaultAreaAccess(), ...existing.areaAccess} : defaultAreaAccess(),
+      purpose:'', purposeOther:'', durationH:1, durationM:0, ppe:existing.ppe||false, safety:existing.safety||false,
+      notes:'', vehicleType: existing.vehicleType||'', plateNumber: existing.plateNumber||''
+    };
+    toast('Returning visitor found \u2014 profile loaded. Review and update access & purpose for this visit.', 'ok');
+    VW.step = 3;
+    renderWizard();
+    return;
+  }
+  const staffMatch = DB.get('staff',[]).find(s=>s.id===nidKey);
+  if(staffMatch) toast('Note: this NID belongs to a registered staff member ('+staffMatch.name+').', 'err');
+  const phoneNorm = normPhone(VW.fields.phone);
+  const phoneMatch = phoneNorm.length>=7 ? visitors.find(v=>normPhone(v.phone)===phoneNorm) : null;
+  if(phoneMatch) toast('Note: this phone number is already on file for '+phoneMatch.name+' (NID '+(phoneMatch.nid||'\u2014')+').', 'err');
+  wizardNext();
+}
+
+function wizardStepFace(){
+  wizardShell(`
+    <p class="small" style="margin-top:0;">Capture the visitor's <b>face photo</b>. This is mandatory unless overridden.</p>
+    <div class="capture-box" id="camBoxFace" style="max-width:320px; margin:0 auto;">
+      ${VW.face.photo? `<img src="${VW.face.photo}">` : `<video id="videoFace" playsinline muted></video>`}
+    </div>
+    <div class="row center" style="margin-top:.6em; justify-content:center;">
+      ${VW.face.photo?
+        `<button class="btn" onclick="VW.face.photo=null; VW.face.override=false; renderWizard();">Retake</button>`
+        : `<button class="btn btn-primary" onclick="startCamera(document.getElementById('videoFace'),'face')">Start Camera</button>
+           <button class="btn" onclick="captureFace()">Capture</button>`
+      }
+    </div>
+    <hr class="sep">
+    <div class="chip-toggle" onclick="event.stopPropagation();">
+      <input type="checkbox" id="overrideChk" ${VW.face.override?'checked':''} onchange="toggleOverride(this.checked)">
+      <span>Bypass face photo (Security Code override required)</span>
+    </div>
+    <div id="overrideReasonWrap" class="field" style="margin-top:.8em; ${VW.face.override?'':'display:none;'}">
+      <label>Reason for override *</label>
+      <input id="overrideReason" value="${escapeHtml(VW.face.overrideReason)}" oninput="VW.face.overrideReason=this.value">
+    </div>
+  `, `
+    <button class="btn" onclick="wizardBack()">Back</button>
+    <button class="btn btn-primary" onclick="wizardNextFromFace()">Continue</button>
+  `, 'Face Photo');
+}
+async function captureFace(){
+  const v = document.getElementById('videoFace');
+  if(!v || !v.srcObject){ toast('Start the camera first.','err'); return; }
+  VW.face.photo = snapFromVideo(v);
+  stopCamera('face');
+  renderWizard();
+}
+async function toggleOverride(checked){
+  if(checked){
+    const ok = await askKey('security');
+    if(!ok){ renderWizard(); return; }
+  }
+  VW.face.override = checked;
+  renderWizard();
+}
+function wizardNextFromFace(){
+  if(!VW.face.photo && !VW.face.override){ toast('Face photo is required (or use the security override).','err'); return; }
+  if(VW.face.override && !VW.face.overrideReason.trim()){ toast('Please enter a reason for the override.','err'); return; }
+  wizardNext();
+}
+
+function wizardStepDetails(){
+  const d = VW.details;
+  const settings = S();
+  const levelOpts = visitorTypeOptions(settings).map(nm=>`<option value="${escapeHtml(nm)}" ${d.accessLevel===nm?'selected':''}>${escapeHtml(nm)}</option>`).join('')
+    + `<option value="Other" ${d.accessLevel==='Other'?'selected':''}>Other (type it in)</option>`;
+  const purposeOpts = settings.purposes.map(p=>`<option value="${escapeHtml(p)}" ${d.purpose===p?'selected':''}>${escapeHtml(p)}</option>`).join('');
+  const zoneNote = settings.accessLevels.find(l=>l.name===d.accessLevel);
+  wizardShell(`
+    <div class="grid grid-2">
+      <div class="field">
+        <label>Visitor Type *</label>
+        <select onchange="VW.details.accessLevel=this.value; renderWizard();">
+          <option value="">Select\u2026</option>${levelOpts}
+        </select>
+        ${zoneNote? `<div class="hint">${escapeHtml(zoneNote.zone)}</div>`:''}
+      </div>
+      ${d.accessLevel==='Other' ? `<div class="field"><label>Specify visitor type *</label><input value="${escapeHtml(d.accessLevelOther)}" oninput="VW.details.accessLevelOther=this.value" placeholder="e.g. Scrap Buyer, Surveyor, Driver"></div>`:''}
+      <div class="field">
+        <label>Visit Purpose *</label>
+        <select onchange="VW.details.purpose=this.value; renderWizard();">
+          <option value="">Select\u2026</option>${purposeOpts}
+        </select>
+      </div>
+      ${d.purpose==='Other' ? `<div class="field" style="grid-column:1/-1;"><label>Specify purpose *</label><input value="${escapeHtml(d.purposeOther)}" oninput="VW.details.purposeOther=this.value"></div>`:''}
+      <div class="field" style="grid-column:1/-1;">
+        <label>Area Access * (select all that apply)</label>
+        ${areaAccessFieldsHtml(d.areaAccess, 'VW.details.areaAccess', 'renderWizard();')}
+      </div>
+      <div class="field">
+        <label>Visit Duration (expected) *</label>
+        <div class="row">
+          <input type="number" min="0" value="${d.durationH}" oninput="VW.details.durationH=+this.value" placeholder="hrs">
+          <input type="number" min="0" max="59" value="${d.durationM}" oninput="VW.details.durationM=+this.value" placeholder="mins">
+        </div>
+      </div>
+      <div class="field"><label>Company (optional)</label><input value="${escapeHtml(d.company)}" oninput="VW.details.company=this.value"></div>
+      <div class="field"><label>Escort (optional)</label><input value="${escapeHtml(d.escort)}" oninput="VW.details.escort=this.value"></div>
+      <div class="field"><label>Vehicle Type (optional)</label><input value="${escapeHtml(d.vehicleType)}" oninput="VW.details.vehicleType=this.value" placeholder="Car, Motorbike, Truck\u2026"></div>
+      <div class="field"><label>Plate Number (optional)</label><input value="${escapeHtml(d.plateNumber)}" oninput="VW.details.plateNumber=this.value"></div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <div class="row">
+          <label class="chip-toggle"><input type="checkbox" ${d.ppe?'checked':''} onchange="VW.details.ppe=this.checked"> PPE required</label>
+          <label class="chip-toggle"><input type="checkbox" ${d.safety?'checked':''} onchange="VW.details.safety=this.checked"> Safety briefing given</label>
+        </div>
+      </div>
+      <div class="field" style="grid-column:1/-1;">
+        <label>Additional Notes &mdash; items, tools or equipment carried in</label>
+        <textarea rows="3" oninput="VW.details.notes=this.value" placeholder="e.g. 1 angle grinder, 1 blue toolbox, 1 laptop (Dell), 2 gas cylinders">${escapeHtml(d.notes)}</textarea>
+        <div class="hint">Whatever is written here is printed on the badge and the record slip, and is shown again at check-out so the gate can confirm the same items are going back out.</div>
+      </div>
+    </div>
+  `, `
+    <button class="btn" onclick="wizardBack()">Back</button>
+    <button class="btn btn-primary" onclick="wizardNextFromDetails()">Review</button>
+  `, 'Visit Details');
+}
+function wizardNextFromDetails(){
+  const d = VW.details;
+  if(!d.accessLevel){ toast('Select a visitor type.','err'); return; }
+  if(d.accessLevel==='Other' && !(d.accessLevelOther||'').trim()){ toast('Type in the visitor type.','err'); return; }
+  if(!areaAccessAny(d.areaAccess)){ toast('Select at least one area access.','err'); return; }
+  if(d.areaAccess.ship && !d.areaAccess.shipName.trim()){ toast('Enter the ship name.','err'); return; }
+  if(d.areaAccess.other && !d.areaAccess.otherText.trim()){ toast('Specify the other area access.','err'); return; }
+  if(!d.purpose || (d.purpose==='Other' && !d.purposeOther.trim())){ toast('Select (or specify) a visit purpose.','err'); return; }
+  if(d.durationH===0 && d.durationM===0){ toast('Enter an expected visit duration.','err'); return; }
+  wizardNext();
+}
+
+function wizardStepReview(){
+  const f = VW.fields, d = VW.details;
+  wizardShell(`
+    <div class="grid grid-2">
+      <div>
+        <div class="kv"><span>Hosted By</span><b>${escapeHtml(f.hostName)}</b></div>
+        <div class="kv"><span>Name</span><b>${escapeHtml(f.name)}</b></div>
+        <div class="kv"><span>NID</span><b>${escapeHtml(f.nid||'\u2014')}</b></div>
+        <div class="kv"><span>Phone</span><b>${escapeHtml(f.phone)}</b></div>
+        <div class="kv"><span>Company</span><b>${escapeHtml(d.company||'\u2014')}</b></div>
+        <div class="kv"><span>Visitor Type</span><b>${escapeHtml(resolveVisitorType(d)||'\u2014')}</b></div>
+        <div class="kv"><span>Area Access</span><b>${escapeHtml(formatAreaAccess(d.areaAccess)||'\u2014')}</b></div>
+        <div class="kv"><span>Purpose</span><b>${escapeHtml(d.purpose==='Other'?d.purposeOther:d.purpose)}</b></div>
+        <div class="kv"><span>Duration</span><b>${d.durationH}h ${d.durationM}m</b></div>
+        <div class="kv"><span>Escort</span><b>${escapeHtml(d.escort||'\u2014')}</b></div>
+        ${(d.vehicleType||d.plateNumber) ? `<div class="kv"><span>Vehicle</span><b>${escapeHtml([d.vehicleType, d.plateNumber].filter(Boolean).join(' \u2014 ')||'\u2014')}</b></div>` : ''}
+        <div class="kv"><span>PPE / Briefing</span><b>${d.ppe?'PPE ':''}${d.safety?'Briefed':''}${!d.ppe&&!d.safety?'\u2014':''}</b></div>
+        <div class="kv"><span>Items In / Notes</span><b>${escapeHtml(d.notes||'\u2014')}</b></div>
+        ${VW.face.override? `<div class="kv"><span>Face photo</span><b style="color:var(--amber);">Overridden</b></div>`:''}
+      </div>
+      <div class="center">
+        ${VW.face.photo? `<img src="${VW.face.photo}" style="width:140px;height:140px;object-fit:cover;border-radius:12px;">` : `<div class="small">No face photo (overridden)</div>`}
+      </div>
+    </div>
+    <p class="hint">Confirm the details above, then generate the badge and check the visitor in.</p>
+  `, `
+    <button class="btn" onclick="wizardBack()">Back</button>
+    <button class="btn btn-primary btn-lg" onclick="finalizeVisitor()">Generate Badge &amp; Check In</button>
+  `, 'Review &amp; Confirm');
+}
+
+async function finalizeVisitor(){
+  const f = VW.fields, d = VW.details;
+  if(VW.editingId){
+    const ok = await askKey('security');
+    if(!ok) return;
+  }
+  const id = VW.editingId || idFromNid(f.nid);
+  const now = nowISO();
+  const durMins = d.durationH*60 + d.durationM;
+  const expiry = new Date(Date.now()+durMins*60000).toISOString();
+  const rec = {
+    id, type:'visitor',
+    hostName: f.hostName, name: f.name, nid: f.nid, phone: f.phone,
+    facePhoto: VW.face.photo||'', faceOverride: VW.face.override, faceOverrideReason: VW.face.overrideReason||'',
+    company: d.company||'', escort: d.escort||'', accessLevel: resolveVisitorType(d), areaAccess: {...d.areaAccess},
+    purpose: d.purpose==='Other'?d.purposeOther:d.purpose,
+    vehicleType: d.vehicleType||'', plateNumber: d.plateNumber||'',
+    durationMins: durMins, ppe: d.ppe, safety: d.safety, notes: d.notes||'',
+    checkIn: now, expiry, checkOut: null, status: 'onsite'
+  };
+  const visitors = DB.get('visitors',[]);
+  if(VW.editingId){
+    const idx = visitors.findIndex(v=>v.id===VW.editingId);
+    if(idx>=0) visitors[idx] = rec; else visitors.unshift(rec);
+    logAudit('Visitor re-checked in (profile updated)', id, 'Officer');
+  } else {
+    visitors.unshift(rec);
+    logAudit('Visitor checked in', id, 'Officer');
+  }
+  DB.set('visitors', visitors);
+  if(VW.face.override) logAudit('Face photo override used: '+VW.face.overrideReason, id, 'Security');
+  closeModal();
+  showBadgeModal(rec, 'VISITOR', true);
+  renderRoute();
+}
+
+/* ---------------------------- BADGE MODAL / PRINT / WHATSAPP ---------------------------------- */
+function showBadgeModal(rec, kind, justCheckedIn){
+  const settings = S();
+  const waMsg = kind==='VISITOR'
+    ? (justCheckedIn
+        ? `Gate Entry \u2013 Visitor ID Issued: ${rec.name} \u2013 ${rec.phone} \u2013 ${rec.accessLevel} \u2013 ${rec.purpose} \u2013 ${durationLabel(rec.durationMins)}`
+        : `Gate Exit \u2013 Visitor Checked Out: ${rec.name} \u2013 ${rec.phone}`)
+    : (justCheckedIn==='registered'
+        ? `Staff Badge Issued: ${rec.name} (${rec.id}) \u2013 ${rec.department||''}`
+        : justCheckedIn
+        ? `Staff Check-In: ${rec.name} (${rec.id}) \u2013 ${rec.department||''}`
+        : `Staff Check-Out: ${rec.name} (${rec.id})`);
+  openModal(`
+    ${modalHeader((kind==='VISITOR'?'Visitor':'Staff')+' Badge \u2014 '+rec.id)}
+    <div class="modal-body center">
+      <div id="badgeHolder" style="display:inline-block;">${buildBadgeHtml(rec, kind)}</div>
+      ${(settings.badgeFoldBack!==false) ? `<div class="hint" style="margin-top:.6em;">Back panel (big ${kind==='VISITOR'?'V':'S'} + hotline) prints automatically beside this on the fold-over sheet.</div>` : ''}
+      <div class="row" style="margin-top:1.1em; justify-content:center;">
+        <button class="btn btn-primary" onclick="printSingleBadge('${rec.id}','${kind}')">Print Badge</button>
+        <button class="btn" onclick="sendWhatsApp('${settings.whatsappNumber}', ${JSON.stringify(waMsg).replace(/"/g,'&quot;')})">Send via WhatsApp</button>
+        <button class="btn btn-ghost" onclick="promptWhatsAppOther(${JSON.stringify(waMsg).replace(/"/g,'&quot;')})">Send to other number</button>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-block" onclick="closeModal()">Done</button></div>
+  `, {});
+}
+function sendWhatsApp(number, msg){
+  const url = 'https://wa.me/'+number.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(msg);
+  window.open(url, '_blank');
+}
+function promptWhatsAppOther(msg){
+  openModal(`
+    ${modalHeader('Send to another number')}
+    <div class="modal-body">
+      <div class="field"><label>WhatsApp Number (with country code)</label><input id="waNum" placeholder="8801XXXXXXXXX"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="sendWhatsApp(document.getElementById('waNum').value, ${JSON.stringify(msg).replace(/"/g,'&quot;')}); closeModal();">Open WhatsApp</button>
+    </div>
+  `, {narrow:true});
+}
+function printSingleBadge(id, kind){
+  const rec = kind==='VISITOR' ? DB.get('visitors',[]).find(v=>v.id===id) : DB.get('staff',[]).find(s=>s.id===id);
+  if(!rec) return;
+  printBadges([{rec, kind}]);
+}
+function printBadges(items){
+  const area = document.getElementById('printArea');
+  const blocks = items.map(it=>{
+    const stub = it.kind==='VISITOR' ? buildVisitorStubHtml(it.rec) : buildStaffStubHtml(it.rec);
+    return `<div class="record-block">${buildBadgeUnitHtml(it.rec, it.kind)}${stub}</div>`;
+  }).join('');
+  area.innerHTML = `<div class="sheet">${blocks}</div>`;
+  setPrintSource('ID Badge / Record Slip');
+  setTimeout(()=>{ applyPrintPageStyle('portrait'); window.print(); }, 60);
+}
+
+/* ---------------------------- CHECKOUT INFO MODAL ----------------------------------
+   Shown on checkout instead of the printable badge \u2014 badge printing only ever
+   happens at entry (check-in) or as an explicit Reprint Badge action from history /
+   lookup. A checkout is a confirmation of who left and when, not a new card issue. */
+function showCheckoutInfoModal(rec, kind){
+  const isVisitor = kind==='VISITOR';
+  const photo = isVisitor ? (rec.facePhoto||'') : (rec.photo||'');
+  openModal(`
+    ${modalHeader((isVisitor?'Visitor':'Staff')+' Checked Out \u2014 '+rec.name)}
+    <div class="modal-body">
+      <div class="grid grid-2">
+        <div>
+          <div class="kv"><span>Name</span><b>${escapeHtml(rec.name)}</b></div>
+          <div class="kv"><span>NID</span><b>${escapeHtml(rec.nid||'\u2014')}</b></div>
+          ${isVisitor ? `
+          <div class="kv"><span>Hosted By</span><b>${escapeHtml(rec.hostName||'\u2014')}</b></div>
+          <div class="kv"><span>Company</span><b>${escapeHtml(rec.company||'\u2014')}</b></div>
+          <div class="kv"><span>Visitor Type</span><b>${escapeHtml(rec.accessLevel||'\u2014')}</b></div>
+          <div class="kv"><span>Area Access</span><b>${escapeHtml(formatAreaAccess(rec.areaAccess)||'\u2014')}</b></div>
+          <div class="kv"><span>Purpose</span><b>${escapeHtml(rec.purpose||'\u2014')}</b></div>
+          ${(rec.vehicleType||rec.plateNumber) ? `<div class="kv"><span>Vehicle</span><b>${escapeHtml([rec.vehicleType, rec.plateNumber].filter(Boolean).join(' \u2014 ')||'\u2014')}</b></div>` : ''}
+          <div class="kv"><span>Items In / Notes</span><b>${escapeHtml(rec.notes||'\u2014')}</b></div>
+          ` : `
+          <div class="kv"><span>Unit</span><b>${escapeHtml(rec.department||'\u2014')}</b></div>
+          <div class="kv"><span>Designation</span><b>${escapeHtml(rec.designation||'\u2014')}</b></div>
+          <div class="kv"><span>Area Access</span><b>${escapeHtml(formatAreaAccess(rec.areaAccess)||'\u2014')}</b></div>
+          `}
+          <div class="kv"><span>Check-In</span><b>${fmtDT(rec.checkIn)}</b></div>
+          <div class="kv"><span>Check-Out</span><b>${fmtDT(rec.checkOut)}</b></div>
+        </div>
+        <div class="center">
+          ${photo?`<img src="${photo}" style="width:120px;height:120px;object-fit:cover;border-radius:10px;">`:'<div class="small">No photo</div>'}
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-block btn-primary" onclick="closeModal()">Done</button></div>
+  `, {wide:true});
+}
+/* ---------------------------- VISITOR CHECKOUT ---------------------------------- */
+async function checkoutVisitor(id){
+  const visitors = DB.get('visitors',[]);
+  const rec = visitors.find(v=>v.id===id || v.nid===id);
+  if(!rec || rec.status==='checked_out'){ toast('Visitor already checked out.','err'); return; }
+  const ok = await askKey('security');
+  if(!ok) return;
+  rec.checkOut = nowISO();
+  rec.status = 'checked_out';
+  rec.totalMins = minutesBetween(rec.checkIn, rec.checkOut);
+  DB.set('visitors', visitors);
+  logAudit('Visitor checked out', id, 'Security');
+  toast('Visitor '+rec.name+' checked out.', 'ok');
+  renderRoute();
+  showCheckoutInfoModal(rec, 'VISITOR');
+}
+/* ---------------------------- ID LOOKUP MODAL (scan / type / monitor override) ----------------------------------
+   Shows full record details with Check In (if not checked in), Check Out, Extend Time (visitors), and Reprint
+   Badge (only while checked in \u2014 once checked out, reprint is hidden until checked back in). */
+function openLookupModal(kind, rec){
+  if(kind==='VISITOR'){
+    const onsite = rec.status==='onsite';
+    const st = visitorStatusInfo(rec);
+    openModal(`
+      ${modalHeader('Visitor \u2014 '+rec.id)}
+      <div class="modal-body">
+        <div class="grid grid-2">
+          <div>
+            <div class="kv"><span>Hosted By</span><b>${escapeHtml(rec.hostName||'\u2014')}</b></div>
+            <div class="kv"><span>Name</span><b>${escapeHtml(rec.name)}</b></div>
+            <div class="kv"><span>NID</span><b>${escapeHtml(rec.nid||'\u2014')}</b></div>
+            <div class="kv"><span>Phone</span><b>${escapeHtml(rec.phone)}</b></div>
+            <div class="kv"><span>Company</span><b>${escapeHtml(rec.company||'\u2014')}</b></div>
+            <div class="kv"><span>Visitor Type</span><b>${escapeHtml(rec.accessLevel)}</b></div>
+            <div class="kv"><span>Area Access</span><b>${escapeHtml(formatAreaAccess(rec.areaAccess)||'\u2014')}</b></div>
+            <div class="kv"><span>Purpose</span><b>${escapeHtml(rec.purpose)}</b></div>
+            <div class="kv"><span>Escort</span><b>${escapeHtml(rec.escort||'\u2014')}</b></div>
+            <div class="kv"><span>Items In / Notes</span><b>${escapeHtml(rec.notes||'\u2014')}</b></div>
+            <div class="kv"><span>Entry</span><b>${fmtDT(rec.checkIn)}</b></div>
+            <div class="kv"><span>Expiry</span><b>${fmtDT(rec.expiry)}</b></div>
+            <div class="kv"><span>Exit</span><b>${rec.checkOut?fmtDT(rec.checkOut):'\u2014'}</b></div>
+            <div class="kv"><span>Status</span><b><span class="badge-pill pill-${st.cls}">${st.label}</span></b></div>
+          </div>
+          <div class="center">
+            ${rec.facePhoto?`<img src="${rec.facePhoto}" style="width:120px;height:120px;object-fit:cover;border-radius:10px;">`:'<div class="small">No face photo</div>'}
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        ${!onsite
+          ? `<button class="btn btn-primary" onclick="closeModal(); reCheckInVisitor('${rec.id}');">Check In</button>`
+          : `<button class="btn" onclick="closeModal(); extendVisitorPrompt('${rec.id}');">Extend Time</button>
+             <button class="btn" onclick="printSingleBadge('${rec.id}','VISITOR')">Reprint Badge</button>
+             <button class="btn btn-primary" onclick="closeModal(); checkoutVisitor('${rec.id}');">Check Out</button>`}
+        <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      </div>
+    `, {wide:true});
+  } else {
+    const entry = staffCurrentlyOnsite(rec.id);
+    openModal(`
+      ${modalHeader('Staff \u2014 '+rec.id)}
+      <div class="modal-body">
+        <div class="grid grid-2">
+          <div>
+            <div class="kv"><span>Name</span><b>${escapeHtml(rec.name)}</b></div>
+            <div class="kv"><span>NID</span><b>${escapeHtml(rec.nid||'\u2014')}</b></div>
+            <div class="kv"><span>Unit</span><b>${escapeHtml(rec.department||'\u2014')}</b></div>
+            <div class="kv"><span>Designation</span><b>${escapeHtml(rec.designation||'\u2014')}</b></div>
+            <div class="kv"><span>Area Access</span><b>${escapeHtml(formatAreaAccess(rec.areaAccess)||'\u2014')}</b></div>
+            <div class="kv"><span>Phone</span><b>${escapeHtml(rec.phone||'\u2014')}</b></div>
+            <div class="kv"><span>Status</span><b>${entry? `<span class="badge-pill pill-green">On Site since ${fmtTimeOnly(entry.checkIn)}</span>` : `<span class="badge-pill pill-gray">Checked Out</span>`}</b></div>
+          </div>
+          <div class="center">
+            ${rec.photo?`<img src="${rec.photo}" style="width:120px;height:120px;object-fit:cover;border-radius:10px;">`:'<div class="small">No photo</div>'}
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        ${!entry
+          ? `<button class="btn btn-primary" onclick="closeModal(); staffCheckIn('${rec.id}');">Check In</button>`
+          : `<button class="btn" onclick="printSingleBadge('${rec.id}','STAFF')">Reprint Badge</button>
+             <button class="btn btn-primary" onclick="closeModal(); staffCheckOut('${rec.id}');">Check Out</button>`}
+        <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      </div>
+    `, {wide:true});
+  }
+}
+/* Re-open the lookup modal for a record already in the database, given only its kind + id \u2014
+   used by the Live Gate Monitor override so it follows the exact same flow as a gate scan. */
+function openLookupFromRecord(kind, id){
+  if(kind==='VISITOR'){
+    const rec = DB.get('visitors',[]).find(v=>v.id===id);
+    if(rec) openLookupModal('VISITOR', rec);
+  } else {
+    const rec = DB.get('staff',[]).find(s=>s.id===id);
+    if(rec) openLookupModal('STAFF', rec);
+  }
+}
+function reCheckInVisitor(id){
+  const visitors = DB.get('visitors',[]);
+  const rec = visitors.find(v=>v.id===id);
+  if(!rec){ toast('Visitor not found.','err'); return; }
+  // Area access and purpose must be refreshed on every visit, so re-check-in routes through
+  // the same wizard the front desk uses for a new registration \u2014 jumping straight to the
+  // Details step since identity/photo are already on file. finalizeVisitor() will update this
+  // same NID-keyed record in place (and ask for the Security Code) rather than duplicate it.
+  newVisitorWizard();
+  VW.editingId = rec.id;
+  VW.fields = {hostName: rec.hostName||'', name: rec.name, nid: rec.nid, phone: rec.phone};
+  VW.face.photo = rec.facePhoto || null;
+  VW.face.override = rec.faceOverride || false;
+  VW.face.overrideReason = rec.faceOverrideReason || '';
+  const vtR = splitVisitorType(rec.accessLevel, S());
+  VW.details = {
+    company: rec.company||'', escort: rec.escort||'', accessLevel: vtR.sel, accessLevelOther: vtR.other,
+    areaAccess: rec.areaAccess ? {...defaultAreaAccess(), ...rec.areaAccess} : defaultAreaAccess(),
+    purpose:'', purposeOther:'', durationH:1, durationM:0, ppe:rec.ppe||false, safety:rec.safety||false,
+    notes:'', vehicleType: rec.vehicleType||'', plateNumber: rec.plateNumber||''
+  };
+  openModal(`<div id="wizardRoot"></div>`, {wide:true, persistent:true});
+  VW.step = 3;
+  renderWizard();
+}
+function extendVisitorPrompt(id){
+  const visitors = DB.get('visitors',[]);
+  const rec = visitors.find(v=>v.id===id);
+  if(!rec){ toast('Visitor not found.','err'); return; }
+  openModal(`
+    ${modalHeader('Extend Time \u2014 '+rec.id)}
+    <div class="modal-body">
+      <p class="small" style="margin-top:0;">Current expiry: <b>${fmtDT(rec.expiry)}</b></p>
+      <div class="field"><label>Add extra time (minutes)</label><input id="extendMins" type="number" value="60" min="1"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="extendVisitorConfirm('${id}')">Extend</button>
+    </div>
+  `, {narrow:true});
+}
+async function extendVisitorConfirm(id){
+  const input = document.getElementById('extendMins');
+  const mins = parseInt(input.value, 10);
+  if(!mins || mins<=0){ toast('Enter a valid number of minutes.','err'); return; }
+  const ok = await askKey('security');
+  if(!ok) return;
+  const visitors = DB.get('visitors',[]);
+  const rec = visitors.find(v=>v.id===id);
+  if(!rec) return;
+  const now = Date.now();
+  const base = new Date(rec.expiry).getTime() > now ? new Date(rec.expiry).getTime() : now;
+  rec.expiry = new Date(base + mins*60000).toISOString();
+  rec.durationMins = (rec.durationMins||0) + mins;
+  DB.set('visitors', visitors);
+  logAudit('Visitor time extended by '+mins+'m', id, 'Security');
+  toast('Extended to '+fmtDT(rec.expiry), 'ok');
+  closeModal();
+  renderRoute();
+}
+function visitorStatusInfo(rec){
+  if(rec.status==='checked_out') return {label:'Checked Out', cls:'gray'};
+  const now = Date.now(), exp = new Date(rec.expiry).getTime();
+  if(now > exp) return {label:'Overdue', cls:'red'};
+  if(exp - now < 15*60000) return {label:'Near Expiry', cls:'amber'};
+  return {label:'On Site', cls:'green'};
+}
+
+/* ========================================================================
+   OVERDUE CHECKOUT ALERTS \u2014 pop-up + sound when a visitor's time is up
+   and they still haven't checked out. Runs on a timer; if more than one
+   visitor is overdue at once it lists them all and lets security decide,
+   per visitor, whether to check them out, view their details, or ignore
+   them for a while. "Ignore" only snoozes that one visitor \u2014 it never
+   turns the feature off, and the alert keeps re-checking in the background.
+   ======================================================================== */
+let overdueAlertOpen = false;
+let overdueSnoozeUntil = {}; // visitor id -> timestamp (ms) until which we won't re-alert
+function getOverdueVisitors(){
+  const now = Date.now();
+  return DB.get('visitors',[]).filter(v=>
+    v.status==='onsite' &&
+    new Date(v.expiry).getTime() < now &&
+    !(overdueSnoozeUntil[v.id] && overdueSnoozeUntil[v.id] > now)
+  );
+}
+function playOverdueAlertSound(){
+  try{
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if(!Ctx) return;
+    const ctx = new Ctx();
+    let t = ctx.currentTime;
+    for(let i=0;i<3;i++){
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.setValueAtTime(880, t);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.35, t+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t+0.3);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(t); osc.stop(t+0.32);
+      t += 0.42;
+    }
+    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 1500);
+  }catch(e){}
+}
+function checkOverdueAlerts(){
+  if(!sessionUnlocked || overdueAlertOpen) return;
+  const settings = S();
+  if(settings.overdueAlertsEnabled===false) return;
+  const list = getOverdueVisitors();
+  if(!list.length) return;
+  overdueAlertOpen = true;
+  if(settings.overdueAlertSoundEnabled!==false) playOverdueAlertSound();
+  renderOverdueAlertModal();
+}
+function renderOverdueAlertModal(){
+  const list = getOverdueVisitors();
+  if(!list.length){ overdueAlertOpen = false; closeModal(); return; }
+  const rows = list.map(v=>{
+    const mins = Math.max(0, Math.round((Date.now() - new Date(v.expiry).getTime())/60000));
+    return `<tr>
+      <td><b>${escapeHtml(v.name)}</b><div class="small mono">${escapeHtml(v.id)}</div></td>
+      <td>${escapeHtml(v.company||'\u2014')}</td>
+      <td><span class="badge-pill pill-red">${mins} min over</span></td>
+      <td>
+        <div class="row" style="gap:.35em; flex-wrap:nowrap;">
+          <button class="btn btn-sm" onclick="overdueViewInfo('${v.id}')">Info</button>
+          <button class="btn btn-sm btn-primary" onclick="overdueCheckOut('${v.id}')">Check Out</button>
+          <button class="btn btn-sm btn-ghost" onclick="overdueSnooze('${v.id}')">Ignore</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+  openModal(`
+    ${modalHeader(ic('alert')+' Time\u2019s Up \u2014 '+list.length+' Visitor'+(list.length>1?'s':'')+' Not Checked Out')}
+    <div class="modal-body">
+      <p class="small" style="margin-top:0;">${list.length>1?'These visitors have':'This visitor has'} passed their expected checkout time and ${list.length>1?'are':'is'} still on site. Decide per visitor below, or ignore all for now.</p>
+      <div class="table-wrap"><table class="hist-print-table" style="width:100%;">
+        <thead><tr><th>Visitor</th><th>Company</th><th>Overdue</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="overdueSnoozeAll()">Ignore All (${S().overdueAlertSnoozeMins||10} min)</button>
+      <button class="btn btn-ghost" onclick="overdueAlertOpen=false; closeModal();">Close</button>
+    </div>
+  `, {wide:true, persistent:true});
+}
+function overdueViewInfo(id){
+  overdueAlertOpen = false;
+  closeModal();
+  openLookupFromRecord('VISITOR', id);
+}
+async function overdueCheckOut(id){
+  overdueAlertOpen = false;
+  closeModal();
+  await checkoutVisitor(id);
+}
+function overdueSnooze(id){
+  const mins = S().overdueAlertSnoozeMins||10;
+  overdueSnoozeUntil[id] = Date.now() + mins*60000;
+  closeModal();
+  renderOverdueAlertModal();
+}
+function overdueSnoozeAll(){
+  const mins = S().overdueAlertSnoozeMins||10;
+  const now = Date.now();
+  getOverdueVisitors().forEach(v=>{ overdueSnoozeUntil[v.id] = now + mins*60000; });
+  overdueAlertOpen = false;
+  closeModal();
+}
+
+/* ========================================================================
+   ADD STAFF (designated non-admin access, gated by its own security code)
+   ======================================================================== */
+function renderAddStaffPage(){
+  return `
+    <div class="card card-pad center" style="max-width:460px; margin:2em auto;">
+      <div style="margin-bottom:.3em;">${ic('idcard','icon-lg')}</div>
+      <div class="section-title" style="justify-content:center;">Register New Staff</div>
+      <p class="small">This registers a new staff member and prints their ID. It does not require Admin access \u2014 just the Add Staff Security Code. Editing or deleting staff still requires Admin, under Settings.</p>
+      <button class="btn btn-primary btn-block" onclick="openStaffForm(null)">${ic('idcard')} Add Staff</button>
+    </div>`;
+}
+
+/* ========================================================================
+   STAFF MANAGEMENT
+   ======================================================================== */
+function openStaffForm(existingId){
+  const staff = DB.get('staff',[]);
+  const rec = existingId ? staff.find(s=>s.id===existingId) : null;
+  const st = rec ? {...rec} : {id:null, name:'', nid:'', department:'', designation:'', areaAccess: defaultAreaAccess(), phone:'', photo:'', bloodGroup:'', email:'', emergencyContact:'', joiningDate:'', status:'active'};
+  window.__staffAA = st.areaAccess ? {...defaultAreaAccess(), ...st.areaAccess} : defaultAreaAccess();
+  openModal(`
+    ${modalHeader(rec? 'Edit Staff \u2014 '+rec.id : 'Add Staff')}
+    <div class="modal-body">
+      <div class="grid grid-2">
+        <div class="field"><label>Full Name *</label><input id="stName" value="${escapeHtml(st.name)}"></div>
+        <div class="field"><label>NID Number *</label><input id="stNid" value="${escapeHtml(st.nid)}"></div>
+        <div class="field"><label>Unit *</label><input id="stDept" value="${escapeHtml(st.department)}"></div>
+        <div class="field"><label>Designation *</label><input id="stDesig" value="${escapeHtml(st.designation)}"></div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Area Access * (select all that apply \u2014 update whenever it changes, no need to redo every visit)</label>
+          <div id="staffAAWrap">${areaAccessFieldsHtml(window.__staffAA, 'window.__staffAA', 'refreshStaffAreaAccess();')}</div>
+        </div>
+        <div class="field"><label>Phone *</label><input id="stPhone" value="${escapeHtml(st.phone)}"></div>
+        <div class="field"><label>Blood Group (optional)</label><input id="stBg" value="${escapeHtml(st.bloodGroup)}"></div>
+        <div class="field"><label>Email (optional)</label><input id="stEmail" value="${escapeHtml(st.email)}"></div>
+        <div class="field"><label>Emergency Contact (optional)</label><input id="stEc" value="${escapeHtml(st.emergencyContact)}"></div>
+        <div class="field"><label>Joining Date (optional)</label><input id="stJoin" type="date" value="${escapeHtml(st.joiningDate)}"></div>
+        <div class="field"><label>Status</label>
+          <select id="stStatus"><option ${st.status==='active'?'selected':''} value="active">Active</option><option ${st.status==='inactive'?'selected':''} value="inactive">Inactive</option></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Photo</label>
+        <div class="row">
+          <div class="capture-box" id="stPhotoBox" style="max-width:120px; aspect-ratio:1/1;">
+            ${st.photo? `<img src="${st.photo}">`:`<video id="stVideo" playsinline muted></video>`}
+          </div>
+          <div>
+            <div class="row"><button class="btn btn-sm" onclick="startCamera(document.getElementById('stVideo'),'staffphoto')">Camera</button><button class="btn btn-sm" onclick="capStaffPhoto()">Capture</button></div>
+            <input type="file" accept="image/*" style="margin-top:.5em;" onchange="uploadStaffPhoto(this)">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStaff(${rec?`'${rec.id}'`:'null'})">${rec?'Save Changes':'Add Staff'}</button>
+    </div>
+  `, {wide:true});
+  window.__staffPhotoTemp = st.photo || '';
+}
+async function capStaffPhoto(){
+  const v = document.getElementById('stVideo');
+  if(!v || !v.srcObject){ toast('Start the camera first.','err'); return; }
+  window.__staffPhotoTemp = snapFromVideo(v);
+  stopCamera('staffphoto');
+  document.getElementById('stPhotoBox').innerHTML = `<img src="${window.__staffPhotoTemp}">`;
+}
+async function uploadStaffPhoto(input){
+  if(!input.files[0]) return;
+  window.__staffPhotoTemp = await fileToDataUrl(input.files[0]);
+  document.getElementById('stPhotoBox').innerHTML = `<img src="${window.__staffPhotoTemp}">`;
+}
+function refreshStaffAreaAccess(){
+  const wrap = document.getElementById('staffAAWrap');
+  if(wrap) wrap.innerHTML = areaAccessFieldsHtml(window.__staffAA, 'window.__staffAA', 'refreshStaffAreaAccess();');
+}
+async function saveStaff(existingId){
+  const name = document.getElementById('stName').value.trim();
+  const nid = document.getElementById('stNid').value.trim();
+  const dept = document.getElementById('stDept').value.trim();
+  const desig = document.getElementById('stDesig').value.trim();
+  const phone = document.getElementById('stPhone').value.trim();
+  const aa = window.__staffAA || defaultAreaAccess();
+  if(!name||!nid||!dept||!desig||!phone){ toast('Please fill all required fields (NID number is mandatory).','err'); return; }
+  if(!areaAccessAny(aa)){ toast('Select at least one area access.','err'); return; }
+  if(aa.ship && !aa.shipName.trim()){ toast('Enter the ship name.','err'); return; }
+  if(aa.other && !aa.otherText.trim()){ toast('Specify the other area access.','err'); return; }
+  const staff = DB.get('staff',[]);
+  const nidKey = idFromNid(nid);
+  if(!existingId){
+    const dup = staff.find(s=>s.id===nidKey);
+    if(dup){
+      toast('A staff member is already registered with this NID: '+dup.name+' ('+dup.id+'). Opening their record instead.','err');
+      closeModal();
+      openStaffForm(dup.id);
+      return;
+    }
+    const visitorMatch = DB.get('visitors',[]).find(v=>v.id===nidKey);
+    if(visitorMatch) toast('Note: this NID is already registered as a visitor ('+visitorMatch.name+').', 'err');
+  }
+  const phoneNorm = normPhone(phone);
+  const phoneDup = phoneNorm.length>=7 ? staff.find(s=>s.id!==nidKey && normPhone(s.phone)===phoneNorm) : null;
+  if(phoneDup) toast('Note: this phone number is already on file for '+phoneDup.name+' ('+phoneDup.id+').', 'err');
+  const ok = await askKey(existingId ? 'admin' : 'staffAdd');
+  if(!ok) return;
+  let newRec = null;
+  if(existingId){
+    const rec = staff.find(s=>s.id===existingId);
+    if(nidKey !== existingId){
+      const collide = staff.find(s=>s.id===nidKey && s!==rec);
+      if(collide){ toast('Another staff member already uses this NID: '+collide.name+' ('+collide.id+').','err'); return; }
+      DB.set('staffAttendance', DB.get('staffAttendance',[]).map(a=> a.staffId===existingId ? {...a, staffId:nidKey} : a));
+      rec.id = nidKey;
+    }
+    Object.assign(rec, {name, nid, department:dept, designation:desig, areaAccess:{...aa}, phone,
+      bloodGroup:document.getElementById('stBg').value.trim(), email:document.getElementById('stEmail').value.trim(),
+      emergencyContact:document.getElementById('stEc').value.trim(), joiningDate:document.getElementById('stJoin').value,
+      status:document.getElementById('stStatus').value, photo: window.__staffPhotoTemp||rec.photo||''});
+    logAudit('Staff edited', rec.id, 'Admin');
+    toast('Staff record updated.','ok');
+  } else {
+    const rec = {id:nidKey, type:'staff', nid, name, department:dept, designation:desig, areaAccess:{...aa}, phone,
+      bloodGroup:document.getElementById('stBg').value.trim(), email:document.getElementById('stEmail').value.trim(),
+      emergencyContact:document.getElementById('stEc').value.trim(), joiningDate:document.getElementById('stJoin').value,
+      status:document.getElementById('stStatus').value, photo: window.__staffPhotoTemp||''};
+    staff.unshift(rec);
+    logAudit('Staff added', rec.id, 'Admin');
+    toast('Staff added: '+rec.id,'ok');
+    newRec = rec;
+  }
+  DB.set('staff', staff);
+  closeModal();
+  renderRoute();
+  if(newRec) showBadgeModal(newRec, 'STAFF', 'registered');
+}
+async function deleteStaff(id){
+  const ok1 = await confirmDialog('Delete staff record?', 'This removes '+id+' permanently. Attendance history for this staff member is kept for records.', 'Delete', true);
+  if(!ok1) return;
+  const ok2 = await askKey('admin');
+  if(!ok2) return;
+  let staff = DB.get('staff',[]);
+  staff = staff.filter(s=>s.id!==id);
+  DB.set('staff', staff);
+  logAudit('Staff deleted', id, 'Admin');
+  toast('Staff record deleted.','ok');
+  renderRoute();
+}
+function staffCurrentlyOnsite(id){
+  const att = DB.get('staffAttendance',[]);
+  return att.find(a=>a.staffId===id && !a.checkOut) || null;
+}
+async function staffCheckIn(id){
+  const staff = DB.get('staff',[]);
+  const rec = staff.find(s=>s.id===id || s.nid===id);
+  if(!rec){ toast('Staff ID not found.','err'); return; }
+  if(staffCurrentlyOnsite(rec.id)){ toast(rec.name+' is already checked in.','err'); return; }
+  const settings = S();
+  const now = new Date();
+  const isLate = now.getHours() > settings.workStartHour || (now.getHours()===settings.workStartHour && now.getMinutes()>0);
+  const att = DB.get('staffAttendance',[]);
+  const entry = {id: uid(), staffId: rec.id, name: rec.name, department: rec.department, checkIn: nowISO(), checkOut:null, late: isLate, earlyDeparture:false, overtimeMins:0, workedMins:0};
+  att.unshift(entry);
+  DB.set('staffAttendance', att);
+  logAudit('Staff checked in', rec.id, 'Officer');
+  toast(rec.name+' checked in.', 'ok');
+  renderRoute();
+  showBadgeModal(rec, 'STAFF', true);
+}
+async function staffCheckOut(id){
+  const staff = DB.get('staff',[]);
+  const rec = staff.find(s=>s.id===id || s.nid===id);
+  if(!rec){ toast('Staff ID not found.','err'); return; }
+  const entry = staffCurrentlyOnsite(rec.id);
+  if(!entry){ toast(rec.name+' is not currently checked in.','err'); return; }
+  const ok = await askKey('security');
+  if(!ok) return;
+  const settings = S();
+  const now = new Date();
+  entry.checkOut = nowISO();
+  entry.workedMins = minutesBetween(entry.checkIn, entry.checkOut);
+  entry.earlyDeparture = now.getHours() < settings.workEndHour;
+  const expectedEnd = new Date(entry.checkIn);
+  expectedEnd.setHours(settings.workEndHour,0,0,0);
+  entry.overtimeMins = Math.max(0, minutesBetween(expectedEnd.toISOString(), entry.checkOut));
+  DB.set('staffAttendance', DB.get('staffAttendance',[]).map(a=>a.id===entry.id?entry:a));
+  logAudit('Staff checked out', rec.id, 'Security');
+  toast(rec.name+' checked out.', 'ok');
+  renderRoute();
+  showCheckoutInfoModal({...rec, checkIn: entry.checkIn, checkOut: entry.checkOut}, 'STAFF');
+}
+function exportStaffJson(){
+  const data = {staff: DB.get('staff',[]), counters: DB.get('counters',{})};
+  downloadFile('staff.json', JSON.stringify(data,null,2), 'application/json');
+  logAudit('Staff database exported', '', 'Admin');
+}
+function importStaffJson(input){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      const ok = await askKey('admin');
+      if(!ok) return;
+      if(Array.isArray(data.staff)){
+        DB.set('staff', data.staff);
+        if(data.counters) DB.set('counters', {...DB.get('counters',{}), staff:data.counters.staff||0});
+        logAudit('Staff database imported', '', 'Admin');
+        toast('Staff database imported.','ok');
+        renderRoute();
+      } else toast('File does not look like a staff export.','err');
+    }catch(e){ toast('Invalid JSON file.','err'); }
+  };
+  reader.readAsText(file);
+}
+function downloadFile(filename, content, mime){
+  const blob = new Blob([content], {type:mime||'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
+}
+/* ========================================================================
+   BULK STAFF IMPORT \u2014 CSV or JSON. Matches existing staff by NID (updates
+   in place); a new NID creates a new record. No external library required
+   (this app stays fully offline), so XLSX isn't supported directly \u2014 the
+   template and instructions ask for CSV, which any spreadsheet program
+   (Excel/Sheets/LibreOffice) can save to via "Save As \u2192 CSV".
+   ======================================================================== */
+function parseAreaAccessString(str){
+  const aa = defaultAreaAccess();
+  if(!str) return aa;
+  String(str).split(/[;|]/).map(s=>s.trim()).filter(Boolean).forEach(tok=>{
+    let m;
+    if(/^office$/i.test(tok)) aa.office = true;
+    else if((m = tok.match(/^ship\s*[:\-]?\s*\(?([^)]*)\)?$/i))){ aa.ship = true; aa.shipName = (m[1]||'').trim(); }
+    else if(/^walkway$/i.test(tok)) aa.walkway = true;
+    else if(/^outdoor/i.test(tok)) aa.outdoorStorage = true;
+    else if(/^indoor/i.test(tok)) aa.indoorStorage = true;
+    else if((m = tok.match(/^other\s*[:\-]?\s*(.*)$/i))){ aa.other = true; aa.otherText = (m[1]||'').trim(); }
+  });
+  return aa;
+}
+/* Minimal RFC4180-ish CSV parser \u2014 handles quoted fields, escaped quotes, and commas inside quotes. */
+function parseCsv(text){
+  const rows = []; let field='', row=[], inQuotes=false, i=0;
+  const pushField=()=>{ row.push(field); field=''; };
+  const pushRow=()=>{ rows.push(row); row=[]; };
+  while(i<text.length){
+    const c = text[i];
+    if(inQuotes){
+      if(c==='"'){ if(text[i+1]==='"'){ field+='"'; i+=2; continue; } inQuotes=false; i++; continue; }
+      field+=c; i++; continue;
+    } else {
+      if(c==='"'){ inQuotes=true; i++; continue; }
+      if(c===','){ pushField(); i++; continue; }
+      if(c==='\r'){ i++; continue; }
+      if(c==='\n'){ pushField(); pushRow(); i++; continue; }
+      field+=c; i++; continue;
+    }
+  }
+  if(field.length || row.length){ pushField(); pushRow(); }
+  if(!rows.length) return [];
+  const headers = rows[0].map(h=>h.trim().toLowerCase());
+  return rows.slice(1).filter(r=>r.some(c=>(c||'').trim()!=='')).map(r=>{
+    const obj = {}; headers.forEach((h,idx)=>obj[h]=(r[idx]||'').trim()); return obj;
+  });
+}
+function normalizeImportRow(obj){
+  const get = (...keys)=>{ for(const k of keys){ if(obj[k]!=null && String(obj[k]).trim()!=='') return String(obj[k]).trim(); } return ''; };
+  const status = get('status').toLowerCase()==='inactive' ? 'inactive' : 'active';
+  return {
+    name: get('name','fullname','full name'),
+    nid: get('nid','nid number','national id'),
+    phone: get('phone','phone number','mobile'),
+    department: get('unit','department','dept'),
+    designation: get('designation','title','position'),
+    areaAccess: get('areaaccess','area access'),
+    bloodGroup: get('bloodgroup','blood group'),
+    email: get('email'),
+    emergencyContact: get('emergencycontact','emergency contact'),
+    joiningDate: get('joiningdate','joining date'),
+    status
+  };
+}
+function bulkImportStaffTemplate(){
+  const csv = 'Name,NID,Phone,Unit,Designation,AreaAccess,BloodGroup,Email,EmergencyContact,JoiningDate,Status\n'
+    + 'John Doe,1234567890,01711111111,Yard Operations,Supervisor,"Office;Ship:MV Horizon;Walkway",O+,john@example.com,01799999999,2024-01-15,active\n';
+  downloadFile('staff_bulk_import_template.csv', csv, 'text/csv');
+}
+function openBulkImportStaffModal(){
+  openModal(`
+    ${modalHeader('Bulk Import Staff')}
+    <div class="modal-body">
+      <p class="small" style="margin-top:0;">Import many staff at once from a <b>CSV</b> or <b>JSON</b> file. Matching is by <b>NID</b> \u2014 a row whose NID already exists updates that staff member in place; a new NID creates a new record. Required columns: <b>Name, NID, Phone, Unit, Designation</b>. The Area Access column accepts semicolon-separated values, e.g. <code>Office;Ship:MV Horizon;Walkway;Other:Crane Bay</code> (allowed: Office, Ship, Walkway, Outdoor Open Storage, Indoor Storage, Other).</p>
+      <button class="btn btn-sm" onclick="bulkImportStaffTemplate()">Download CSV Template</button>
+      <div class="field" style="margin-top:1em;"><label>Choose CSV or JSON file</label><input type="file" id="bulkImportFile" accept=".csv,.json,application/json,text/csv"></div>
+      <p class="hint">JSON files should be an array of objects using the same field names (case-insensitive), e.g. <code>[{"name":"...","nid":"...","phone":"...","unit":"...","designation":"...","areaAccess":"Office;Walkway"}]</code>.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="runBulkImportStaff()">Import</button>
+    </div>
+  `, {wide:true});
+}
+async function runBulkImportStaff(){
+  const input = document.getElementById('bulkImportFile');
+  const file = input && input.files[0];
+  if(!file){ toast('Choose a CSV or JSON file first.','err'); return; }
+  const text = await file.text();
+  let rows = [];
+  try{
+    if(/\.json$/i.test(file.name) || text.trim().startsWith('[')){
+      const data = JSON.parse(text);
+      rows = (Array.isArray(data)?data:[]).map(o=>{
+        const lower = {}; Object.keys(o).forEach(k=>lower[k.toLowerCase()]=o[k]);
+        return normalizeImportRow(lower);
+      });
+    } else {
+      rows = parseCsv(text).map(normalizeImportRow);
+    }
+  }catch(e){ toast('Could not parse the file: '+e.message,'err'); return; }
+  rows = rows.filter(r=>r.name && r.nid && r.phone && r.department && r.designation);
+  if(!rows.length){ toast('No valid rows found \u2014 Name, NID, Phone, Unit and Designation are required in every row.','err'); return; }
+  const ok = await askKey('admin');
+  if(!ok) return;
+  const staff = DB.get('staff',[]);
+  let added=0, updated=0;
+  rows.forEach(r=>{
+    const id = idFromNid(r.nid);
+    const areaAccess = parseAreaAccessString(r.areaAccess);
+    const existing = staff.find(s=>s.id===id);
+    if(existing){
+      Object.assign(existing, {name:r.name, nid:r.nid, department:r.department, designation:r.designation,
+        areaAccess, phone:r.phone, bloodGroup:r.bloodGroup||existing.bloodGroup||'', email:r.email||existing.email||'',
+        emergencyContact:r.emergencyContact||existing.emergencyContact||'', joiningDate:r.joiningDate||existing.joiningDate||'',
+        status:r.status||existing.status||'active'});
+      updated++;
+    } else {
+      staff.unshift({id, type:'staff', nid:r.nid, name:r.name, department:r.department, designation:r.designation,
+        areaAccess, phone:r.phone, bloodGroup:r.bloodGroup||'', email:r.email||'', emergencyContact:r.emergencyContact||'',
+        joiningDate:r.joiningDate||'', status:r.status||'active', photo:''});
+      added++;
+    }
+  });
+  DB.set('staff', staff);
+  logAudit('Bulk staff import: '+added+' added, '+updated+' updated', '', 'Admin');
+  toast('Bulk import complete \u2014 '+added+' added, '+updated+' updated.', 'ok');
+  closeModal();
+  renderRoute();
+}
+
+
+/* ========================================================================
+   NAVIGATION SHELL
+   ======================================================================== */
+const NAV = [
+  {id:'dashboard', label:'Home', ico:'home'},
+  {id:'monitor', label:'Live Monitor', ico:'radio'},
+  {id:'history', label:'History', ico:'clock'},
+  {id:'reports', label:'Reports', ico:'chart'},
+  {id:'addstaff', label:'Add Staff', ico:'idcard'},
+  {id:'settings', label:'Settings', ico:'settings'},
+  {id:'help', label:'Help', ico:'help'}
+];
+let adminUnlocked = false;
+
+function renderSidebarNav(){
+  const cur = currentView();
+  document.getElementById('navTabs').innerHTML = NAV.map(n=>`
+    <button class="navbtn ${n.id===cur?'active':''}" onclick="go('${n.id}')">${ic(n.ico)} ${n.label}</button>
+  `).join('');
+}
+function currentView(){ return (location.hash||'#dashboard').replace('#',''); }
+function go(view){ location.hash = view; }
+function toggleSidebar(force){
+  const sb = document.getElementById('sidebar'), sc = document.getElementById('scrim');
+  const open = force!==undefined ? force : !sb.classList.contains('open');
+  sb.classList.toggle('open', open); sc.classList.toggle('show', open);
+}
+window.addEventListener('hashchange', renderRoute);
+
+function renderRoute(){
+  const view = currentView();
+  renderSidebarNav();
+  toggleSidebar(false);
+  const titles = {dashboard:'Home', gate:'Home', monitor:'Live Gate Monitor', history:'History', reports:'Reports', addstaff:'Add Staff', settings:'Settings', help:'Help'};
+  document.getElementById('pageTitle').textContent = titles[view] || 'Home';
+  const c = document.getElementById('content');
+  if(view==='dashboard') c.innerHTML = renderDashboard();
+  else if(view==='gate') c.innerHTML = renderDashboard(); // legacy link, folded into Home
+  else if(view==='monitor') c.innerHTML = renderMonitor();
+  else if(view==='history') c.innerHTML = renderHistory();
+  else if(view==='reports') c.innerHTML = renderReports();
+  else if(view==='addstaff') c.innerHTML = renderAddStaffPage();
+  else if(view==='settings') c.innerHTML = renderSettings();
+  else if(view==='help') c.innerHTML = renderHelp();
+  else c.innerHTML = renderDashboard();
+  afterRouteRender(view);
+}
+function afterRouteRender(view){
+  if(view==='history') initHistoryDefaults();
+  updateRoleChip();
+}
+
+/* ========================================================================
+   DASHBOARD
+   ======================================================================== */
+function todayStr(){ return new Date().toDateString(); }
+function isToday(iso){ return iso && new Date(iso).toDateString()===todayStr(); }
+
+function renderDashboard(){
+  const visitors = DB.get('visitors',[]);
+  const staff = DB.get('staff',[]);
+  const att = DB.get('staffAttendance',[]);
+  const onsiteVisitors = visitors.filter(v=>v.status==='onsite');
+  const onsiteStaff = att.filter(a=>!a.checkOut);
+  const todayVisitors = visitors.filter(v=>isToday(v.checkIn));
+  const todayStaffAtt = att.filter(a=>isToday(a.checkIn));
+  const overdue = onsiteVisitors.filter(v=>visitorStatusInfo(v).cls==='red');
+  const todayCheckIns = todayVisitors.length + todayStaffAtt.length;
+  const todayCheckOuts = visitors.filter(v=>isToday(v.checkOut)).length + att.filter(a=>isToday(a.checkOut)).length;
+
+  const recent = [...visitors.map(v=>({t:v.checkIn, txt:`${v.name} checked in \u2014 ${v.accessLevel}`, kind:'visitor'})),
+                   ...visitors.filter(v=>v.checkOut).map(v=>({t:v.checkOut, txt:`${v.name} checked out`, kind:'visitor'})),
+                   ...att.map(a=>({t:a.checkIn, txt:`${a.name} (staff) checked in`, kind:'staff'})),
+                   ...att.filter(a=>a.checkOut).map(a=>({t:a.checkOut, txt:`${a.name} (staff) checked out`, kind:'staff'}))]
+                   .sort((a,b)=> new Date(b.t)-new Date(a.t)).slice(0,8);
+
+  return `
+    <div class="card scan-hero">
+      <div class="section-title" style="margin-bottom:.9em;">${ic('idcard')} Gate Console</div>
+      <div class="scan-hero-inner">
+        <div class="scan-tile" onclick="openVisitorWizard()">
+          <div class="scan-tile-ico">${ic('idcard')}</div>
+          <b>New Visitor</b>
+          <span>Name, phone &amp; NID number \u2014 NID is photocopied at the gate</span>
+        </div>
+        <div class="scan-tile" onclick="document.getElementById('homeScanInput').focus()">
+          <div class="scan-tile-ico">${ic('edit')}</div>
+          <b>Check In / Check Out</b>
+          <span>Enter the person's NID number \u2014 no scanning needed</span>
+        </div>
+      </div>
+      <div class="scan-manual">
+        <input id="homeScanInput" placeholder="Enter NID / Staff ID / Visitor ID" autocomplete="off" onkeydown="if(event.key==='Enter')homeManualSubmit()">
+        <button class="btn btn-primary" onclick="homeManualSubmit()">Go</button>
+      </div>
+    </div>
+    <div class="grid grid-4" style="margin-bottom:1.2em;">
+      <div class="stat"><div class="accent acc-navy"></div><div class="num">${onsiteVisitors.length}</div><div class="lbl">Visitors Onsite</div></div>
+      <div class="stat"><div class="accent acc-green"></div><div class="num">${onsiteStaff.length}</div><div class="lbl">Staff Onsite</div></div>
+      <div class="stat"><div class="accent acc-gold"></div><div class="num">${todayVisitors.length}</div><div class="lbl">Today's Visitors</div></div>
+      <div class="stat"><div class="accent acc-amber"></div><div class="num">${todayStaffAtt.length}</div><div class="lbl">Today's Staff Attendance</div></div>
+      <div class="stat"><div class="accent acc-red"></div><div class="num">${overdue.length}</div><div class="lbl">Overdue Visitors</div></div>
+      <div class="stat"><div class="accent acc-navy"></div><div class="num">${todayCheckIns}</div><div class="lbl">Today's Check-ins</div></div>
+      <div class="stat"><div class="accent acc-navy"></div><div class="num">${todayCheckOuts}</div><div class="lbl">Today's Check-outs</div></div>
+      <div class="stat"><div class="accent acc-gold"></div><div class="num">${staff.length}</div><div class="lbl">Registered Staff</div></div>
+    </div>
+    <div class="grid grid-3" style="align-items:start;">
+      <div class="card card-pad" style="grid-column:span 1;">
+        <div class="section-title">Other Actions</div>
+        <div style="display:flex; flex-direction:column; gap:.6em;">
+          <button class="btn btn-lg" onclick="go('monitor')">${ic('radio')} Live Gate Monitor</button>
+          <button class="btn btn-lg" onclick="go('reports')">${ic('chart')} Generate Report</button>
+          <button class="btn btn-lg" onclick="go('help')">${ic('help')} Help</button>
+        </div>
+      </div>
+      <div class="card card-pad" style="grid-column:span 2;">
+        <div class="section-title">Recent Activity</div>
+        ${recent.length? `<div style="display:flex; flex-direction:column; gap:.1em;">${recent.map(r=>`
+          <div class="kv"><span>${escapeHtml(r.txt)}</span><span class="small">${fmtDT(r.t)}</span></div>
+        `).join('')}</div>` : `<div class="empty">${ic('inbox')}<br>No activity yet today.</div>`}
+      </div>
+    </div>
+  `;
+}
+
+/* ========================================================================
+   HOME SCAN CONSOLE
+   Two simple flows \u2014 no QR codes, no camera scanning, just typed numbers:
+   - Type a National ID that isn't a known record -> start visitor registration
+   - Type a Staff ID, Visitor ID, or NID that's already in the system -> check-in / check-out
+   ======================================================================== */
+function homeStartVisitorWithNid(prefillNid){
+  newVisitorWizard();
+  if(prefillNid) VW.fields.nid = prefillNid;
+  openModal(`<div id="wizardRoot"></div>`, {wide:true, persistent:true});
+  renderWizard();
+}
+/* Normalizes a phone number for comparison \u2014 strips everything but digits, and drops a
+   leading country/trunk prefix ("+880", "880", or a leading "0") so "01712345678",
+   "+8801712345678" and "8801712345678" all match the same stored number. */
+function normPhone(p){
+  let d = (p||'').replace(/\D/g,'');
+  if(d.startsWith('880')) d = d.slice(3);
+  else if(d.startsWith('0')) d = d.slice(1);
+  return d;
+}
+async function homeManualSubmit(){
+  const input = document.getElementById('homeScanInput');
+  const raw = (input.value||'').trim();
+  if(!raw){ toast('Scan or type an ID.','err'); return; }
+  input.value = '';
+  const id = raw.toUpperCase();
+  const rawPhone = normPhone(raw);
+  const isPhoneLike = rawPhone.length>=7;
+  const staff = DB.get('staff',[]).find(s=>s.id===id || (s.nid||'').toUpperCase()===id
+    || (isPhoneLike && normPhone(s.phone)===rawPhone));
+  if(staff){
+    openLookupModal('STAFF', staff);
+    return;
+  }
+  const visitor = DB.get('visitors',[]).find(v=>v.id===id || (v.nid||'').toUpperCase()===id
+    || (isPhoneLike && normPhone(v.phone)===rawPhone));
+  if(visitor){
+    openLookupModal('VISITOR', visitor);
+    return;
+  }
+  const ok = await confirmDialog('No record found', 'No staff or visitor is registered with \u201c'+escapeHtml(raw)+'\u201d. Start a new visitor registration using this as the NID number?', 'Register Visitor');
+  if(ok) homeStartVisitorWithNid(raw);
+}
+/* ========================================================================
+   LIVE GATE MONITOR
+   ======================================================================== */
+function renderMonitor(){
+  const visitors = DB.get('visitors',[]).filter(v=>v.status==='onsite');
+  const att = DB.get('staffAttendance',[]).filter(a=>!a.checkOut);
+  const rows = [
+    ...visitors.map(v=>({...v, _kind:'Visitor', _status:visitorStatusInfo(v)})),
+    ...att.map(a=>({...a, _kind:'Staff', _status:{label:'On Site', cls:'green'}, accessLevel:a.department}))
+  ].sort((a,b)=> new Date(a.checkIn)-new Date(b.checkIn));
+
+  const counts = {green:0,amber:0,red:0};
+  rows.forEach(r=>{ if(counts[r._status.cls]!==undefined) counts[r._status.cls]++; });
+
+  return `
+    <div class="grid grid-3" style="margin-bottom:1em;">
+      <div class="stat"><div class="accent acc-green"></div><div class="num">${counts.green}</div><div class="lbl">On Site</div></div>
+      <div class="stat"><div class="accent acc-amber"></div><div class="num">${counts.amber}</div><div class="lbl">Near Expiry</div></div>
+      <div class="stat"><div class="accent acc-red"></div><div class="num">${counts.red}</div><div class="lbl">Overdue</div></div>
+    </div>
+    <div class="card card-pad">
+      <div class="section-title">Everyone Currently On Site</div>
+      ${rows.length? `<div class="table-wrap"><table>
+        <thead><tr><th></th><th>ID</th><th>Name</th><th>Type</th><th>Visitor Type / Unit</th><th>Entry</th><th>Status</th><th></th></tr></thead>
+        <tbody>${rows.map(r=>`
+          <tr>
+            <td><span class="dot dot-${r._status.cls}"></span></td>
+            <td class="mono">${escapeHtml(r.id||r.staffId)}</td>
+            <td>${escapeHtml(r.name)}</td>
+            <td>${r._kind}</td>
+            <td>${escapeHtml(r.accessLevel||'\u2014')}</td>
+            <td>${fmtTimeOnly(r.checkIn)}</td>
+            <td><span class="badge-pill pill-${r._status.cls}">${r._status.label}</span></td>
+            <td>${r._kind==='Visitor' ? `<button class="btn btn-sm" onclick="openLookupFromRecord('VISITOR','${r.id}')">Check Out</button>` : `<button class="btn btn-sm" onclick="openLookupFromRecord('STAFF','${r.staffId}')">Check Out</button>`}</td>
+          </tr>
+        `).join('')}</tbody>
+      </table></div>` : `<div class="empty">${ic('users')}<br>No one is currently on site.</div>`}
+    </div>
+  `;
+}
+
+/* ========================================================================
+   HISTORY
+   ======================================================================== */
+let historyState = {tab:'visitor', from:'', to:'', q:''};
+function initHistoryDefaults(){
+  if(!historyState.from){
+    const d = new Date(); d.setDate(d.getDate()-30);
+    historyState.from = d.toISOString().slice(0,10);
+    historyState.to = new Date().toISOString().slice(0,10);
+  }
+}
+function renderHistory(){
+  return `
+    <div class="subtabs">
+      <button class="subtab ${historyState.tab==='visitor'?'active':''}" onclick="historyState.tab='visitor'; renderRoute();">Visitor History</button>
+      <button class="subtab ${historyState.tab==='staff'?'active':''}" onclick="historyState.tab='staff'; renderRoute();">Staff Attendance</button>
+    </div>
+    <div class="card card-pad">
+      <div class="row" style="align-items:end; margin-bottom:1em;">
+        <div class="field" style="max-width:170px;"><label>From</label><input type="date" value="${historyState.from}" onchange="historyState.from=this.value; renderRoute();"></div>
+        <div class="field" style="max-width:170px;"><label>To</label><input type="date" value="${historyState.to}" onchange="historyState.to=this.value; renderRoute();"></div>
+        <div class="field"><label>Search</label><input placeholder="Name, ID, phone, company\u2026" value="${escapeHtml(historyState.q)}" oninput="historyState.q=this.value; renderRoute();"></div>
+        <div class="spacer"></div>
+        <button class="btn" onclick="printHistory()">Print</button>
+        <button class="btn" onclick="exportHistory('json')">JSON</button>
+        <button class="btn" onclick="exportHistory('csv')">CSV</button>
+        <button class="btn" onclick="exportHistory('xlsx')">XLSX</button>
+      </div>
+      ${historyState.tab==='visitor' ? renderVisitorHistoryTable() : renderStaffHistoryTable()}
+    </div>
+  `;
+}
+function historyFilteredVisitors(){
+  const {from,to,q} = historyState;
+  return DB.get('visitors',[]).filter(v=>{
+    const d = v.checkIn.slice(0,10);
+    if(from && d<from) return false;
+    if(to && d>to) return false;
+    if(q){
+      const hay = [v.id,v.name,v.phone,v.nid,v.company,v.hostName,v.accessLevel].join(' ').toLowerCase();
+      if(!hay.includes(q.toLowerCase())) return false;
+    }
+    return true;
+  }).sort((a,b)=> new Date(b.checkIn)-new Date(a.checkIn));
+}
+function historyFilteredStaffAtt(){
+  const {from,to,q} = historyState;
+  return DB.get('staffAttendance',[]).filter(a=>{
+    const d = a.checkIn.slice(0,10);
+    if(from && d<from) return false;
+    if(to && d>to) return false;
+    if(q){
+      const hay = [a.staffId,a.name,a.department].join(' ').toLowerCase();
+      if(!hay.includes(q.toLowerCase())) return false;
+    }
+    return true;
+  }).sort((a,b)=> new Date(b.checkIn)-new Date(a.checkIn));
+}
+function renderVisitorHistoryTable(){
+  const rows = historyFilteredVisitors();
+  if(!rows.length) return `<div class="empty">${ic('inbox')}<br>No visitor records in this range.</div>`;
+  return `<div class="table-wrap"><table>
+    <thead><tr><th>ID</th><th>Name</th><th>Hosted By</th><th>Phone</th><th>Company</th><th>Type</th><th>Purpose</th><th>Entry</th><th>Exit</th><th>Status</th><th></th></tr></thead>
+    <tbody>${rows.map(v=>{ const st=visitorStatusInfo(v); return `
+      <tr>
+        <td class="mono">${escapeHtml(v.id)}</td>
+        <td>${escapeHtml(v.name)}</td>
+        <td>${escapeHtml(v.hostName||'\u2014')}</td>
+        <td>${escapeHtml(v.phone)}</td>
+        <td>${escapeHtml(v.company||'\u2014')}</td>
+        <td>${escapeHtml(v.accessLevel)}</td>
+        <td>${escapeHtml(v.purpose)}</td>
+        <td>${fmtDT(v.checkIn)}</td>
+        <td>${v.checkOut?fmtDT(v.checkOut):'\u2014'}</td>
+        <td><span class="badge-pill pill-${st.cls}">${st.label}</span></td>
+        <td class="row" style="gap:.3em;">
+          <button class="btn btn-sm" onclick="viewVisitorRecord('${v.id}')">View</button>
+          <button class="btn btn-sm" onclick="printSingleBadge('${v.id}','VISITOR')">Reprint</button>
+          ${v.status==='onsite'?`<button class="btn btn-sm" onclick="checkoutVisitor('${v.id}')">Check Out</button>`:''}
+        </td>
+      </tr>`;}).join('')}</tbody>
+  </table></div>`;
+}
+function renderStaffHistoryTable(){
+  const rows = historyFilteredStaffAtt();
+  if(!rows.length) return `<div class="empty">${ic('inbox')}<br>No attendance records in this range.</div>`;
+  return `<div class="table-wrap"><table>
+    <thead><tr><th>Staff ID</th><th>Name</th><th>Unit</th><th>Check In</th><th>Check Out</th><th>Worked</th><th>Late</th><th>Early Dep.</th><th>Overtime</th><th></th></tr></thead>
+    <tbody>${rows.map(a=>`
+      <tr>
+        <td class="mono">${escapeHtml(a.staffId)}</td>
+        <td>${escapeHtml(a.name)}</td>
+        <td>${escapeHtml(a.department||'\u2014')}</td>
+        <td>${fmtDT(a.checkIn)}</td>
+        <td>${a.checkOut?fmtDT(a.checkOut):'\u2014'}</td>
+        <td>${a.workedMins?durationLabel(a.workedMins):'\u2014'}</td>
+        <td>${a.late?'<span class="badge-pill pill-amber">Late</span>':'\u2014'}</td>
+        <td>${a.earlyDeparture&&a.checkOut?'<span class="badge-pill pill-amber">Early</span>':'\u2014'}</td>
+        <td>${a.overtimeMins?durationLabel(a.overtimeMins):'\u2014'}</td>
+        <td>${!a.checkOut?`<button class="btn btn-sm" onclick="staffCheckOut('${a.staffId}')">Check Out</button>`:''}</td>
+      </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+function viewVisitorRecord(id){
+  const v = DB.get('visitors',[]).find(x=>x.id===id);
+  if(!v) return;
+  const st = visitorStatusInfo(v);
+  openModal(`
+    ${modalHeader('Visitor Record \u2014 '+v.id)}
+    <div class="modal-body">
+      <div class="grid grid-2">
+        <div>
+          <div class="kv"><span>Hosted By</span><b>${escapeHtml(v.hostName||'\u2014')}</b></div>
+          <div class="kv"><span>Name</span><b>${escapeHtml(v.name)}</b></div>
+          <div class="kv"><span>NID</span><b>${escapeHtml(v.nid||'\u2014')}</b></div>
+          <div class="kv"><span>Phone</span><b>${escapeHtml(v.phone)}</b></div>
+          <div class="kv"><span>Company</span><b>${escapeHtml(v.company||'\u2014')}</b></div>
+          <div class="kv"><span>Visitor Type</span><b>${escapeHtml(v.accessLevel)}</b></div>
+          <div class="kv"><span>Area Access</span><b>${escapeHtml(formatAreaAccess(v.areaAccess)||'\u2014')}</b></div>
+          <div class="kv"><span>Purpose</span><b>${escapeHtml(v.purpose)}</b></div>
+          <div class="kv"><span>Escort</span><b>${escapeHtml(v.escort||'\u2014')}</b></div>
+          <div class="kv"><span>Items In / Notes</span><b>${escapeHtml(v.notes||'\u2014')}</b></div>
+          <div class="kv"><span>PPE / Briefing</span><b>${v.ppe?'PPE ':''}${v.safety?'Briefed':''}${!v.ppe&&!v.safety?'\u2014':''}</b></div>
+          <div class="kv"><span>Entry</span><b>${fmtDT(v.checkIn)}</b></div>
+          <div class="kv"><span>Expiry</span><b>${fmtDT(v.expiry)}</b></div>
+          <div class="kv"><span>Exit</span><b>${v.checkOut?fmtDT(v.checkOut):'\u2014'}</b></div>
+          <div class="kv"><span>Status</span><b><span class="badge-pill pill-${st.cls}">${st.label}</span></b></div>
+        </div>
+        <div class="center">
+          ${v.facePhoto?`<img src="${v.facePhoto}" style="width:120px;height:120px;object-fit:cover;border-radius:10px;">`:'<div class="small">No face photo</div>'}
+          <div class="row" style="margin-top:.6em; justify-content:center;">
+            ${v.frontPhoto?`<img src="${v.frontPhoto}" style="width:90px;border-radius:6px;">`:''}
+            ${v.backPhoto?`<img src="${v.backPhoto}" style="width:90px;border-radius:6px;">`:''}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="printSingleBadge('${v.id}','VISITOR')">Reprint Badge</button>
+      ${v.status==='onsite'?`<button class="btn btn-primary" onclick="closeModal(); checkoutVisitor('${v.id}')">Check Out</button>`:''}
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+    </div>
+  `, {wide:true});
+}
+function printHistory(){
+  const area = document.getElementById('printArea');
+  const isV = historyState.tab==='visitor';
+  const rows = isV ? historyFilteredVisitors() : historyFilteredStaffAtt();
+  const settings = S();
+  const title = (isV?'Visitor History':'Staff Attendance')+' \u2014 '+settings.companyName+' \u2014 '+historyState.from+' to '+historyState.to;
+  let table;
+  if(isV){
+    table = `<table class="hist-print-table"><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Company</th><th>Type</th><th>Purpose</th><th>Entry</th><th>Exit</th><th>Status</th><th>Items In / Notes</th></tr></thead>
+    <tbody>${rows.map(v=>`<tr><td>${escapeHtml(v.id)}</td><td>${escapeHtml(v.name)}</td><td>${escapeHtml(v.phone)}</td><td>${escapeHtml(v.company||'')}</td><td>${escapeHtml(v.accessLevel)}</td><td>${escapeHtml(v.purpose)}</td><td>${fmtDT(v.checkIn)}</td><td>${v.checkOut?fmtDT(v.checkOut):''}</td><td>${visitorStatusInfo(v).label}</td><td>${escapeHtml(v.notes||'')}</td></tr>`).join('')}</tbody></table>`;
+  } else {
+    table = `<table class="hist-print-table"><thead><tr><th>Staff ID</th><th>Name</th><th>Unit</th><th>Check In</th><th>Check Out</th><th>Worked</th><th>Late</th><th>Overtime</th></tr></thead>
+    <tbody>${rows.map(a=>`<tr><td>${escapeHtml(a.staffId)}</td><td>${escapeHtml(a.name)}</td><td>${escapeHtml(a.department||'')}</td><td>${fmtDT(a.checkIn)}</td><td>${a.checkOut?fmtDT(a.checkOut):''}</td><td>${a.workedMins?durationLabel(a.workedMins):''}</td><td>${a.late?'Yes':''}</td><td>${a.overtimeMins?durationLabel(a.overtimeMins):''}</td></tr>`).join('')}</tbody></table>`;
+  }
+  area.innerHTML = `<div style="padding:6mm;"><h2 style="font-family:sans-serif;">${escapeHtml(title)}</h2>${table}</div>`;
+  setPrintSource(isV ? 'History > Visitor History' : 'History > Staff Attendance');
+  setTimeout(()=>{ applyPrintPageStyle(S().reportOrientation||'landscape'); window.print(); }, 50);
+}
+/* Rewrites (never appends) a single dynamic @page rule right before every print job, so a
+   report printed in landscape can never leak into the next badge print (which needs portrait).
+   Margin and orientation both come from Settings > Printing so any user can tune them. */
+/* Stamps the credit + provenance line that repeats at the foot of every printed sheet.
+   sourceLabel says WHICH screen produced the paper, so a page found on a desk can always be
+   traced back. Called by every print entry point before window.print(). */
+function setPrintSource(sourceLabel){
+  const el = document.getElementById('printFootLine');
+  if(!el) return;
+  const s = S();
+  let who = 'gate';
+  try { if(sessionRole) who = sessionRole; } catch(e){ /* not unlocked yet */ }
+  el.textContent = 'Powered by Hamid Yasir & Co.  |  ' + (s.companyName || 'Mehreen Ship Recycling')
+    + '  |  Source: ' + (sourceLabel || 'Gate System')
+    + '  |  Printed ' + fmtDT(nowISO()) + ' (' + who + ')';
+}
+function applyPrintPageStyle(orientation){
+  const s = S();
+  let marginMm = parseFloat(s.printMarginMm);
+  if(!isFinite(marginMm) || marginMm <= 0){
+    const legacyIn = parseFloat(s.printMarginIn);
+    marginMm = (isFinite(legacyIn) && legacyIn > 0) ? legacyIn * 25.4 : 20;
+  }
+  marginMm = Math.min(40, Math.max(3, marginMm));
+  let el = document.getElementById('dynamicPrintPageStyle');
+  if(!el){ el = document.createElement('style'); el.id = 'dynamicPrintPageStyle'; document.head.appendChild(el); }
+  el.textContent = `@media print{ @page{ size:A4 ${orientation}; margin:${marginMm.toFixed(2)}mm; } }`;
+}
+function exportHistory(fmt){
+  const isV = historyState.tab==='visitor';
+  const rows = isV ? historyFilteredVisitors() : historyFilteredStaffAtt();
+  const fname = (isV?'visitor_history_':'staff_attendance_')+historyState.from+'_to_'+historyState.to;
+  if(fmt==='json'){ downloadFile(fname+'.json', JSON.stringify(rows,null,2), 'application/json'); }
+  else if(fmt==='csv'){ downloadFile(fname+'.csv', toCsv(rows), 'text/csv'); }
+  else if(fmt==='xlsx'){
+    const ws = XLSX.utils.json_to_sheet(rows.map(stripPhotosForExport));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, isV?'Visitor History':'Staff Attendance');
+    XLSX.writeFile(wb, fname+'.xlsx');
+  }
+  logAudit((isV?'Visitor history':'Staff attendance')+' exported ('+fmt+')', '', 'Officer');
+}
+function stripPhotosForExport(rec){
+  const {facePhoto, frontPhoto, backPhoto, photo, ...rest} = rec;
+  return rest;
+}
+function toCsv(rows){
+  if(!rows.length) return '';
+  const clean = rows.map(stripPhotosForExport);
+  const cols = Object.keys(clean[0]);
+  const esc = v=>{ const s = v==null?'':String(v); return /[",\n]/.test(s)? '"'+s.replace(/"/g,'""')+'"': s; };
+  return cols.join(',')+'\n'+clean.map(r=>cols.map(c=>esc(r[c])).join(',')).join('\n');
+}
+
+/* ========================================================================
+   REPORTS
+   ======================================================================== */
+let reportState = {type:'daily-visitor', date: new Date().toISOString().slice(0,10), month: new Date().toISOString().slice(0,7)};
+function renderReports(){
+  return `
+    <div class="grid grid-4" style="margin-bottom:1em;">
+      ${reportCard('daily-visitor','Daily Visitor Report','Every visitor logged on a chosen day.')}
+      ${reportCard('staff-attendance','Staff Attendance Report','Attendance, lateness & overtime for a chosen day.')}
+      ${reportCard('gate-summary','Daily Gate Summary','Combined visitor + staff activity for a chosen day.')}
+      ${reportCard('monthly','Monthly Report','Full month roll-up of visitor and staff activity.')}
+    </div>
+    <div class="card card-pad">
+      <div class="row" style="align-items:end;">
+        ${reportState.type==='monthly'
+          ? `<div class="field" style="max-width:200px;"><label>Month</label><input type="month" value="${reportState.month}" onchange="reportState.month=this.value; renderRoute();"></div>`
+          : `<div class="field" style="max-width:200px;"><label>Date</label><input type="date" value="${reportState.date}" onchange="reportState.date=this.value; renderRoute();"></div>`
+        }
+        <div class="spacer"></div>
+        <button class="btn" onclick="printReport()">Print</button>
+        <button class="btn" onclick="exportReport('csv')">CSV</button>
+        <button class="btn" onclick="exportReport('xlsx')">XLSX</button>
+        <button class="btn" onclick="exportReport('json')">JSON</button>
+      </div>
+      <hr class="sep">
+      <div id="reportBody">${buildReportHtml()}</div>
+    </div>
+  `;
+}
+function reportCard(id,title,desc){
+  return `<div class="card card-pad" style="cursor:pointer; border-color:${reportState.type===id?'var(--navy)':'var(--line)'};" onclick="reportState.type='${id}'; renderRoute();">
+    <b>${title}</b><div class="small" style="margin-top:.3em;">${desc}</div>
+  </div>`;
+}
+function reportRows(){
+  const {type, date, month} = reportState;
+  if(type==='daily-visitor') return DB.get('visitors',[]).filter(v=>v.checkIn.slice(0,10)===date);
+  if(type==='staff-attendance') return DB.get('staffAttendance',[]).filter(a=>a.checkIn.slice(0,10)===date);
+  if(type==='gate-summary') return [
+    ...DB.get('visitors',[]).filter(v=>v.checkIn.slice(0,10)===date).map(v=>({time:v.checkIn, event:'Visitor Check-in', who:v.name, detail:v.accessLevel})),
+    ...DB.get('visitors',[]).filter(v=>v.checkOut && v.checkOut.slice(0,10)===date).map(v=>({time:v.checkOut, event:'Visitor Check-out', who:v.name, detail:v.accessLevel})),
+    ...DB.get('staffAttendance',[]).filter(a=>a.checkIn.slice(0,10)===date).map(a=>({time:a.checkIn, event:'Staff Check-in', who:a.name, detail:a.department})),
+    ...DB.get('staffAttendance',[]).filter(a=>a.checkOut && a.checkOut.slice(0,10)===date).map(a=>({time:a.checkOut, event:'Staff Check-out', who:a.name, detail:a.department})),
+  ].sort((a,b)=> new Date(a.time)-new Date(b.time));
+  if(type==='monthly') return {
+    visitors: DB.get('visitors',[]).filter(v=>v.checkIn.slice(0,7)===month),
+    staffAtt: DB.get('staffAttendance',[]).filter(a=>a.checkIn.slice(0,7)===month)
+  };
+}
+function buildReportHtml(){
+  const {type} = reportState;
+  if(type==='monthly'){
+    const {visitors, staffAtt} = reportRows();
+    return `
+      <div class="grid grid-3" style="margin-bottom:1em;">
+        <div class="stat"><div class="num">${visitors.length}</div><div class="lbl">Total Visitors</div></div>
+        <div class="stat"><div class="num">${staffAtt.length}</div><div class="lbl">Staff Attendance Entries</div></div>
+        <div class="stat"><div class="num">${staffAtt.filter(a=>a.late).length}</div><div class="lbl">Late Arrivals</div></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Date</th><th>Visitors</th><th>Staff Check-ins</th></tr></thead>
+      <tbody>${monthlyDailyBreakdown(visitors, staffAtt).map(r=>`<tr><td>${r.date}</td><td>${r.v}</td><td>${r.s}</td></tr>`).join('')}</tbody></table></div>
+    `;
+  }
+  const rows = reportRows();
+  if(!rows.length) return `<div class="empty">${ic('inbox')}<br>No records for this date.</div>`;
+  if(type==='daily-visitor'){
+    return `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Hosted By</th><th>Phone</th><th>Company</th><th>Type</th><th>Purpose</th><th>Entry</th><th>Exit</th></tr></thead>
+    <tbody>${rows.map(v=>`<tr><td>${escapeHtml(v.id)}</td><td>${escapeHtml(v.name)}</td><td>${escapeHtml(v.hostName||'\u2014')}</td><td>${escapeHtml(v.phone)}</td><td>${escapeHtml(v.company||'\u2014')}</td><td>${escapeHtml(v.accessLevel)}</td><td>${escapeHtml(v.purpose)}</td><td>${fmtTimeOnly(v.checkIn)}</td><td>${v.checkOut?fmtTimeOnly(v.checkOut):'\u2014'}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+  if(type==='staff-attendance'){
+    return `<div class="table-wrap"><table><thead><tr><th>Staff ID</th><th>Name</th><th>Unit</th><th>Check In</th><th>Check Out</th><th>Worked</th><th>Late</th><th>Overtime</th></tr></thead>
+    <tbody>${rows.map(a=>`<tr><td>${escapeHtml(a.staffId)}</td><td>${escapeHtml(a.name)}</td><td>${escapeHtml(a.department||'\u2014')}</td><td>${fmtTimeOnly(a.checkIn)}</td><td>${a.checkOut?fmtTimeOnly(a.checkOut):'\u2014'}</td><td>${a.workedMins?durationLabel(a.workedMins):'\u2014'}</td><td>${a.late?'Yes':'\u2014'}</td><td>${a.overtimeMins?durationLabel(a.overtimeMins):'\u2014'}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+  if(type==='gate-summary'){
+    return `<div class="table-wrap"><table><thead><tr><th>Time</th><th>Event</th><th>Who</th><th>Detail</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr><td>${fmtTimeOnly(r.time)}</td><td>${r.event}</td><td>${escapeHtml(r.who)}</td><td>${escapeHtml(r.detail||'')}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+}
+function monthlyDailyBreakdown(visitors, staffAtt){
+  const days = {};
+  visitors.forEach(v=>{ const d=v.checkIn.slice(0,10); days[d]=days[d]||{v:0,s:0}; days[d].v++; });
+  staffAtt.forEach(a=>{ const d=a.checkIn.slice(0,10); days[d]=days[d]||{v:0,s:0}; days[d].s++; });
+  return Object.keys(days).sort().map(d=>({date:d, v:days[d].v, s:days[d].s}));
+}
+function printReport(){
+  const area = document.getElementById('printArea');
+  const settings = S();
+  const titleMap = {'daily-visitor':'Daily Visitor Report','staff-attendance':'Staff Attendance Report','gate-summary':'Daily Gate Summary','monthly':'Monthly Report'};
+  const when = reportState.type==='monthly' ? reportState.month : reportState.date;
+  area.innerHTML = `<div style="padding:6mm;"><h2 style="font-family:sans-serif;">${settings.companyName} \u2014 ${titleMap[reportState.type]} \u2014 ${when}</h2>${buildReportHtml().replace(/class="table-wrap"/g,'').replace(/<table>/g,'<table class="hist-print-table">')}</div>`;
+  setPrintSource('Reports > ' + titleMap[reportState.type]);
+  setTimeout(()=>{ applyPrintPageStyle(settings.reportOrientation||'landscape'); window.print(); }, 50);
+}
+function exportReport(fmt){
+  const rowsRaw = reportState.type==='monthly' ? reportRows().visitors.concat(reportRows().staffAtt) : reportRows();
+  const rows = Array.isArray(rowsRaw) ? rowsRaw : [];
+  const fname = 'report_'+reportState.type+'_'+(reportState.type==='monthly'?reportState.month:reportState.date);
+  if(fmt==='json') downloadFile(fname+'.json', JSON.stringify(rows,null,2), 'application/json');
+  else if(fmt==='csv') downloadFile(fname+'.csv', toCsv(rows), 'text/csv');
+  else if(fmt==='xlsx'){
+    const ws = XLSX.utils.json_to_sheet(rows.map(stripPhotosForExport));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Report');
+    XLSX.writeFile(wb, fname+'.xlsx');
+  }
+  logAudit('Report exported: '+reportState.type+' ('+fmt+')', '', 'Officer');
+}
+
+/* ========================================================================
+   SETTINGS
+   ======================================================================== */
+let settingsTab = 'general';
+function renderSettings(){
+  const tabs = [['general','General'],['visitor','Visitor Settings'],['staff','Staff Management'],['printing','Printing'],['security','Security'],['backup','Backup'],['offline','Offline & Sync'],['audit','Audit Log']];
+  const needsAdmin = settingsTab !== 'printing';
+  if(needsAdmin && !adminUnlocked){
+    return `
+      <div class="subtabs">${tabs.map(t=>`<button class="subtab ${settingsTab===t[0]?'active':''}" onclick="settingsTab='${t[0]}'; renderRoute();">${t[1]}</button>`).join('')}</div>
+      <div class="card card-pad center" style="max-width:420px; margin:2em auto;">
+        <div style="margin-bottom:.3em;">${ic('lock','icon-lg')}</div>
+        <div class="section-title" style="justify-content:center;">Admin Access Required</div>
+        <p class="small">Staff management, security codes and backups are restricted to Admin. Enter the Admin Security Code to override. Printing options (page margin, orientation, badge layout) are open to every access level \u2014 use the Printing tab above, no code needed.</p>
+        <button class="btn btn-primary btn-block" onclick="unlockSettings()">${ic('shield')} Enter Admin Security Code</button>
+      </div>`;
+  }
+  return `
+    <div class="subtabs">${tabs.map(t=>`<button class="subtab ${settingsTab===t[0]?'active':''}" onclick="settingsTab='${t[0]}'; renderRoute();">${t[1]}</button>`).join('')}</div>
+    <div class="card card-pad">${settingsTabBody()}</div>
+  `;
+}
+async function unlockSettings(){
+  const ok = await askKey('admin');
+  if(ok){ adminUnlocked = true; renderRoute(); }
+}
+function settingsTabBody(){
+  const s = S();
+  if(settingsTab==='general') return `
+    <div class="grid grid-2">
+      <div class="field"><label>Company Name</label><input id="setCompany" value="${escapeHtml(s.companyName)}">
+        <div class="hint">Shown in full under the logo on badges. The logo itself is always the <b>\u2388MSR</b> wordmark \u2014 not editable here.</div>
+      </div>
+      <div class="field"><label>Public Hotline</label><input id="setHotline" value="${escapeHtml(s.hotline)}">
+        <div class="hint">Printed on every badge and shown to visitors. Default: 09611336887.</div>
+      </div>
+      <div class="field"><label>WhatsApp Update Number</label><input id="setWhatsapp" value="${escapeHtml(s.whatsappNumber)}">
+        <div class="hint">Office number that receives check-in / check-out updates via the "Send via WhatsApp" button. Not shown to visitors. Default: +8801319001751.</div>
+      </div>
+    </div>
+    <hr class="sep">
+    <div class="section-title" style="font-size:.95em;">Overdue Checkout Alerts</div>
+    <p class="small" style="margin-top:0;">When a visitor's time is up and they're still on site, pop up a warning (with sound) so security can check them out, view their details, or ignore it for a while. Checked automatically every 30 seconds while the app is open and unlocked.</p>
+    <div class="row" style="flex-wrap:wrap;">
+      <label class="chip-toggle"><input type="checkbox" id="setOverdueAlerts" ${s.overdueAlertsEnabled!==false?'checked':''}> Enable pop-up alerts</label>
+      <label class="chip-toggle"><input type="checkbox" id="setOverdueSound" ${s.overdueAlertSoundEnabled!==false?'checked':''}> Play sound</label>
+      <div class="field" style="max-width:160px; margin-bottom:0;"><label>Ignore duration (minutes)</label><input id="setOverdueSnooze" type="number" min="1" value="${s.overdueAlertSnoozeMins||10}"></div>
+      <button class="btn btn-sm" style="align-self:flex-end;" onclick="playOverdueAlertSound()">Test Sound</button>
+    </div>
+    <hr class="sep">
+    <button class="btn btn-primary" onclick="saveGeneralSettings()">Save</button>
+  `;
+  if(settingsTab==='visitor'){
+  if(!s_accessLevels) s_accessLevels = s.accessLevels.map(l=>({...l}));
+  if(!s_purposes) s_purposes = s.purposes.slice();
+  return `
+    <div class="section-title" style="font-size:.95em;">Visitor Types</div>
+    <div id="accessLevelsEditor">${s_accessLevels.map((l,i)=>`
+      <div class="row" style="margin-bottom:.5em;">
+        <input value="${escapeHtml(l.name)}" placeholder="Visitor type name" onchange="s_accessLevels[${i}].name=this.value">
+        <input value="${escapeHtml(l.zone)}" placeholder="Note (optional)" onchange="s_accessLevels[${i}].zone=this.value">
+        <button class="btn btn-sm btn-danger" onclick="s_accessLevels.splice(${i},1); refreshAccessLevelsEditor();">&times;</button>
+      </div>`).join('')}</div>
+    <button class="btn btn-sm" onclick="s_accessLevels.push({name:'',zone:''}); refreshAccessLevelsEditor();">+ Add Visitor Type</button>
+    <hr class="sep">
+    <div class="section-title" style="font-size:.95em;">Visit Purposes</div>
+    <div class="tag-input" id="purposesTagInput">${s_purposes.map((p,i)=>`<span class="tag-chip">${escapeHtml(p)}<button onclick="s_purposes.splice(${i},1); refreshPurposesEditor();">&times;</button></span>`).join('')}
+      <input style="border:none; flex:1; min-width:120px;" placeholder="Add purpose + Enter" onkeydown="if(event.key==='Enter'&&this.value.trim()){s_purposes.push(this.value.trim()); this.value=''; refreshPurposesEditor();}">
+    </div>
+    <hr class="sep">
+    <button class="btn btn-primary" onclick="saveVisitorSettings()">Save Visitor Settings</button>
+  `;
+  }
+  if(settingsTab==='staff') return renderStaffSettingsTab();
+  if(settingsTab==='offline') return `
+    <p class="small" style="margin-top:0;">This is one self-contained <code>index.html</code> file \u2014 push it to a GitHub Pages repo (or open it locally) and it runs with no server, ever. There is no QR code generation or camera scanning anywhere in the app \u2014 check-in and check-out are done by typing a person's NID number (or Staff/Visitor ID) into the Home Scan Console, so there's nothing that needs a camera or a barcode library to work offline.</p>
+    <p class="small"><b>One remaining limitation:</b> the XLSX export library (used only for the optional Excel report export, not for badges or day-to-day gate use) is still loaded from a CDN, since it's large and most browsers cache it after the first successful load. If guaranteed offline-from-first-run is a hard requirement for that one feature too, download <code>xlsx.full.min.js</code> yourself, place it next to <code>index.html</code>, and swap its <code>&lt;script src="https://cdn\u2026"&gt;</code> tag near the top of the file for a local <code>&lt;script src="./xlsx.full.min.js"&gt;</code> tag \u2014 no other code changes needed.</p>
+    <p class="small">All data (visitors, staff, attendance, settings) lives only in this browser's LocalStorage \u2014 it does not sync between devices. Use Backup \u2192 Export/Import to move data between an online and an offline copy, or between gate devices.</p>
+  `;
+  if(settingsTab==='printing'){
+  if(!s_badgeFields) s_badgeFields = {...(s.badgeFields||defaultSettings().badgeFields)};
+  const bf = s_badgeFields;
+  const fieldToggle = (key,label,locked)=>`
+    <label class="row" style="gap:.4em; align-items:center;">
+      <input type="checkbox" ${bf[key]?'checked':''} ${locked?'disabled':''} onchange="s_badgeFields['${key}']=this.checked;">
+      ${label}${locked?' <span class="small">(always shown \u2014 this is the person\'s ID number)</span>':''}
+    </label>`;
+  return `
+    <p class="small" style="margin-top:0;">Badge layout is a portrait CR80 card (default 54mm \u00d7 85.6mm, square corners) laid onto A4 sheets \u2014 wordmark, a big bold V/S kind indicator, a stamp-size photo (shown whole, never cropped), full labeled rows, and a large NID number at the bottom in place of a QR code \u2014 that NID number is the person's ID; security reads it directly, no scanning required. Both visitor and staff badges also print a cut-and-keep record slip. History and reports print on A4 in the orientation set below, with repeating headers.</p>
+    <hr class="sep">
+    <div class="section-title" style="font-size:.95em;">Page Setup (applies to every print job)</div>
+    <div class="grid grid-2">
+      <div class="field"><label>Page margin (mm) &mdash; default 20mm (2cm)</label><input id="setPrintMargin" type="number" step="1" min="3" max="40" value="${escapeHtml(String(s.printMarginMm!=null?s.printMarginMm:20))}"></div>
+      <div class="field"><label>History &amp; Reports orientation</label>
+        <select id="setReportOrientation">
+          <option value="landscape" ${((s.reportOrientation||'landscape')==='landscape')?'selected':''}>Landscape (recommended \u2014 fits wide tables)</option>
+          <option value="portrait" ${(s.reportOrientation==='portrait')?'selected':''}>Portrait</option>
+        </select>
+      </div>
+    </div>
+    <p class="hint">Badge sheets always print portrait (the card itself is portrait-shaped); this orientation setting only affects the History and Reports print/export views.</p>
+    <hr class="sep">
+    <div class="section-title" style="font-size:.95em;">Card Size</div>
+    <div class="grid grid-2">
+      <div class="field"><label>Badge width (mm)</label><input id="setBadgeW" type="number" step="0.1" value="${escapeHtml(String(s.badgeWidthMm||54))}"></div>
+      <div class="field"><label>Badge height (mm)</label><input id="setBadgeH" type="number" step="0.1" value="${escapeHtml(String(s.badgeHeightMm||85.6))}"></div>
+    </div>
+    <hr class="sep">
+    <div class="section-title" style="font-size:.95em;">Fold-Over Back Panel</div>
+    <label class="row" style="gap:.4em; align-items:center;">
+      <input type="checkbox" id="setFoldBack" ${s.badgeFoldBack!==false?'checked':''}>
+      Print a rotated back panel (big V/S + hotline) below the front, for a fold-over badge
+    </label>
+    <p class="hint">When off, only the front panel prints \u2014 same as a plain single-sided CR80 card.</p>
+    <hr class="sep">
+    <div class="section-title" style="font-size:.95em;">Front Panel \u2014 Fields to Show</div>
+    <div id="badgeFieldsEditor" style="display:flex; flex-direction:column; gap:.4em;">
+      ${fieldToggle('photo','Photo')}
+      ${fieldToggle('hostedBy','Hosted By (visitor)')}
+      ${fieldToggle('areaAccess','Area Access')}
+      ${fieldToggle('purpose','Purpose (visitor)')}
+      ${fieldToggle('escort','Escort (visitor)')}
+      ${fieldToggle('checkIn','Check-In (visitor)')}
+      ${fieldToggle('expiry','Expiry (visitor)')}
+      ${fieldToggle('notes','Items In / Notes (visitor)')}
+      ${fieldToggle('subline','Company / Designation subline')}
+      ${fieldToggle('nid','NID Number',true)}
+    </div>
+    <hr class="sep">
+    <button class="btn btn-primary" onclick="savePrintingSettings()">Save Printing Settings</button>
+  `;
+  }
+  if(settingsTab==='security') return `
+    <div class="override-note" style="margin-bottom:1.1em;">
+      ${ic('shield')}
+      <div>Every restricted action across the app \u2014 checkouts, staff edits, deletions, backups, settings \u2014 can be unlocked with these codes. The <b>Security Code</b> covers day-to-day overrides at the gate; the <b>Add Staff Security Code</b> covers only registering new staff; the <b>Admin Security Code</b> covers everything, including changing these codes. The Admin code always works anywhere the others do.</div>
+    </div>
+    <div class="grid grid-2">
+      <div class="field"><label>Admin Security Code</label><input id="setAdminKey" type="text" value="${escapeHtml(s.adminKey)}"></div>
+      <div class="field"><label>Security Code</label><input id="setSecKey" type="text" value="${escapeHtml(s.securityKey)}"></div>
+      <div class="field"><label>Add Staff Security Code</label><input id="setStaffAddKey" type="text" value="${escapeHtml(s.staffAddKey)}"></div>
+    </div>
+    <p class="hint">Admin: settings, staff management (edit/delete), import/export, deletions, configuration. Security Officer: check-in/out, badge printing, history viewing. Add Staff: lets a designated person register new staff only \u2014 no access to Settings, edits, or deletions.</p>
+    <button class="btn btn-primary" onclick="saveSecuritySettings()">${ic('checkcircle')} Save Codes</button>
+  `;
+  if(settingsTab==='backup') return `
+    <div class="override-note" style="margin-bottom:1.1em;">
+      ${ic('shield')}
+      <div>Your data (visitors, staff, attendance, settings) lives only in this browser's storage \u2014 replacing or updating this <code>index.html</code> file in place does <b>not</b> erase it. Data is only at risk if this tool is opened from a new location (a different URL, folder, or device) or a different browser, since browser storage is tied to where the file is opened from. <b>Before any update, moving the file, or switching devices/browsers, export a full backup here first</b> \u2014 restoring it afterwards brings everything back exactly as it was.</div>
+    </div>
+    <div class="grid grid-2">
+      <div class="card card-pad">
+        <b>Export</b>
+        <div style="display:flex; flex-direction:column; gap:.5em; margin-top:.7em;">
+          <button class="btn" onclick="exportAll()">Export All Data (JSON)</button>
+          <button class="btn" onclick="exportVisitorsOnly()">Export Visitors Only</button>
+          <button class="btn" onclick="exportStaffJson()">Export Staff Only</button>
+        </div>
+      </div>
+      <div class="card card-pad">
+        <b>Import</b>
+        <div style="margin-top:.7em;">
+          <label>Restore full backup (JSON)</label>
+          <input type="file" accept="application/json" onchange="importAll(this)">
+          <label style="margin-top:.8em;">Import staff.json</label>
+          <input type="file" accept="application/json" onchange="importStaffJson(this)">
+        </div>
+      </div>
+    </div>
+    <hr class="sep">
+    <div class="card card-pad" style="border-color:#eecccc;">
+      <b style="color:var(--red);">Danger Zone</b>
+      <p class="small">Clearing data permanently deletes all visitors, staff, attendance and audit history from this browser. Export a backup first.</p>
+      <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
+    </div>
+  `;
+  if(settingsTab==='audit') return renderAuditLog();
+}
+let s_accessLevels = null, s_purposes = null, s_badgeFields = null;
+function refreshAccessLevelsEditor(){ settingsTab='visitor'; renderRoute(); }
+function refreshPurposesEditor(){ settingsTab='visitor'; renderRoute(); }
+function saveGeneralSettings(){
+  const s = S();
+  s.companyName = document.getElementById('setCompany').value.trim() || s.companyName;
+  s.hotline = document.getElementById('setHotline').value.trim();
+  s.whatsappNumber = document.getElementById('setWhatsapp').value.trim().replace(/[^\d]/g,'') || s.whatsappNumber;
+  s.overdueAlertsEnabled = document.getElementById('setOverdueAlerts').checked;
+  s.overdueAlertSoundEnabled = document.getElementById('setOverdueSound').checked;
+  s.overdueAlertSnoozeMins = Math.max(1, parseInt(document.getElementById('setOverdueSnooze').value,10) || 10);
+  saveS(s);
+  logAudit('Settings changed (general)', '', 'Admin');
+  toast('General settings saved.', 'ok');
+  renderRoute();
+}
+function saveVisitorSettings(){
+  const s = S();
+  if(s_accessLevels) s.accessLevels = s_accessLevels.filter(l=>l.name.trim());
+  if(s_purposes) s.purposes = s_purposes.filter(p=>p.trim());
+  saveS(s);
+  s_accessLevels = null; s_purposes = null;
+  logAudit('Settings changed (visitor)', '', 'Admin');
+  toast('Visitor settings saved.', 'ok');
+  renderRoute();
+}
+function savePrintingSettings(){
+  const s = S();
+  const w = parseFloat(document.getElementById('setBadgeW').value) || s.badgeWidthMm || 54;
+  const h = parseFloat(document.getElementById('setBadgeH').value) || s.badgeHeightMm || 85.6;
+  s.badgeWidthMm = w;
+  s.badgeHeightMm = h;
+  s.badgeFoldBack = document.getElementById('setFoldBack').checked;
+  if(s_badgeFields){ s_badgeFields.nid = true; s.badgeFields = {...s_badgeFields}; }
+  const marginVal = parseFloat(document.getElementById('setPrintMargin').value);
+  s.printMarginMm = (isFinite(marginVal) && marginVal>=3 && marginVal<=40) ? marginVal : 20;
+  delete s.printMarginIn;
+  s.reportOrientation = document.getElementById('setReportOrientation').value==='portrait' ? 'portrait' : 'landscape';
+  saveS(s);
+  s_badgeFields = null;
+  logAudit('Settings changed (printing)', '', 'Officer');
+  toast('Printing settings saved.', 'ok');
+  renderRoute();
+}
+function saveSecuritySettings(){
+  const s = S();
+  s.adminKey = document.getElementById('setAdminKey').value.trim() || s.adminKey;
+  s.securityKey = document.getElementById('setSecKey').value.trim() || s.securityKey;
+  s.staffAddKey = document.getElementById('setStaffAddKey').value.trim() || s.staffAddKey;
+  saveS(s);
+  logAudit('Security keys changed', '', 'Admin');
+  toast('Security keys updated.', 'ok');
+  renderRoute();
+}
+function renderStaffSettingsTab(){
+  const staff = DB.get('staff',[]);
+  return `
+    <div class="row" style="margin-bottom:1em; flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="openStaffForm(null)">+ Add Staff</button>
+      <button class="btn" onclick="openBulkImportStaffModal()">Bulk Import (CSV/JSON)</button>
+      <button class="btn" onclick="exportStaffJson()">Export Staff DB</button>
+      <label class="btn" style="display:inline-flex; align-items:center;">Import Staff DB<input type="file" accept="application/json" style="display:none;" onchange="importStaffJson(this)"></label>
+    </div>
+    ${staff.length? `<div class="table-wrap"><table>
+      <thead><tr><th>ID</th><th>NID</th><th>Name</th><th>Unit</th><th>Designation</th><th>Area Access</th><th>Phone</th><th>Status</th><th></th></tr></thead>
+      <tbody>${staff.map(s=>`
+        <tr>
+          <td class="mono">${escapeHtml(s.id)}</td><td class="mono">${escapeHtml(s.nid||'\u2014')}</td><td>${escapeHtml(s.name)}</td>
+          <td>${escapeHtml(s.department)}</td><td>${escapeHtml(s.designation)}</td><td>${escapeHtml(formatAreaAccess(s.areaAccess)||'\u2014')}</td><td>${escapeHtml(s.phone)}</td>
+          <td><span class="badge-pill ${s.status==='active'?'pill-green':'pill-gray'}">${s.status}</span></td>
+          <td class="row" style="gap:.3em;">
+            <button class="btn btn-sm" onclick="openStaffForm('${s.id}')">Edit</button>
+            <button class="btn btn-sm" onclick="printSingleBadge('${s.id}','STAFF')">Card</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteStaff('${s.id}')">Delete</button>
+          </td>
+        </tr>`).join('')}</tbody>
+    </table></div>` : `<div class="empty">${ic('users')}<br>No staff added yet.</div>`}
+  `;
+}
+function renderAuditLog(){
+  const log = DB.get('auditLog',[]).slice(0,300);
+  return `<div class="table-wrap"><table>
+    <thead><tr><th>Timestamp</th><th>Action</th><th>Record</th><th>Role</th></tr></thead>
+    <tbody>${log.map(l=>`<tr><td>${fmtDT(l.ts)}</td><td>${escapeHtml(l.action)}</td><td class="mono">${escapeHtml(l.recordId)}</td><td>${escapeHtml(l.role)}</td></tr>`).join('')}</tbody>
+  </table></div>${!log.length?`<div class="empty">No audit entries yet.</div>`:''}`;
+}
+function exportAll(){
+  const data = {
+    appDataVersion: APP_DATA_VERSION,
+    exportedAt: nowISO(),
+    settings: S(),
+    visitors: DB.get('visitors',[]),
+    staff: DB.get('staff',[]),
+    staffAttendance: DB.get('staffAttendance',[]),
+    counters: DB.get('counters',{}),
+    auditLog: DB.get('auditLog',[])
+  };
+  downloadFile('gsms_backup_'+new Date().toISOString().slice(0,10)+'.json', JSON.stringify(data,null,2), 'application/json');
+  logAudit('Full backup exported', '', 'Admin');
+}
+function exportVisitorsOnly(){
+  downloadFile('visitors_'+new Date().toISOString().slice(0,10)+'.json', JSON.stringify(DB.get('visitors',[]),null,2), 'application/json');
+  logAudit('Visitors exported', '', 'Admin');
+}
+async function importAll(input){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      const ok = await confirmDialog('Restore full backup?', 'This replaces all current data (visitors, staff, attendance, settings) with the contents of this file.', 'Restore', true);
+      if(!ok){ input.value=''; return; }
+      const ok2 = await askKey('admin');
+      if(!ok2){ input.value=''; return; }
+      if(data.settings) DB.set('settings', Object.assign({}, defaultSettings(), data.settings));
+      if(data.visitors) DB.set('visitors', data.visitors);
+      if(data.staff) DB.set('staff', data.staff);
+      if(data.staffAttendance) DB.set('staffAttendance', data.staffAttendance);
+      if(data.counters) DB.set('counters', data.counters);
+      if(data.auditLog) DB.set('auditLog', data.auditLog);
+      logAudit('Backup restored', '', 'Admin');
+      toast('Backup restored.', 'ok');
+      renderRoute();
+    }catch(e){ toast('Invalid backup file.','err'); }
+  };
+  reader.readAsText(file);
+}
+async function clearAllData(){
+  const ok1 = await confirmDialog('Clear all data?', 'This permanently deletes every visitor, staff, attendance and audit record on this device. This cannot be undone.', 'Clear Everything', true);
+  if(!ok1) return;
+  const ok2 = await askKey('admin');
+  if(!ok2) return;
+  const ok3 = await confirmDialog('Are you absolutely sure?', 'Type-to-confirm is skipped here, but this really is your last chance to cancel.', 'Yes, delete everything', true);
+  if(!ok3) return;
+  DB.set('visitors', []); DB.set('staff', []); DB.set('staffAttendance', []);
+  DB.set('counters', {visitor:0, staff:0}); DB.set('auditLog', []);
+  toast('All data cleared.', 'ok');
+  renderRoute();
+}
+
+/* ========================================================================
+   HELP
+   ======================================================================== */
+function renderHelp(){
+  const s = S();
+  return `
+    <div class="grid grid-2" style="align-items:start;">
+      <div class="card card-pad">
+        <div class="section-title">${ic('idcard')} Using the Gate Console</div>
+        <div class="help-item">
+          <h4>${ic('idcard')} New Visitor</h4>
+          <p>Use this when someone new arrives. Tap <b>New Visitor</b> on the Home screen and enter their name, phone number and NID number \u2014 the physical NID itself is taken and photocopied at the gate, so there's no card scanning or OCR here. The wizard then takes a face photo, visit details, and prints their visitor badge plus a cut-and-keep slip \u2014 paste the NID photocopy under the information on that slip (or on the back) and file it at the security desk.</p>
+        </div>
+        <div class="help-item">
+          <h4>${ic('edit')} Check In / Check Out</h4>
+          <p>There is no QR code or camera scanning anywhere in this app. Instead, type the person's <b>NID number</b> (or their Staff ID or Visitor ID \u2014 any of those work interchangeably) into the box and press <b>Go</b>. The system automatically checks them in if they're not currently on site, or checks them out if they are. Either way, a pop-up shows their full information \u2014 name, host, access, photo, and times \u2014 so security can confirm it's the same person before they pass through. If nothing matches, you'll be offered the chance to start a new visitor registration with that number as the NID.</p>
+        </div>
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">${ic('shield')} Security Codes &amp; Overrides</div>
+        <div class="override-note" style="margin-bottom:1em;">
+          ${ic('lock')}
+          <div>Sensitive actions \u2014 early checkouts, editing or deleting staff, changing settings, restoring backups \u2014 always ask for a code first. This keeps a clear audit trail of who overrode what.</div>
+        </div>
+        <div class="help-item">
+          <h4>Security Code</h4>
+          <p>Held by security officers on shift. Confirms day-to-day overrides such as an early visitor or staff checkout.</p>
+        </div>
+        <div class="help-item">
+          <h4>Add Staff Security Code</h4>
+          <p>Held by a designated person who registers new staff via <b>Add Staff</b> in the sidebar. It only unlocks adding a new staff record \u2014 not Settings, edits, or deletions.</p>
+        </div>
+        <div class="help-item">
+          <h4>Admin Security Code</h4>
+          <p>Held by administrators. Unlocks Settings, staff management (edit/delete), data import/export, and full backup restore or deletion \u2014 and also satisfies any Security Code or Add Staff Security Code prompt.</p>
+        </div>
+        <div class="help-item">
+          <h4>Changing the codes</h4>
+          <p>Go to <b>Settings \u2192 Security</b> (admin access required) to update all three codes at any time.</p>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-2" style="align-items:start; margin-top:1.2em;">
+      <div class="card card-pad">
+        <div class="section-title">${ic('users')} Managing People</div>
+        <div class="help-item">
+          <h4>${ic('radio')} Live Monitor</h4>
+          <p>Shows everyone currently on site \u2014 staff and visitors together \u2014 with live status (on site, near expiry, overdue) and a one-tap checkout.</p>
+        </div>
+        <div class="help-item">
+          <h4>${ic('clock')} History</h4>
+          <p>Search and filter past visitor and staff attendance records by date range, name, or ID, and print or export them.</p>
+        </div>
+        <div class="help-item">
+          <h4>${ic('chart')} Reports</h4>
+          <p>Generate daily visitor, staff attendance, gate summary, or monthly reports, and export as JSON, CSV, or Excel.</p>
+        </div>
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">${ic('help')} Need More Help</div>
+        <div class="help-item">
+          <h4>${ic('phone')} Site Hotline</h4>
+          <p>${escapeHtml(s.hotline||'\u2014')}</p>
+        </div>
+        <div class="help-item">
+          <h4>${ic('mail')} Software Support</h4>
+          <p>Contact Hamid Yasir &amp; Co., the developers of this system, for technical issues or feature requests.</p>
+        </div>
+        <div class="help-item">
+          <h4>${ic('download')} Data lives on this device</h4>
+          <p>All records are stored locally in this browser. Use <b>Settings \u2192 Backup</b> regularly to export a copy, especially before clearing browser data or switching devices.</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ========================================================================
+   GLOBAL SEARCH
+   ======================================================================== */
+let searchDebounce = null;
+function onGlobalSearch(q){
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(()=>doGlobalSearch(q), 180);
+}
+function doGlobalSearch(q){
+  const existing = document.getElementById('searchResultsDrop');
+  if(existing) existing.remove();
+  q = q.trim().toLowerCase();
+  if(!q) return;
+  const visitors = DB.get('visitors',[]).filter(v=>[v.id,v.name,v.phone,v.nid,v.company].join(' ').toLowerCase().includes(q)).slice(0,6);
+  const staff = DB.get('staff',[]).filter(s=>[s.id,s.name,s.phone,s.nid,s.department,formatAreaAccess(s.areaAccess)].join(' ').toLowerCase().includes(q)).slice(0,6);
+  if(!visitors.length && !staff.length) return;
+  const input = document.getElementById('globalSearch');
+  const rect = input.getBoundingClientRect();
+  const drop = document.createElement('div');
+  drop.id = 'searchResultsDrop';
+  drop.className = 'card';
+  drop.style.cssText = `position:fixed; top:${rect.bottom+6}px; left:${rect.left}px; width:${Math.max(rect.width,320)}px; z-index:150; max-height:60vh; overflow-y:auto;`;
+  drop.innerHTML = `
+    ${visitors.length? `<div class="small" style="padding:.6em .9em .2em; font-weight:700;">Visitors</div>`+visitors.map(v=>`
+      <div class="kv" style="padding:.5em .9em; cursor:pointer;" onmousedown="closeSearchDrop(); viewVisitorRecord('${v.id}')"><span>${escapeHtml(v.name)} <span class="small mono">${escapeHtml(v.id)}</span></span><span class="small">${escapeHtml(v.phone)}</span></div>`).join(''):''}
+    ${staff.length? `<div class="small" style="padding:.6em .9em .2em; font-weight:700;">Staff</div>`+staff.map(s=>`
+      <div class="kv" style="padding:.5em .9em; cursor:pointer;" onmousedown="closeSearchDrop(); go('gate');"><span>${escapeHtml(s.name)} <span class="small mono">${escapeHtml(s.id)}</span></span><span class="small">${escapeHtml(s.department||'')}</span></div>`).join(''):''}
+  `;
+  document.body.appendChild(drop);
+}
+function closeSearchDrop(){ const d=document.getElementById('searchResultsDrop'); if(d) d.remove(); }
+document.addEventListener('click', (e)=>{
+  if(e.target.id!=='globalSearch') closeSearchDrop();
+});
+
+/* ========================================================================
+   APP BOOTSTRAP
+   ======================================================================== */
+function updateRoleChip(){
+  const dot = document.getElementById('roleDot'), lbl = document.getElementById('roleLabel');
+  if(!dot||!lbl) return;
+  const admin = adminUnlocked || sessionRole==='admin';
+  dot.classList.toggle('on', admin);
+  const roleLabels = {admin:'Admin mode', security:'Security mode', staffAdd:'Add Staff mode'};
+  lbl.textContent = admin ? 'Admin unlocked' : (roleLabels[sessionRole] || 'Locked');
+}
+
+/* ---------------------------- APP LOCK SCREEN ----------------------------------
+   The whole app is gated behind a security code at launch. Any of the three codes
+   (Security, Add Staff, or Admin) will unlock it; which one was used just sets the
+   role shown in the sidebar chip \u2014 per-action overrides (checkout, settings, etc.)
+   still ask for their own code as before. */
+let sessionUnlocked = false;
+let sessionRole = null; // 'admin' | 'security' | 'staffAdd'
+function attemptUnlock(){
+  const input = document.getElementById('lockCodeInput');
+  const val = input.value;
+  const settings = S();
+  let role = null;
+  if(val===settings.adminKey) role='admin';
+  else if(val===settings.securityKey) role='security';
+  else if(val===settings.staffAddKey) role='staffAdd';
+  if(role){
+    sessionUnlocked = true;
+    sessionRole = role;
+    document.getElementById('lockScreen').classList.add('hidden');
+    document.getElementById('lockErr').style.display='none';
+    input.value='';
+    logAudit('Gate system unlocked', '', role==='admin'?'Admin':role==='staffAdd'?'Add Staff':'Security');
+    updateRoleChip();
+    setTimeout(checkOverdueAlerts, 800);
+  } else {
+    document.getElementById('lockErr').style.display='block';
+    input.value='';
+    input.focus();
+  }
+}
+function lockApp(){
+  sessionUnlocked = false;
+  sessionRole = null;
+  adminUnlocked = false;
+  const lock = document.getElementById('lockScreen');
+  lock.classList.remove('hidden');
+  updateRoleChip();
+  setTimeout(()=>{ const i=document.getElementById('lockCodeInput'); if(i) i.focus(); }, 60);
+}
+
+if(!location.hash) location.hash = '#dashboard';
+renderRoute();
+setTimeout(()=>{ const i=document.getElementById('lockCodeInput'); if(i) i.focus(); }, 60);
+setInterval(checkOverdueAlerts, 30000);
+</script>
+</body>
+</html>
