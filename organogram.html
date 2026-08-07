@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mehreen Ship Recycling — Organizational Structure</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root{
+    --navy:      #0d2438;
+    --navy-2:    #16324a;
+    --steel:     #4a6478;
+    --steel-lt:  #dbe4ea;
+    --plate:     #eef1ef;
+    --paper:     #faf9f5;
+    --rust:      #b5502e;
+    --rust-dk:   #8c3c22;
+    --safety:    #e3a92b;
+    --line:      #d7dee2;
+    --ink:       #16232c;
+    --ink-soft:  #5b6b74;
+  }
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html{-webkit-text-size-adjust:100%;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    font-family:'IBM Plex Sans',sans-serif;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important;transition-duration:0.001ms !important;}
+  }
+
+  a{color:inherit;}
+
+  /* ---------- Sticky header ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:var(--navy);
+    color:#fff;
+    padding:14px 16px 0;
+    box-shadow:0 1px 0 rgba(0,0,0,.15);
+  }
+  .eyebrow-strip{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--safety);
+    font-weight:600;
+    margin-bottom:3px;
+  }
+  header h1{
+    font-family:'Zilla Slab',serif;
+    font-weight:700;
+    font-size:19px;
+    margin:0 0 2px;
+    letter-spacing:-0.01em;
+  }
+  header .sub{
+    font-size:11.5px;
+    color:#a9bac7;
+    margin-bottom:12px;
+  }
+
+  .tabs{
+    display:flex;
+    gap:0;
+    border-top:1px solid rgba(255,255,255,.12);
+  }
+  .tab-btn{
+    flex:1;
+    background:none;
+    border:none;
+    color:#9fb2c1;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-weight:600;
+    padding:12px 8px 11px;
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+  }
+  .tab-btn.active{
+    color:#fff;
+    border-bottom-color:var(--safety);
+  }
+
+  main{max-width:920px;margin:0 auto;padding:18px 14px 60px;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  
+  .section-label{
+    display:flex;align-items:center;gap:10px;
+    margin:30px 0 14px;
+  }
+  .section-label:first-child{margin-top:4px;}
+  .section-label .frame{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;font-weight:600;letter-spacing:.08em;
+    color:#fff;background:var(--navy);
+    padding:5px 10px;white-space:nowrap;
+  }
+  .section-label .rule{flex:1;height:1px;background:var(--line);}
+
+  /* ================= EXECUTIVE TIMELINE (mobile-first) ================= */
+  .timeline{
+    position:relative;
+    padding-left:20px;
+    margin-bottom:6px;
+  }
+  .timeline::before{
+    content:'';position:absolute;left:5px;top:6px;bottom:6px;width:2px;
+    background:var(--line);
+  }
+  .tl-item{position:relative;margin-bottom:14px;}
+  .tl-item::before{
+    content:'';position:absolute;left:-20px;top:5px;width:11px;height:11px;
+    border-radius:50%;background:var(--navy);border:2px solid var(--paper);
+    box-shadow:0 0 0 1px var(--navy);
+  }
+  .tl-item.aif::before{background:var(--safety);box-shadow:0 0 0 1px var(--safety);}
+  .tl-card{
+    background:#fff;border:1px solid var(--line);border-left:3px solid var(--navy);
+    padding:12px 14px 11px;
+  }
+  .tl-card.aif{background:var(--navy);color:#fff;border-left-color:var(--safety);}
+  .tl-card.advisor{border-left-color:var(--steel);padding:10px 14px;}
+  .tl-card.hub{border-left-color:var(--rust);}
+  .tl-role{
+    font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--rust);font-weight:600;margin-bottom:4px;
+  }
+  .tl-card.aif .tl-role{color:var(--safety);}
+  .tl-name{
+    font-family:'Zilla Slab',serif;font-weight:700;font-size:16px;color:var(--navy);
+    margin-bottom:4px;
+  }
+  .tl-card.aif .tl-name{color:#fff;}
+  .tl-tasks{font-size:11.5px;color:var(--ink-soft);line-height:1.5;}
+  .tl-card.aif .tl-tasks{color:#c7d5e0;}
+  .advisor-pair{display:grid;grid-template-columns:1fr;gap:8px;}
+
+  /* ================= UNIT ACCORDIONS ================= */
+  .unit{
+    background:#fff;border:1px solid var(--line);margin-bottom:10px;
+    border-left:4px solid var(--navy);
+  }
+  .unit > summary{
+    list-style:none;cursor:pointer;padding:13px 14px 12px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .unit > summary::-webkit-details-marker{display:none;}
+  .unit .chev{
+    margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:14px;
+    color:var(--steel);transition:transform .15s ease;flex:0 0 auto;
+  }
+  .unit[open] .chev{transform:rotate(90deg);}
+  .unit .frame-code{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;
+    color:var(--safety);background:var(--navy);padding:3px 6px;flex:0 0 auto;
+  }
+  .unit .u-info{flex:1;min-width:0;}
+  .unit .u-title{
+    display:block;
+    font-family:'Zilla Slab',serif;font-weight:700;font-size:14.5px;color:var(--navy);
+    line-height:1.25;
+  }
+  .unit .u-monitor{
+    display:block;
+    font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.03em;
+    color:var(--steel);margin-top:5px;padding-top:5px;border-top:1px dashed var(--line);
+  }
+  .unit .u-count{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--steel);
+    flex:0 0 auto;
+  }
+
+  .unit-body{padding:0 14px 12px;}
+  .person{
+    padding:9px 0;border-bottom:1px solid var(--steel-lt);
+  }
+  .person:last-child{border-bottom:none;}
+  .p-name{
+    font-weight:600;font-size:12.5px;color:var(--navy);
+    display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;
+  }
+  .p-role{font-size:10.5px;color:var(--rust-dk);font-weight:500;margin-top:1px;}
+  .p-tasks{font-size:10.5px;color:var(--ink-soft);margin-top:3px;line-height:1.4;}
+
+  .subunit{margin-top:10px;padding-top:10px;border-top:2px dashed var(--line);}
+  .subunit-label{
+    font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--steel);font-weight:600;margin-bottom:6px;
+  }
+  .guard-list{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;}
+  .guard-list .g{font-size:10.5px;color:var(--ink);padding:3px 0;border-bottom:1px solid var(--steel-lt);}
+  .guard-list .g.senior{font-weight:600;color:var(--navy);}
+
+  
+  /* ================= DIRECTORY ================= */
+  .dir-controls{
+    position:sticky;top:88px;z-index:30;background:var(--paper);
+    padding:2px 0 12px;
+  }
+  .search-box{
+    width:100%;padding:11px 12px;border:1px solid var(--line);background:#fff;
+    font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;color:var(--ink);
+    margin-bottom:10px;
+  }
+  .search-box:focus{outline:2px solid var(--safety);outline-offset:-1px;}
+  .chip-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
+  .chip-row::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;
+    letter-spacing:.03em;padding:6px 11px;border:1px solid var(--line);background:#fff;
+    color:var(--ink-soft);cursor:pointer;white-space:nowrap;
+  }
+  .chip.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+  .dir-group{margin-top:18px;}
+  .dir-group-title{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--navy);font-weight:600;
+    padding-bottom:6px;border-bottom:2px solid var(--navy);margin-bottom:2px;
+  }
+  .dir-row{
+    display:flex;justify-content:space-between;gap:10px;padding:10px 2px;
+    border-bottom:1px solid var(--steel-lt);
+  }
+  .dir-row .d-name{font-weight:600;font-size:13px;color:var(--navy);}
+  .dir-row .d-role{font-size:11px;color:var(--rust-dk);margin-top:1px;}
+  .dir-row .d-tag{
+    font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--steel);
+    text-align:right;white-space:nowrap;padding-top:2px;
+  }
+  .no-results{
+    text-align:center;color:var(--ink-soft);font-size:12.5px;padding:30px 10px;
+  }
+
+  /* ---------- Legend / footer ---------- */
+  .legend{
+    margin-top:30px;background:var(--plate);border:1px solid var(--line);
+    padding:16px;
+  }
+  .legend h4{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--navy);margin:0 0 5px;
+  }
+  .legend p{font-size:11.5px;color:var(--ink-soft);line-height:1.5;margin:0 0 12px;}
+  .legend p:last-child{margin-bottom:0;}
+  .legend .divider{border-top:1px solid var(--line);padding-top:12px;margin-top:2px;}
+
+  .footer-note{
+    text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;
+    color:var(--steel);margin-top:26px;letter-spacing:.04em;
+  }
+
+  .bottom-actions{
+    text-align:center;margin:34px 0 0;
+  }
+  .print-btn{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--navy);
+    background:#fff;border:1px solid var(--navy);padding:10px 22px;cursor:pointer;
+  }
+  .print-btn:hover{background:var(--navy);color:#fff;}
+
+  /* ================= WIDER VIEWPORTS ================= */
+  @media (min-width:640px){
+    header{padding:20px 28px 0;}
+    header h1{font-size:24px;}
+    header .sub{font-size:12.5px;}
+    .tab-btn{font-size:12px;padding:13px 8px;}
+    main{padding:26px 28px 70px;}
+    .dir-controls{top:96px;}
+    .advisor-pair{grid-template-columns:1fr 1fr;}
+    .unit-grid-wrap{columns:2;column-gap:12px;}
+    .unit-grid-wrap .unit{break-inside:avoid;}
+    .dir-row{padding:11px 4px;}
+  }
+  @media (min-width:980px){
+    .unit-grid-wrap{columns:3;}
+  }
+
+  /* ================= PRINT (single A4 page) ================= */
+  #printSheet{display:none;}
+
+  @page{ size:A4 landscape; margin:9mm; }
+
+  @media print{
+    html,body{background:#fff;height:auto;}
+    header{display:none !important;}
+    main{padding:0;max-width:none;}
+    .view{display:none !important;}
+    .bottom-actions{display:none !important;}
+    .footer-note{display:none !important;}
+
+    #printSheet{display:block;}
+    #printSheet .ps-cols{
+      display:flex;align-items:flex-start;gap:11pt;
+    }
+    #printSheet .ps-col{
+      flex:1 1 0;min-width:0;
+    }
+    #printSheet .ps-group{
+      break-inside:avoid;page-break-inside:avoid;margin-bottom:7pt;
+    }
+    #printSheet .ps-group-title{
+      font-family:'IBM Plex Mono',monospace;font-size:6.8pt;font-weight:700;
+      letter-spacing:.03em;text-transform:uppercase;color:#fff;background:var(--navy);
+      padding:1.5pt 4pt;margin-bottom:2pt;
+    }
+    #printSheet .ps-monitor{
+      font-size:6.2pt;color:var(--ink-soft);font-style:italic;margin-bottom:2.5pt;
+    }
+    #printSheet .ps-row{font-size:6.4pt;line-height:1.4;margin-bottom:0.6pt;color:var(--ink);}
+    #printSheet .ps-row b{color:var(--navy);font-weight:600;}
+    #printSheet .ps-row .ps-role{color:var(--rust-dk);}
+    #printSheet .ps-legend{
+      margin-top:6pt;padding-top:5pt;border-top:1pt solid var(--line);
+      font-size:6.2pt;color:var(--ink-soft);line-height:1.45;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow-strip">Mehreen Ship Recycling</div>
+  <h1>Organizational &amp; Administrative Structure</h1>
+  <div class="sub">Joromtol Rd, Ghoramara, Chittagong</div>
+  <div class="tabs">
+    <button class="tab-btn active" data-view="org">Organogram</button>
+    <button class="tab-btn" data-view="dir">Directory</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============================================================ -->
+  <!-- ORGANOGRAM VIEW -->
+  <!-- ============================================================ -->
+  <div class="view active" id="view-org">
+
+    <div class="section-label"><span class="frame">FR·01 — Ownership &amp; Executive Authority</span><span class="rule"></span></div>
+
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-card">
+          <div class="tl-role">Managing Partner</div>
+          <div class="tl-name">Md. Jahurul Alam</div>
+          <div class="tl-tasks">Strategic leadership, capital allocation, executive approvals, procurement approvals</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-card">
+          <div class="tl-role">Equity Partner</div>
+          <div class="tl-name">Lucky Johar</div>
+          <div class="tl-tasks">Ownership oversight, investment oversight, strategic approvals</div>
+        </div>
+      </div>
+      <div class="tl-item aif">
+        <div class="tl-card aif">
+          <div class="tl-role">Attorney-in-Fact · Partner-Designate</div>
+          <div class="tl-name">Hamid Yasir</div>
+          <div class="tl-tasks">Exercises delegated executive authority, executive administration, operational oversight, final executive approvals — highest delegated authority in the organization</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="advisor-pair">
+          <div class="tl-card advisor">
+            <div class="tl-role">HR, Org. Development &amp; Strategic Advisor · Partner-Designate</div>
+            <div class="tl-name" style="font-size:14px;">Seju Yasir</div>
+            <div class="tl-tasks">Human resources strategy, organizational development, strategic advice</div>
+          </div>
+          <div class="tl-card advisor">
+            <div class="tl-role">Public Well-Being Advisor · Partner-Designate</div>
+            <div class="tl-name" style="font-size:14px;">Akhi Johar</div>
+            <div class="tl-tasks">Employee well-being, public health awareness, social responsibility advice</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label"><span class="frame">FR·02 — Functional Units</span><span class="rule"></span></div>
+    <p style="font-size:11.5px;color:var(--ink-soft);margin:-6px 0 16px;">Each unit's Unit Monitor reports to the Attorney-in-Fact via Arefin Mahmood (Executive Assistant to the Attorney-in-Fact). Tap a unit to expand.</p>
+
+    <div class="unit-grid-wrap">
+
+      <!-- Audit, Standardization & Administration -->
+      <details class="unit">
+        <summary>
+          <span class="frame-code">AS</span>
+          <span class="u-info">
+            <span class="u-title">Audit, Standardization &amp; Administration</span>
+            <span class="u-monitor">Unit Monitor: Arefin Mahmood</span>
+          </span>
+          <span class="u-count">15</span>
+          <span class="chev">›</span>
+        </summary>
+        <div class="unit-body">
+          <div class="person">
+            <div class="p-name">Arefin Mahmood</div>
+            <div class="p-role">Executive Assistant to the Attorney-in-Fact</div>
+            <div class="p-tasks">Report consolidation, executive coordination, audit coordination, SOP implementation, administration oversight. All Unit Monitors report to the Attorney-in-Fact through this role.</div>
+          </div>
+          <div class="subunit" style="margin-top:10px;padding-top:10px;">
+            <div class="subunit-label">Administration Sub-Unit</div>
+            <div class="person">
+              <div class="p-name">Rayed Hossan Chowdhury</div>
+              <div class="p-role">Office Assistant</div>
+              <div class="p-tasks">Office support, logistics</div>
+            </div>
+            <div class="person">
+              <div class="p-name">Md. Ali</div>
+              <div class="p-role">Office Assistant</div>
+              <div class="p-tasks">Office support, logistics</div>
+            </div>
+          </div>
+          <div class="subunit">
+            <div class="subunit-label">Security Sub-Unit — Sub-Unit Monitor: Mohammad Younuch</div>
+            <div class="person" style="padding-top:0;">
+              <div class="p-name">Mohammad Younuch</div>
+              <div class="p-role">Security Coordinator</div>
+              <div class="p-tasks">Coordinate security operations, patrol scheduling, access control, incident reporting</div>
+            </div>
+            <div class="guard-list">
+              <div class="g senior">Md. Mahmaudul Karim <span style="font-weight:400;color:var(--ink-soft);">— Sr. Guard</span></div>
+              <div class="g senior">Joynal Abedin <span style="font-weight:400;color:var(--ink-soft);">— Sr. Guard</span></div>
+              <div class="g">Md. Sumon</div>
+              <div class="g">Ukayang Marma</div>
+              <div class="g">Md. Nurul Alam</div>
+              <div class="g">Md. Hossen</div>
+              <div class="g">Md. Samasul Islam</div>
+              <div class="g">Md. Tohi Uddin</div>
+              <div class="g">Md. Masud</div>
+              <div class="g">Md. Shah Alam</div>
+              <div class="g">Md. Robiul Islam Rakib</div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <!-- Head Office & External Coordination -->
+      <details class="unit">
+        <summary>
+          <span class="frame-code">HO</span>
+          <span class="u-info">
+            <span class="u-title">Head Office &amp; External Coordination</span>
+            <span class="u-monitor">Unit Monitor: Md. Akter Hossain</span>
+          </span>
+          <span class="u-count">2</span>
+          <span class="chev">›</span>
+        </summary>
+        <div class="unit-body">
+          <div class="person">
+            <div class="p-name">Md. Akter Hossain</div>
+            <div class="p-role">Executive Assistant (Head Office &amp; Ext. Coordination)</div>
+            <div class="p-tasks">Executive correspondence, head office administration, government liaison, external coordination</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Jakir Hossain</div>
+            <div class="p-role">Head Office &amp; Ext. Coordination Assistant</div>
+            <div class="p-tasks">Correspondence support, administrative assistance, liaison support</div>
+          </div>
+        </div>
+      </details>
+
+      <!-- HSE -->
+      <details class="unit">
+        <summary>
+          <span class="frame-code">HSE</span>
+          <span class="u-info">
+            <span class="u-title">Health, Safety, Environment &amp; Compliance</span>
+            <span class="u-monitor">Unit Monitor: Durjoy Chowdhury</span>
+          </span>
+          <span class="u-count">3</span>
+          <span class="chev">›</span>
+        </summary>
+        <div class="unit-body">
+          <div class="person">
+            <div class="p-name">Durjoy Chowdhury</div>
+            <div class="p-role">Executive Assistant (HSE &amp; Compliance)</div>
+            <div class="p-tasks">HSE management, inspections, environmental compliance, regulatory coordination</div>
+          </div>
+          <div class="person">
+            <div class="p-name">S.M. Ertajul Suvo</div>
+            <div class="p-role">Safety Assistant</div>
+            <div class="p-tasks">Safety inspections, toolbox meetings, incident reporting</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Forhad Hossain</div>
+            <div class="p-role">Environmental Assistant</div>
+            <div class="p-tasks">Environmental monitoring, waste management, compliance support</div>
+          </div>
+        </div>
+      </details>
+
+      <!-- Sales & Procurement -->
+      <details class="unit">
+        <summary>
+          <span class="frame-code">SP</span>
+          <span class="u-info">
+            <span class="u-title">Sales &amp; Procurement</span>
+          </span>
+          <span class="u-count">1</span>
+          <span class="chev">›</span>
+        </summary>
+        <div class="unit-body">
+          <div class="person" style="border-bottom:none;">
+            <div class="p-name">Md. Tarek</div>
+            <div class="p-role">Director (Corporate Staff) – Sales &amp; Procurement</div>
+            <div class="p-tasks">Sales development, vessel sourcing, procurement recommendations, commercial coordination.</div>
+            <div class="p-tasks" style="font-style:italic;margin-top:5px;">Title designation only; no director-level executive authority or statutory responsibilities.</div>
+          </div>
+        </div>
+      </details>
+
+      <!-- Ship Operations -->
+      <details class="unit">
+        <summary>
+          <span class="frame-code">SO</span>
+          <span class="u-info">
+            <span class="u-title">Ship Operations</span>
+            <span class="u-monitor">Unit Monitor: Md. Robiul Islam</span>
+          </span>
+          <span class="u-count">5</span>
+          <span class="chev">›</span>
+        </summary>
+        <div class="unit-body">
+          <div class="person">
+            <div class="p-name">Md. Robiul Islam</div>
+            <div class="p-role">Executive Assistant (Ship Operations)</div>
+            <div class="p-tasks">Coordinate ship-side operations, operational reporting, work allocation support</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Joynal Abedin</div>
+            <div class="p-role">Ship Operations Assistant</div>
+            <div class="p-tasks">Ship-side operational support, crew coordination</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Belayet Chowdhury</div>
+            <div class="p-role">Ship Operations Assistant</div>
+            <div class="p-tasks">Ship-side operational support, crew coordination</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Robiul Islam <span style="font-weight:400;color:var(--ink-soft);">(II)</span></div>
+            <div class="p-role">Fitter Foreman</div>
+            <div class="p-tasks">Supervise mechanical fitting and equipment maintenance crew — separate individual from the unit's Executive Assistant.</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Tajul Islam</div>
+            <div class="p-role">Ship Cutting Foreman</div>
+            <div class="p-tasks">Supervise ship cutting crew and daily production</div>
+          </div>
+        </div>
+      </details>
+
+      <!-- Yard Accounts -->
+      <details class="unit">
+        <summary>
+          <span class="frame-code">YA</span>
+          <span class="u-info">
+            <span class="u-title">Yard Accounts</span>
+            <span class="u-monitor">Unit Monitor: Md. Safiqul Islam</span>
+          </span>
+          <span class="u-count">7</span>
+          <span class="chev">›</span>
+        </summary>
+        <div class="unit-body">
+          <p style="font-size:10.5px;color:var(--ink-soft);font-style:italic;margin:0 0 10px;">Handles yard-level cash and records. Full-scope company accounting and financial reporting is managed by the Attorney-in-Fact.</p>
+          <div class="person">
+            <div class="p-name">Md. Safiqul Islam</div>
+            <div class="p-role">Executive Assistant (Yard Accounts)</div>
+            <div class="p-tasks">Sales reporting, cash oversight, executive reporting, records coordination</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Mizanur Rahman</div>
+            <div class="p-role">Records Assistant</div>
+            <div class="p-tasks">Data entry, recordkeeping, document filing</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Tanvir Hasan</div>
+            <div class="p-role">Records Assistant</div>
+            <div class="p-tasks">Data entry, recordkeeping, document filing</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Mitun Kanti Das</div>
+            <div class="p-role">Vat Assistant</div>
+            <div class="p-tasks">VAT documentation and filing support</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Uttam Datta</div>
+            <div class="p-role">Cutting Office Assistant</div>
+            <div class="p-tasks">Cutting office recordkeeping and administrative support</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Ariful Islam</div>
+            <div class="p-role">Scaleman</div>
+            <div class="p-tasks">Weighing operations, weight recording</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Meraj</div>
+            <div class="p-role">Cash &amp; Records Assistant</div>
+            <div class="p-tasks">Cash receipts, register maintenance, records support</div>
+          </div>
+        </div>
+      </details>
+
+      <!-- Yard Operations -->
+      <details class="unit">
+        <summary>
+          <span class="frame-code">YO</span>
+          <span class="u-info">
+            <span class="u-title">Yard Operations</span>
+            <span class="u-monitor">Unit Monitor: Md. Shamshul Alam</span>
+          </span>
+          <span class="u-count">12</span>
+          <span class="chev">›</span>
+        </summary>
+        <div class="unit-body">
+          <div class="person">
+            <div class="p-name">Md. Shamshul Alam</div>
+            <div class="p-role">Executive Assistant (Yard Operations)</div>
+            <div class="p-tasks">Supervise work crews and daily production, coordinate yard reporting</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Aziz</div>
+            <div class="p-role">Cutter Foreman</div>
+            <div class="p-tasks">Supervise cutting crew and daily production</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Saiful Islam</div>
+            <div class="p-role">Cutter Foreman</div>
+            <div class="p-tasks">Supervise cutting crew and daily production</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Sofi</div>
+            <div class="p-role">Wire Foreman</div>
+            <div class="p-tasks">Supervise electrical wiring and cable installation crew</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Abdul Mannan</div>
+            <div class="p-role">Salvage Sorter</div>
+            <div class="p-tasks">Sort and grade salvaged materials</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Arif Hasan</div>
+            <div class="p-role">Salvage Sorter</div>
+            <div class="p-tasks">Sort and grade salvaged materials</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Sohidul Islam</div>
+            <div class="p-role">Electrical Assistant</div>
+            <div class="p-tasks">Electrical maintenance support</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Rashed</div>
+            <div class="p-role">Winch Operator</div>
+            <div class="p-tasks">Operate winching equipment</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Liton</div>
+            <div class="p-role">Winch Operator</div>
+            <div class="p-tasks">Operate winching equipment</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Rajib Das</div>
+            <div class="p-role">Marine Yard Labourer</div>
+            <div class="p-tasks">General yard labour and material handling</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Md. Nurul Islam</div>
+            <div class="p-role">Store Keeper</div>
+            <div class="p-tasks">Store inventory, issue and receipt of materials</div>
+          </div>
+          <div class="person">
+            <div class="p-name">Joy Kumar Das</div>
+            <div class="p-role">Yard Cleaner</div>
+            <div class="p-tasks">Yard cleaning and housekeeping</div>
+          </div>
+        </div>
+      </details>
+
+    </div>
+
+    <div class="legend">
+      <h4>Company Background</h4>
+      <p>Mehreen Ship Recycling is a family-owned partnership between Md. Jahurul Alam (Managing Partner) and Lucky Johar (Equity Partner), with three Partner-Designates—Hamid Yasir, Seju Yasir, and Akhi Johar—representing the next generation of ownership. All executive authority originates from the Managing Partner and Equity Partner and is formally delegated to an Attorney-in-Fact, who serves as the primary decision-making authority within the company. Support roles, such as Unit Monitor positions, are designed to relay and implement ownership instructions within specific operational units but carry no independent executive, managerial, or financial authority.</p>
+      <h4>Unit Monitor</h4>
+      <p>An assistant appointed to relay and carry out the owners' instructions within a functional unit. Unit Monitors hold no independent executive, managerial or financial authority. Every unit ultimately answers to the Attorney-in-Fact via Arefin Mahmood (Executive Assistant to the Attorney-in-Fact).</p>
+      <h4>Sub-Unit Monitor</h4>
+      <p>An assistant role within a sub-unit responsible for relaying coordination and instructions, reporting up through the parent unit's Unit Monitor.</p>
+      <div class="divider">
+        <p><b style="color:var(--navy);">All executive authority remains vested in the Attorney-in-Fact</b> under delegated authority from the Managing Partner and Equity Partner. Every functional unit ultimately reports administratively to the Attorney-in-Fact through the Executive Assistant (Audit, Standardization &amp; Administration).</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- DIRECTORY VIEW -->
+  <!-- ============================================================ -->
+  <div class="view" id="view-dir">
+    <div class="dir-controls">
+      <input type="text" class="search-box" id="dirSearch" placeholder="Search by name, role or unit…" autocomplete="off">
+      <div class="chip-row" id="chipRow">
+        <button class="chip active" data-unit="all">All</button>
+      </div>
+    </div>
+    <div id="dirResults"></div>
+    <div class="no-results" id="noResults" style="display:none;">No one matches that search.</div>
+  </div>
+
+</main>
+
+<div class="bottom-actions">
+  <button id="printBtn" class="print-btn" type="button">Print (A4)</button>
+</div>
+
+<div class="footer-note">MEHREEN SHIP RECYCLING · ORGANIZATIONAL &amp; ADMINISTRATIVE STRUCTURE</div>
+
+<!-- Print-only single A4-page condensed layout, populated by JS from the directory data below -->
+<div id="printSheet">
+  <div class="ps-header" style="text-align:center;margin-bottom:6pt;border-bottom:1pt solid #0d2438;padding-bottom:5pt;">
+    <div style="font-family:'Zilla Slab',serif;font-weight:700;font-size:13pt;color:#0d2438;">Mehreen Ship Recycling — Organizational &amp; Administrative Structure</div>
+    <div style="font-size:7.5pt;color:#5b6b74;margin-top:1pt;">Joromtol Rd, Ghoramara, Chittagong</div>
+  </div>
+  <div class="ps-cols" id="printCols"></div>
+  <div class="ps-legend" id="printLegend"></div>
+</div>
+
+<script>
+  // ---------- Directory data ----------
+  const directory = [
+    {name:"Md. Jahurul Alam", role:"Managing Partner", unit:"Ownership & Executive Authority"},
+    {name:"Lucky Johar", role:"Equity Partner", unit:"Ownership & Executive Authority"},
+    {name:"Hamid Yasir", role:"Attorney-in-Fact · Partner-Designate", unit:"Ownership & Executive Authority"},
+    {name:"Seju Yasir", role:"HR, Org. Development & Strategic Advisor · Partner-Designate", unit:"Ownership & Executive Authority"},
+    {name:"Akhi Johar", role:"Public Well-Being Advisor · Partner-Designate", unit:"Ownership & Executive Authority"},
+    {name:"Md. Tarek", role:"Director (Corporate Staff) – Sales & Procurement (title only, no director-level authority)", unit:"Sales & Procurement"},
+    {name:"Md. Akter Hossain", role:"Executive Assistant (Head Office & Ext. Coordination)", unit:"Head Office & External Coordination"},
+    {name:"Md. Jakir Hossain", role:"Head Office & Ext. Coordination Assistant", unit:"Head Office & External Coordination"},
+    {name:"Md. Safiqul Islam", role:"Executive Assistant (Yard Accounts)", unit:"Yard Accounts"},
+    {name:"Md. Mizanur Rahman", role:"Records Assistant", unit:"Yard Accounts"},
+    {name:"Md. Tanvir Hasan", role:"Records Assistant", unit:"Yard Accounts"},
+    {name:"Mitun Kanti Das", role:"Vat Assistant", unit:"Yard Accounts"},
+    {name:"Uttam Datta", role:"Cutting Office Assistant", unit:"Yard Accounts"},
+    {name:"Md. Ariful Islam", role:"Scaleman", unit:"Yard Accounts"},
+    {name:"Md. Meraj", role:"Cash & Records Assistant", unit:"Yard Accounts"},
+    {name:"Durjoy Chowdhury", role:"Executive Assistant (HSE & Compliance)", unit:"HSE & Compliance"},
+    {name:"S.M. Ertajul Suvo", role:"Safety Assistant", unit:"HSE & Compliance"},
+    {name:"Md. Forhad Hossain", role:"Environmental Assistant", unit:"HSE & Compliance"},
+    {name:"Md. Robiul Islam", role:"Executive Assistant (Ship Operations)", unit:"Ship Operations"},
+    {name:"Joynal Abedin", role:"Ship Operations Assistant", unit:"Ship Operations"},
+    {name:"Belayet Chowdhury", role:"Ship Operations Assistant", unit:"Ship Operations"},
+    {name:"Md. Robiul Islam (II)", role:"Fitter Foreman", unit:"Ship Operations"},
+    {name:"Md. Tajul Islam", role:"Ship Cutting Foreman", unit:"Ship Operations"},
+    {name:"Md. Shamshul Alam", role:"Executive Assistant (Yard Operations)", unit:"Yard Operations"},
+    {name:"Md. Aziz", role:"Cutter Foreman", unit:"Yard Operations"},
+    {name:"Saiful Islam", role:"Cutter Foreman", unit:"Yard Operations"},
+    {name:"Md. Sofi", role:"Wire Foreman", unit:"Yard Operations"},
+    {name:"Md. Abdul Mannan", role:"Salvage Sorter", unit:"Yard Operations"},
+    {name:"Md. Arif Hasan", role:"Salvage Sorter", unit:"Yard Operations"},
+    {name:"Md. Sohidul Islam", role:"Electrical Assistant", unit:"Yard Operations"},
+    {name:"Md. Rashed", role:"Winch Operator", unit:"Yard Operations"},
+    {name:"Md. Liton", role:"Winch Operator", unit:"Yard Operations"},
+    {name:"Rajib Das", role:"Marine Yard Labourer", unit:"Yard Operations"},
+    {name:"Md. Nurul Islam", role:"Store Keeper", unit:"Yard Operations"},
+    {name:"Joy Kumar Das", role:"Yard Cleaner", unit:"Yard Operations"},
+    {name:"Arefin Mahmood", role:"Executive Assistant to the Attorney-in-Fact", unit:"Audit, Standardization & Administration"},
+    {name:"Rayed Hossan Chowdhury", role:"Office Assistant", unit:"Audit, Standardization & Administration"},
+    {name:"Md. Ali", role:"Office Assistant", unit:"Audit, Standardization & Administration"},
+    {name:"Mohammad Younuch", role:"Security Coordinator", unit:"Audit, Standardization & Administration"},
+    {name:"Md. Mahmaudul Karim", role:"Senior Guard", unit:"Audit, Standardization & Administration"},
+    {name:"Joynal Abedin", role:"Senior Guard", unit:"Audit, Standardization & Administration"},
+    {name:"Md. Sumon", role:"Guard", unit:"Audit, Standardization & Administration"},
+    {name:"Ukayang Marma", role:"Guard", unit:"Audit, Standardization & Administration"},
+    {name:"Md. Nurul Alam", role:"Guard", unit:"Audit, Standardization & Administration"},
+    {name:"Md. Hossen", role:"Guard", unit:"Audit, Standardization & Administration"},
+    {name:"Md. Samasul Islam", role:"Guard", unit:"Audit, Standardization & Administration"},
+    {name:"Md. Tohi Uddin", role:"Guard", unit:"Audit, Standardization & Administration"},
+    {name:"Md. Masud", role:"Guard", unit:"Audit, Standardization & Administration"},
+    {name:"Md. Shah Alam", role:"Guard", unit:"Audit, Standardization & Administration"},
+    {name:"Md. Robiul Islam Rakib", role:"Guard", unit:"Audit, Standardization & Administration"},
+  ];
+
+  const unitOrder = [
+    "Ownership & Executive Authority","Audit, Standardization & Administration",
+    "Head Office & External Coordination","HSE & Compliance","Sales & Procurement",
+    "Ship Operations","Yard Accounts","Yard Operations"
+  ];
+
+  // Build unit filter chips
+  const unitChipRow = document.getElementById('chipRow');
+  unitOrder.forEach(u=>{
+    const b=document.createElement('button');
+    b.className='chip';
+    b.dataset.unit=u;
+    b.textContent=u;
+    unitChipRow.appendChild(b);
+  });
+
+  let activeUnit='all';
+  let query='';
+
+  function renderDirectory(){
+    const results=document.getElementById('dirResults');
+    const noResults=document.getElementById('noResults');
+    results.innerHTML='';
+    const q=query.trim().toLowerCase();
+
+    const grouped={};
+    unitOrder.forEach(u=>grouped[u]=[]);
+
+    directory.forEach(p=>{
+      if(activeUnit!=='all' && p.unit!==activeUnit) return;
+      const hay=(p.name+' '+p.role+' '+p.unit).toLowerCase();
+      if(q && !hay.includes(q)) return;
+      grouped[p.unit].push(p);
+    });
+
+    let any=false;
+    unitOrder.forEach(u=>{
+      if(grouped[u].length===0) return;
+      any=true;
+      const groupEl=document.createElement('div');
+      groupEl.className='dir-group';
+      groupEl.innerHTML=`<div class="dir-group-title">${u} · ${grouped[u].length}</div>`;
+      grouped[u].forEach(p=>{
+        const row=document.createElement('div');
+        row.className='dir-row';
+        row.innerHTML=`
+          <div>
+            <div class="d-name">${p.name}</div>
+            <div class="d-role">${p.role}</div>
+          </div>
+          <div class="d-tag">${p.unit.split(' ').map(w=>w[0]).join('').slice(0,3).toUpperCase()}</div>
+        `;
+        groupEl.appendChild(row);
+      });
+      results.appendChild(groupEl);
+    });
+
+    noResults.style.display=any?'none':'block';
+  }
+
+  document.getElementById('dirSearch').addEventListener('input',e=>{
+    query=e.target.value;
+    renderDirectory();
+  });
+
+  unitChipRow.addEventListener('click',e=>{
+    const chip=e.target.closest('.chip');
+    if(!chip) return;
+    activeUnit=chip.dataset.unit;
+    document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    renderDirectory();
+  });
+
+  renderDirectory();
+
+  // ---------- Print sheet (single A4 page, condensed) ----------
+  function shortRole(role){ return role.split(' (')[0]; }
+
+  function buildPrintSheet(){
+    const cols=document.getElementById('printCols');
+    const execUnit="Ownership & Executive Authority";
+    const groups=[];
+
+    unitOrder.forEach(u=>{
+      const people=directory.filter(p=>p.unit===u);
+      if(people.length===0) return;
+      let monitorLine='';
+      if(u!==execUnit && u!=="Sales & Procurement"){
+        monitorLine=`<div class="ps-monitor">Unit Monitor: ${people[0].name}</div>`;
+      }
+      const rows=people.map(p=>{
+        const roleText = (u==="Sales & Procurement")
+          ? "Director (Corporate Staff) – Sales &amp; Procurement"
+          : shortRole(p.role);
+        return `<div class="ps-row"><b>${p.name}</b> — <span class="ps-role">${roleText}</span></div>`;
+      }).join('');
+      const html=`<div class="ps-group"><div class="ps-group-title">${u}</div>${monitorLine}${rows}</div>`;
+      // weight = number of lines this group will occupy, used for column balancing
+      const weight=1+(monitorLine?1:0)+people.length;
+      groups.push({html,weight});
+    });
+
+    // Bin-pack groups into N columns, always adding to the currently lightest column
+    const N=4;
+    const colWeights=new Array(N).fill(0);
+    const colHtml=new Array(N).fill('');
+    groups.forEach(g=>{
+      let idx=0;
+      for(let i=1;i<N;i++){ if(colWeights[i]<colWeights[idx]) idx=i; }
+      colWeights[idx]+=g.weight;
+      colHtml[idx]+=g.html;
+    });
+
+    cols.innerHTML='';
+    colHtml.forEach(h=>{
+      const col=document.createElement('div');
+      col.className='ps-col';
+      col.innerHTML=h;
+      cols.appendChild(col);
+    });
+
+    document.getElementById('printLegend').innerHTML =
+      'Mehreen Ship Recycling is a family-owned partnership between Md. Jahurul Alam (Managing Partner) and Lucky Johar (Equity Partner), with three Partner-Designates—Hamid Yasir, Seju Yasir, and Akhi Johar—representing the next generation of ownership. All executive authority originates from the Managing Partner and Equity Partner and is formally delegated to an Attorney-in-Fact, who serves as the primary decision-making authority within the company. Support roles, such as Unit Monitor positions, are designed to relay and implement ownership instructions within specific operational units but carry no independent executive, managerial, or financial authority. ' +
+      'Md. Tarek\'s "Director" title is a designation only, with no director-level executive authority or statutory responsibilities.';
+  }
+  buildPrintSheet();
+
+  // ---------- Tab switching ----------
+  document.querySelectorAll('.tab-btn[data-view]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-btn[data-view]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      document.getElementById('view-'+btn.dataset.view).classList.add('active');
+      window.scrollTo({top:0,behavior:'instant'});
+    });
+  });
+
+  // ---------- Print button ----------
+  document.getElementById('printBtn').addEventListener('click',()=>{
+    window.print();
+  });
+
+</script>
+
+</body>
+</html>
