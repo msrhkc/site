@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MSR Reporting Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<style id="printPageStyle">@page { size: A4 portrait; margin: 0.5in; }</style>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --oxford: #001f3f;
+    --oxford-hover: #002b57;
+    --bg: #f2f2f7;
+    --surface: #ffffff;
+    --surface-2: #f6f6f8;
+    --ink: #1c1c1e;
+    --ink-soft: #6e6e73;
+    --ink-muted: #a1a1a6;
+    --border: #e5e5ea;
+    --accent: #0071e3;
+    --green: #248a3d;
+    --green-bg: #e5f6e9;
+    --red: #d70015;
+    --red-bg: #fdebec;
+    --gold: #b8860b;
+    --gold-bg: #faf3e2;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --sans: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  }
+  html { font-size: 15px; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  header {
+    background: var(--oxford);
+    padding: 16px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  }
+  .brand { font-weight: 800; font-size: 20px; color: #fff; letter-spacing: 0.01em; }
+  .brand-sub { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: var(--surface-2); }
+  .upload-zone input { display: none; }
+  .upload-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .upload-hint { font-size: 12.5px; color: var(--ink-soft); }
+
+  .status-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--green-bg); color: var(--green); border-radius: var(--radius-sm);
+    padding: 10px 14px; font-size: 13px; font-weight: 600; margin-top: 12px;
+  }
+  .status-bar.error { background: var(--red-bg); color: var(--red); }
+  .status-bar button { background: none; border: none; color: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; font-size: 12.5px; }
+
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tab-btn {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 9px 16px; font-size: 13px; font-weight: 700; color: var(--ink-soft); cursor: pointer;
+  }
+  .tab-btn.active { background: var(--oxford); border-color: var(--oxford); color: #fff; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  h2 { font-size: 17px; font-weight: 800; margin-bottom: 4px; }
+  .subhint { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 16px; }
+
+  .field-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
+  .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+  .field label { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+  .field input, .field select {
+    border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 11px;
+    font-size: 14px; font-family: var(--sans); background: var(--surface);
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: var(--radius-sm);
+    padding: 10px 18px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background 0.15s;
+  }
+  .btn-primary { background: var(--oxford); color: #fff; }
+  .btn-primary:hover { background: var(--oxford-hover); }
+  .btn-primary:disabled { background: var(--ink-muted); cursor: not-allowed; }
+  .btn-ghost { background: var(--surface-2); color: var(--ink); border: 1px solid var(--border); }
+  .btn-danger { background: var(--red-bg); color: var(--red); }
+  .btn-sm { padding: 6px 12px; font-size: 12.5px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.02em; color: var(--ink-soft); }
+  .table-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+  tr.row-item td { background: #fff; }
+  tr.row-payment td { background: var(--surface-2); font-style: italic; color: var(--ink-soft); }
+  tr.row-total td { background: var(--gold-bg); font-weight: 700; color: var(--ink); font-style: normal; }
+  tr.row-blank td { border: none; background: transparent; padding: 3px; }
+  .mono { font-family: var(--mono); }
+  .num { text-align: right; font-family: var(--mono); }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-soft); font-size: 13.5px; }
+
+  .outgoing-list { margin-top: 14px; }
+  .outgoing-row { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-light, var(--border)); font-size: 13px; }
+  .outgoing-row .cat { font-weight: 700; min-width: 140px; }
+  .outgoing-row .desc { flex: 1; color: var(--ink-soft); }
+  .outgoing-row .amt { font-family: var(--mono); font-weight: 700; min-width: 90px; text-align: right; }
+  .outgoing-row .rm { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; padding: 0 4px; }
+
+  .summary-grid { display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; max-width: 420px; font-size: 14px; }
+  .summary-grid .lbl { color: var(--ink-soft); }
+  .summary-grid .val { font-family: var(--mono); font-weight: 700; text-align: right; }
+  .summary-grid .divider { grid-column: 1 / -1; border-top: 1px solid var(--border); margin: 4px 0; }
+  .summary-grid .final .lbl, .summary-grid .final .val { font-size: 16px; font-weight: 800; color: var(--oxford); }
+
+  @media (min-width: 640px) { .upload-zone { padding: 40px; } }
+
+  /* ═══════════════════════════════════════════════════
+     PRINT / PDF — dedicated statement-style layout
+     ═══════════════════════════════════════════════════ */
+  .print-sheet { display: none; }
+  .ps-header { margin-bottom: 14px; }
+  .ps-company { font-size: 15pt; font-weight: 800; letter-spacing: 0.01em; }
+  .ps-title { font-size: 11pt; font-weight: 700; margin-top: 2px; color: #333; }
+  .ps-meta { font-size: 8.5pt; color: #555; margin-top: 3px; }
+  .ps-rule { border: none; border-top: 1.5px solid #001f3f; margin: 8px 0 12px; }
+  .ps-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8pt; }
+  .ps-table th, .ps-table td {
+    border: 1px solid #999; padding: 3px 5px; text-align: left;
+    word-break: break-word; overflow-wrap: anywhere; vertical-align: top;
+  }
+  .ps-table thead th { background: #eef2f6; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.02em; }
+  .ps-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .ps-group { break-inside: avoid; page-break-inside: avoid; }
+  .ps-row-payment td { font-style: italic; color: #444; }
+  .ps-row-total td { font-weight: 700; background: #f7f3e6; }
+
+  /* Per-receipt statement card: used instead of one wide flat table so
+     the layout reads cleanly no matter what orientation the print
+     dialog actually applies (mobile print/PDF doesn't reliably honour
+     a CSS-forced landscape @page rule). */
+  .ps-receipt-card { break-inside: avoid; page-break-inside: avoid; margin-bottom: 16px; }
+  .ps-receipt-head {
+    font-size: 8.5pt; font-weight: 600; margin-bottom: 5px; padding-bottom: 4px;
+    border-bottom: 1px solid #ccc; line-height: 1.7;
+  }
+  .ps-receipt-head .lbl { color: #777; font-weight: 500; margin-right: 3px; }
+  .ps-receipt-head .sep { display: inline-block; width: 14px; }
+  .ps-mini-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8.5pt; margin-bottom: 5px; }
+  .ps-mini-table th, .ps-mini-table td {
+    border: 1px solid #bbb; padding: 3px 6px; text-align: left;
+    word-break: break-word; overflow-wrap: anywhere;
+  }
+  .ps-mini-table thead th { background: #eef2f6; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.02em; }
+  .ps-mini-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .ps-mini-table td.method { font-style: italic; }
+  .ps-receipt-total-line { text-align: right; font-weight: 800; font-size: 9.5pt; padding: 2px 2px 0; }
+
+  .ps-summary-table { width: 100%; max-width: 420px; border-collapse: collapse; font-size: 10.5pt; }
+  .ps-summary-table td { border: none; padding: 6px 0; }
+  .ps-summary-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .ps-summary-table tr.ps-divider td { border-top: 1.5px solid #001f3f; padding-top: 10px; }
+  .ps-summary-table tr.ps-final td { font-weight: 800; font-size: 12.5pt; padding-top: 10px; }
+  .ps-footer { margin-top: 16px; font-size: 7.5pt; color: #777; }
+
+  @media print {
+    header, .container { display: none !important; }
+    .print-sheet { display: block !important; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">MSR Reporting Tool</div>
+  <div class="brand-sub">Office reports from POS JSON backup</div>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept="application/json,.json" />
+      <div class="upload-title">Click to upload, or drag in a JSON backup</div>
+      <div class="upload-hint">Use the "Download JSON backup" file from the POS (MSR_Master_Backup_*.json). Nothing is uploaded anywhere — this all runs in your browser.</div>
+    </div>
+    <div id="statusBar" style="display:none"></div>
+  </div>
+
+  <div id="appArea" style="display:none">
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="vessel">Vessel &amp; Payment Report</button>
+      <button class="tab-btn" data-tab="master">Master Export (SL)</button>
+      <button class="tab-btn" data-tab="outgoing">Outgoing / Expenses</button>
+      <button class="tab-btn" data-tab="summary">Cash Summary</button>
+    </div>
+
+    <!-- VESSEL & PAYMENT REPORT -->
+    <div class="tab-panel active card" data-panel="vessel">
+      <h2>Vessel &amp; Payment Report</h2>
+      <div class="subhint">Each receipt lists its items broken out by vessel, followed by one row per payment method used — every method shows its own reference. Vehicle &amp; driver shown per receipt.</div>
+      <div class="field-row">
+        <div class="field" style="max-width:200px">
+          <label>From date (optional)</label>
+          <input type="date" id="vFrom" />
+        </div>
+        <div class="field" style="max-width:200px">
+          <label>To date (optional)</label>
+          <input type="date" id="vTo" />
+        </div>
+        <button class="btn btn-ghost" id="vApplyFilter">Apply</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-ghost" id="vPrintBtn">Print / Save PDF</button>
+        <button class="btn btn-primary" id="vDownloadBtn">Download XLSX</button>
+      </div>
+      <div class="table-wrap"><div id="vesselTableHolder"></div></div>
+    </div>
+
+    <!-- MASTER EXPORT -->
+    <div class="tab-panel card" data-panel="master">
+      <h2>Master Export (with SL)</h2>
+      <div class="subhint">Same layout as the POS's own history export, with a running sequence number added before Receipt ID.</div>
+      <div class="field-row">
+        <button class="btn btn-ghost" id="mPrintBtn">Print / Save PDF</button>
+        <button class="btn btn-primary" id="mCsvBtn">Download CSV</button>
+        <button class="btn btn-primary" id="mXlsxBtn">Download XLSX</button>
+      </div>
+      <div class="table-wrap"><div id="masterTableHolder"></div></div>
+    </div>
+
+    <!-- OUTGOING / EXPENSES -->
+    <div class="tab-panel card" data-panel="outgoing">
+      <h2>Outgoing / Expenses — today only</h2>
+      <div class="subhint">Entered fresh each time you're about to print a report. Not saved — cleared on reload. Feeds into the Cash Summary tab.</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Category</label>
+          <select id="ogCategory">
+            <option>Cutting Office Advance</option>
+            <option>Daily Guard Advance</option>
+            <option>Safety Engineer Advance</option>
+            <option>Oil Filling Advance</option>
+            <option>HO Return / Transfer</option>
+            <option>Utility Bill (Water/Electricity)</option>
+            <option>Conveyance</option>
+            <option>Office Snacks / Misc</option>
+            <option>Hardware</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Description (optional)</label>
+          <input type="text" id="ogDesc" placeholder="e.g. Mv Sanwa" />
+        </div>
+        <div class="field" style="max-width:140px">
+          <label>Amount (Tk)</label>
+          <input type="number" id="ogAmount" placeholder="0" min="0" step="0.01" />
+        </div>
+        <button class="btn btn-primary" id="ogAddBtn">Add</button>
+      </div>
+      <div class="outgoing-list" id="ogList"></div>
+      <div style="margin-top:14px;font-weight:800;font-size:15px" id="ogTotalLine">Total outgoing: ৳0.00</div>
+    </div>
+
+    <!-- CASH SUMMARY -->
+    <div class="tab-panel card" data-panel="summary">
+      <h2>Cash Summary</h2>
+      <div class="subhint">Balance Forward + Cash Received (from the Vessel &amp; Payment Report, filtered by the same dates) − Outgoing Total = Balance C/D.</div>
+      <div class="field-row">
+        <div class="field" style="max-width:200px">
+          <label>Balance Forward (Tk)</label>
+          <input type="number" id="sBalanceForward" placeholder="0" min="0" step="0.01" />
+        </div>
+        <button class="btn btn-ghost" id="sRecalcBtn">Recalculate</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-ghost" id="sPrintBtn">Print / Save PDF</button>
+        <button class="btn btn-primary" id="sDownloadBtn">Download XLSX</button>
+      </div>
+      <div class="summary-grid" id="summaryGrid"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="print-sheet" id="printSheet"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════ */
+const state = {
+  receipts: [],       // normalized receipts from uploaded JSON
+  filtered: [],        // date-filtered subset used for vessel report + cash summary
+  outgoing: []          // in-memory only, [{category, desc, amountCents}]
+};
+
+/* ═══════════════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════════════ */
+function money(cents) {
+  if (!Number.isFinite(cents)) cents = 0;
+  return '৳' + (cents / 100).toFixed(2);
+}
+function num2(cents) {
+  if (!Number.isFinite(cents)) cents = 0;
+  return (cents / 100).toFixed(2);
+}
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+function formatDate(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '-';
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+function formatDateTime(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '-';
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
+    ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+function isCashMethod(method) {
+  return String(method || '').trim().toLowerCase() === 'cash';
+}
+
+/* ═══════════════════════════════════════════════════
+   FILE UPLOAD & PARSING
+   ═══════════════════════════════════════════════════ */
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const statusBar = document.getElementById('statusBar');
+const appArea = document.getElementById('appArea');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+function showStatus(msg, isError) {
+  statusBar.style.display = 'flex';
+  statusBar.className = 'status-bar' + (isError ? ' error' : '');
+  statusBar.innerHTML = '<span>' + escapeHtml(msg) + '</span>' +
+    (isError ? '' : '<button id="statusReset">Upload a different file</button>');
+  const btn = document.getElementById('statusReset');
+  if (btn) btn.onclick = resetTool;
+}
+
+function resetTool() {
+  state.receipts = [];
+  state.filtered = [];
+  appArea.style.display = 'none';
+  statusBar.style.display = 'none';
+  fileInput.value = '';
+}
+
+async function handleFile(file) {
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    let receipts = Array.isArray(data) ? data : data.receipts;
+    if (!Array.isArray(receipts)) throw new Error('This file does not look like a POS backup — no "receipts" array found.');
+    receipts = receipts.map(normalizeReceipt).sort((a, b) =>
+      new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0));
+    if (!receipts.length) throw new Error('The backup file has no receipts in it.');
+    state.receipts = receipts;
+    state.filtered = receipts.slice();
+    showStatus(`Loaded ${receipts.length} receipt${receipts.length === 1 ? '' : 's'} from ${escapeHtml(file.name)}.`, false);
+    appArea.style.display = 'block';
+    renderAll();
+  } catch (e) {
+    showStatus('Could not read this file: ' + e.message, true);
+    appArea.style.display = 'none';
+  }
+}
+
+function normalizeReceipt(r) {
+  r = r || {};
+  let payments = r.payments;
+  if (!payments && r.payment) {
+    payments = [{ method: r.payment.method || 'Cash', amountCents: r.totalCents || 0, ref: r.payment.ref || '' }];
+  }
+  if (!Array.isArray(payments)) payments = [];
+  return {
+    receiptId: r.receiptId || '-',
+    submittedAt: r.submittedAt || null,
+    client: r.client || { name: '', phone: '' },
+    items: Array.isArray(r.items) ? r.items : [],
+    payments,
+    vehicle: r.vehicle || { plate: '', driverName: '', driverPhone: '' },
+    totalCents: Number.isFinite(r.totalCents) ? r.totalCents : 0
+  };
+}
+
+/* ═══════════════════════════════════════════════════
+   TABS
+   ═══════════════════════════════════════════════════ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector(`.tab-panel[data-panel="${btn.dataset.tab}"]`).classList.add('active');
+  };
+});
+
+function renderAll() {
+  renderVesselReport();
+  renderMasterExport();
+  renderOutgoing();
+  renderSummary();
+}
+
+/* ═══════════════════════════════════════════════════
+   DATE FILTER (shared by vessel report + cash summary)
+   ═══════════════════════════════════════════════════ */
+document.getElementById('vApplyFilter').onclick = () => {
+  const from = document.getElementById('vFrom').value;
+  const to = document.getElementById('vTo').value;
+  state.filtered = state.receipts.filter(r => {
+    if (!r.submittedAt) return true;
+    const d = new Date(r.submittedAt);
+    if (from && d < new Date(from + 'T00:00:00')) return false;
+    if (to && d > new Date(to + 'T23:59:59')) return false;
+    return true;
+  });
+  renderVesselReport();
+  renderSummary();
+};
+
+/* ═══════════════════════════════════════════════════
+   VESSEL & PAYMENT REPORT
+   Columns: SL | Receipt ID | Date | Party | Phone | Vessel | Item |
+            Qty | Unit | Rate | Item Amount | Vehicle | Driver |
+            Cash Amount | Cash Ref | Other Method (Ref) | Other Amount | Receipt Total
+   ═══════════════════════════════════════════════════ */
+const VESSEL_HEADERS = ['SL', 'Receipt ID', 'Date', 'Party', 'Phone', 'Vessel', 'Item', 'Qty', 'Unit',
+    'Rate (Tk)', 'Item Amount (Tk)', 'Vehicle No', 'Driver', 'Cash Amount (Tk)', 'Cash Reference',
+    'Other Method (Reference)', 'Other Amount (Tk)', 'Receipt Total (Tk)'
+];
+
+function buildVesselRows(receipts) {
+  const rows = [];
+  let sl = 0;
+  let totalCash = 0;
+  let totalOther = 0;
+  let grandTotal = 0;
+
+  receipts.forEach(r => {
+    sl++;
+    const vehicleStr = (r.vehicle && r.vehicle.plate) || '-';
+    const driverStr = (r.vehicle && r.vehicle.driverName)
+        ? r.vehicle.driverName + ((r.vehicle.driverPhone) ? ' (' + r.vehicle.driverPhone + ')' : '')
+        : '-';
+    const items = r.items.length ? r.items : [{ vessel: '-', name: '-', qty: '', unit: '', rateCents: 0, amountCents: r.totalCents }];
+
+    items.forEach((it, idx) => {
+      rows.push({
+        kind: 'item',
+        cells: [
+          idx === 0 ? sl : '', r.receiptId, formatDate(r.submittedAt),
+          (r.client && r.client.name) || '-', (r.client && r.client.phone) || '-',
+          it.vessel || '-', it.name || '-', it.qty != null ? it.qty : '', it.unit || '',
+          Number.isFinite(it.rateCents) ? num2(it.rateCents) : '', Number.isFinite(it.amountCents) ? num2(it.amountCents) : '',
+          vehicleStr, driverStr, '', '', '', '', ''
+        ]
+      });
+    });
+
+    const payments = r.payments.length ? r.payments : [];
+    payments.forEach(p => {
+      const cash = isCashMethod(p.method);
+      if (cash) totalCash += (p.amountCents || 0); else totalOther += (p.amountCents || 0);
+      rows.push({
+        kind: 'payment',
+        cells: [
+          '', r.receiptId, '', '', '', '', '', '', '', '', '', '', '',
+          cash ? num2(p.amountCents) : '',
+          cash ? (p.ref || '-') : '',
+          !cash ? ((p.method || '-') + ' (Ref: ' + (p.ref || '-') + ')') : '',
+          !cash ? num2(p.amountCents) : '',
+          ''
+        ]
+      });
+    });
+
+    grandTotal += (r.totalCents || 0);
+    rows.push({
+      kind: 'total',
+      cells: ['', r.receiptId, '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'RECEIPT TOTAL', num2(r.totalCents)]
+    });
+    rows.push({ kind: 'blank', cells: new Array(18).fill('') });
+  });
+
+  return { rows, totalCash, totalOther, grandTotal };
+}
+
+let lastVesselResult = null;
+
+function renderVesselReport() {
+  const { rows, totalCash, totalOther, grandTotal } = buildVesselRows(state.filtered);
+  lastVesselResult = { rows, totalCash, totalOther, grandTotal };
+  const holder = document.getElementById('vesselTableHolder');
+  if (!state.filtered.length) {
+    holder.innerHTML = '<div class="empty-state">No receipts in this date range.</div>';
+    return;
+  }
+  let html = '<table><thead><tr>' + VESSEL_HEADERS.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead><tbody>';
+  rows.forEach(row => {
+    const cls = row.kind === 'item' ? 'row-item' : row.kind === 'payment' ? 'row-payment' : row.kind === 'total' ? 'row-total' : 'row-blank';
+    html += `<tr class="${cls}">` + row.cells.map((c, i) => {
+      const numeric = [9, 10, 13, 16, 17].includes(i);
+      return `<td class="${numeric ? 'num' : ''}">${escapeHtml(c)}</td>`;
+    }).join('') + '</tr>';
+  });
+  html += '</tbody></table>';
+  html += `<div style="padding:10px 4px;font-size:12.5px;color:var(--ink-soft)">
+    Cash total: <strong style="color:var(--ink)">৳${totalCash / 100 === 0 ? '0.00' : (totalCash/100).toFixed(2)}</strong> &nbsp;·&nbsp;
+    Other methods total: <strong style="color:var(--ink)">৳${(totalOther/100).toFixed(2)}</strong> &nbsp;·&nbsp;
+    Grand total: <strong style="color:var(--ink)">৳${(grandTotal/100).toFixed(2)}</strong>
+  </div>`;
+  holder.innerHTML = html;
+}
+
+document.getElementById('vDownloadBtn').onclick = () => {
+  if (typeof XLSX === 'undefined') { alert('XLSX library still loading — try again in a second.'); return; }
+  if (!state.filtered.length) { alert('No receipts to export.'); return; }
+  const data = [VESSEL_HEADERS];
+  lastVesselResult.rows.forEach(r => data.push(r.cells));
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:5},{wch:14},{wch:12},{wch:16},{wch:14},{wch:12},{wch:18},{wch:8},{wch:8},
+                 {wch:10},{wch:12},{wch:16},{wch:16},{wch:12},{wch:16},{wch:22},{wch:12},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Vessel & Payment Report');
+  XLSX.writeFile(wb, 'MSR_Vessel_Payment_Report.xlsx');
+};
+
+/* ═══════════════════════════════════════════════════
+   MASTER EXPORT (mirrors POS's own history export, + SL column)
+   ═══════════════════════════════════════════════════ */
+const MASTER_HEADERS = ['SL', 'Receipt ID', 'Date', 'Client', 'Phone', 'Vessel', 'Item', 'Description',
+    'Quantity', 'Unit', 'Rate (Tk)', 'Amount (Tk)', 'Payment Method', 'Reference', 'Grand Total (Tk)'
+];
+
+function buildMasterRows(receipts) {
+  const rows = [];
+  let sl = 0;
+  receipts.forEach(r => {
+    sl++;
+    const paySummary = (r.payments || []).map(p => (p.method || '-') + ': ' + num2(p.amountCents)).join(' | ') || '-';
+    const payRefs = (r.payments || []).map(p => p.ref || '-').join('; ');
+    const items = r.items.length ? r.items : [{ vessel: '-', name: '-', desc: '', qty: '', unit: '', rateCents: 0, amountCents: r.totalCents }];
+    items.forEach((it, idx) => {
+      rows.push([
+        idx === 0 ? sl : '', r.receiptId, formatDateTime(r.submittedAt),
+        (r.client && r.client.name) || '-', (r.client && r.client.phone) || '-',
+        it.vessel || '-', it.name || '-', it.desc || '', it.qty != null ? it.qty : '', it.unit || '',
+        Number.isFinite(it.rateCents) ? num2(it.rateCents) : '', Number.isFinite(it.amountCents) ? num2(it.amountCents) : '',
+        paySummary, payRefs, num2(r.totalCents)
+      ]);
+    });
+  });
+  return rows;
+}
+
+function renderMasterExport() {
+  const rows = buildMasterRows(state.receipts);
+  const holder = document.getElementById('masterTableHolder');
+  if (!rows.length) { holder.innerHTML = '<div class="empty-state">No receipts loaded.</div>'; return; }
+  let html = '<table><thead><tr>' + MASTER_HEADERS.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead><tbody>';
+  rows.forEach(r => {
+    html += '<tr class="row-item">' + r.map((c, i) => `<td class="${[0,8,10,11,14].includes(i)?'num':''}">${escapeHtml(c)}</td>`).join('') + '</tr>';
+  });
+  html += '</tbody></table>';
+  holder.innerHTML = html;
+}
+
+document.getElementById('mCsvBtn').onclick = () => {
+  if (!state.receipts.length) { alert('No receipts loaded.'); return; }
+  const rows = buildMasterRows(state.receipts);
+  const esc = v => { const s = String(v == null ? '' : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  let csv = MASTER_HEADERS.map(esc).join(',') + '\n';
+  rows.forEach(r => { csv += r.map(esc).join(',') + '\n'; });
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'MSR_Master_Export_SL.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+};
+
+document.getElementById('mXlsxBtn').onclick = () => {
+  if (typeof XLSX === 'undefined') { alert('XLSX library still loading — try again in a second.'); return; }
+  if (!state.receipts.length) { alert('No receipts loaded.'); return; }
+  const rows = buildMasterRows(state.receipts);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([MASTER_HEADERS, ...rows]);
+  ws['!cols'] = [{wch:5},{wch:14},{wch:20},{wch:18},{wch:14},{wch:12},{wch:20},{wch:22},
+                 {wch:10},{wch:8},{wch:10},{wch:12},{wch:20},{wch:18},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Receipts');
+  XLSX.writeFile(wb, 'MSR_Master_Export_SL.xlsx');
+};
+
+/* ═══════════════════════════════════════════════════
+   OUTGOING / EXPENSES (in-memory only, today only)
+   ═══════════════════════════════════════════════════ */
+document.getElementById('ogAddBtn').onclick = () => {
+  const category = document.getElementById('ogCategory').value;
+  const desc = document.getElementById('ogDesc').value.trim();
+  const amtInput = document.getElementById('ogAmount');
+  const amt = parseFloat(amtInput.value);
+  if (!Number.isFinite(amt) || amt <= 0) { alert('Enter a valid amount.'); return; }
+  state.outgoing.push({ category, desc, amountCents: Math.round(amt * 100) });
+  document.getElementById('ogDesc').value = '';
+  amtInput.value = '';
+  renderOutgoing();
+  renderSummary();
+};
+
+function renderOutgoing() {
+  const list = document.getElementById('ogList');
+  if (!state.outgoing.length) {
+    list.innerHTML = '<div class="empty-state">No outgoing entries yet.</div>';
+  } else {
+    list.innerHTML = state.outgoing.map((o, i) => `
+      <div class="outgoing-row">
+        <span class="cat">${escapeHtml(o.category)}</span>
+        <span class="desc">${escapeHtml(o.desc || '')}</span>
+        <span class="amt">${money(o.amountCents)}</span>
+        <button class="rm" data-i="${i}" title="Remove">&times;</button>
+      </div>`).join('');
+    list.querySelectorAll('.rm').forEach(btn => {
+      btn.onclick = () => { state.outgoing.splice(+btn.dataset.i, 1); renderOutgoing(); renderSummary(); };
+    });
+  }
+  const total = state.outgoing.reduce((s, o) => s + o.amountCents, 0);
+  document.getElementById('ogTotalLine').textContent = 'Total outgoing: ' + money(total);
+}
+
+/* ═══════════════════════════════════════════════════
+   CASH SUMMARY
+   ═══════════════════════════════════════════════════ */
+document.getElementById('sRecalcBtn').onclick = renderSummary;
+
+function renderSummary() {
+  const grid = document.getElementById('summaryGrid');
+  const bf = Math.round((parseFloat(document.getElementById('sBalanceForward').value) || 0) * 100);
+  const cashReceived = lastVesselResult ? lastVesselResult.totalCash : 0;
+  const outgoingTotal = state.outgoing.reduce((s, o) => s + o.amountCents, 0);
+  const balanceCD = bf + cashReceived - outgoingTotal;
+
+  grid.innerHTML = `
+    <div class="lbl">Balance Forward</div><div class="val">${money(bf)}</div>
+    <div class="lbl">Cash Received (Vessel &amp; Payment Report)</div><div class="val">${money(cashReceived)}</div>
+    <div class="lbl">Outgoing Total</div><div class="val">− ${money(outgoingTotal)}</div>
+    <div class="divider"></div>
+    <div class="lbl final">Balance C/D</div><div class="val final">${money(balanceCD)}</div>
+  `;
+}
+
+document.getElementById('sDownloadBtn').onclick = () => {
+  if (typeof XLSX === 'undefined') { alert('XLSX library still loading — try again in a second.'); return; }
+  const bf = Math.round((parseFloat(document.getElementById('sBalanceForward').value) || 0) * 100);
+  const cashReceived = lastVesselResult ? lastVesselResult.totalCash : 0;
+  const outgoingTotal = state.outgoing.reduce((s, o) => s + o.amountCents, 0);
+  const balanceCD = bf + cashReceived - outgoingTotal;
+
+  const data = [
+    ['MSR Cash Summary'],
+    [],
+    ['Balance Forward', num2(bf)],
+    ['Cash Received (Vessel & Payment Report)', num2(cashReceived)],
+    ['Outgoing Total', num2(outgoingTotal)],
+    ['Balance C/D', num2(balanceCD)],
+    [],
+    ['Outgoing detail:'],
+    ['Category', 'Description', 'Amount (Tk)']
+  ];
+  state.outgoing.forEach(o => data.push([o.category, o.desc || '', num2(o.amountCents)]));
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{ wch: 34 }, { wch: 24 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, ws, 'Cash Summary');
+  XLSX.writeFile(wb, 'MSR_Cash_Summary.xlsx');
+};
+
+/* ═══════════════════════════════════════════════════
+   PRINT / PDF — statement-style layouts
+   ═══════════════════════════════════════════════════ */
+function setPrintPageStyle(orientation, marginIn) {
+  const el = document.getElementById('printPageStyle');
+  el.textContent = `@page { size: A4 ${orientation}; margin: ${marginIn}in; }`;
+}
+
+function psHeader(title, metaHtml) {
+  return `
+    <div class="ps-header">
+      <div class="ps-company">MEHREEN SHIP RECYCLING &mdash; HKC</div>
+      <div class="ps-title">${escapeHtml(title)}</div>
+      <div class="ps-meta">${metaHtml}</div>
+    </div>
+    <hr class="ps-rule" />`;
+}
+
+const SEP = '\u00A0\u00A0\u00B7\u00A0\u00A0'; // nbsp middle-dot nbsp, used as a visual separator
+
+function dateRangeLabel() {
+  const from = document.getElementById('vFrom').value;
+  const to = document.getElementById('vTo').value;
+  if (!from && !to) return 'All dates';
+  return `${from ? formatDate(from) : 'Start'} to ${to ? formatDate(to) : 'today'}`;
+}
+
+/* Vessel & Payment Report — one statement card per receipt: a header
+   line, a narrow items table, a narrow payments table, and a total
+   line. Kept to a handful of columns per table (rather than one wide
+   18-column table) so it stays readable in portrait — print/PDF on
+   mobile doesn't reliably honour a forced landscape orientation. */
+function buildVesselPrintHtml(receipts) {
+  let html = '';
+  let totalCash = 0, totalOther = 0, grandTotal = 0;
+  receipts.forEach((r, ri) => {
+    const vehicleStr = (r.vehicle && r.vehicle.plate) || '-';
+    const driverStr = (r.vehicle && r.vehicle.driverName)
+        ? r.vehicle.driverName + ((r.vehicle.driverPhone) ? ' (' + r.vehicle.driverPhone + ')' : '')
+        : '-';
+    const items = r.items.length ? r.items : [{ vessel: '-', name: '-', qty: '', unit: '', rateCents: 0, amountCents: r.totalCents }];
+
+    html += `<div class="ps-group ps-receipt-card">
+      <div class="ps-receipt-head">
+        <span class="lbl">SL</span>${ri + 1}<span class="sep"></span>
+        <span class="lbl">Receipt</span>${escapeHtml(r.receiptId)}<span class="sep"></span>
+        <span class="lbl">Date</span>${escapeHtml(formatDate(r.submittedAt))}<span class="sep"></span>
+        <span class="lbl">Party</span>${escapeHtml((r.client && r.client.name) || '-')} (${escapeHtml((r.client && r.client.phone) || '-')})<span class="sep"></span>
+        <span class="lbl">Vehicle</span>${escapeHtml(vehicleStr)}<span class="sep"></span>
+        <span class="lbl">Driver</span>${escapeHtml(driverStr)}
+      </div>
+      <table class="ps-mini-table">
+        <colgroup><col style="width:16%"><col style="width:30%"><col style="width:11%"><col style="width:9%"><col style="width:16%"><col style="width:18%"></colgroup>
+        <thead><tr><th>Vessel</th><th>Item</th><th>Qty</th><th>Unit</th><th>Rate (Tk)</th><th>Amount (Tk)</th></tr></thead>
+        <tbody>` +
+      items.map(it => `<tr>
+          <td>${escapeHtml(it.vessel || '-')}</td>
+          <td>${escapeHtml(it.name || '-')}</td>
+          <td class="num">${escapeHtml(it.qty != null ? it.qty : '')}</td>
+          <td>${escapeHtml(it.unit || '')}</td>
+          <td class="num">${Number.isFinite(it.rateCents) ? num2(it.rateCents) : ''}</td>
+          <td class="num">${Number.isFinite(it.amountCents) ? num2(it.amountCents) : ''}</td>
+        </tr>`).join('') +
+      '</tbody></table>';
+
+    const payments = r.payments.length ? r.payments : [];
+    if (payments.length) {
+      html += `<table class="ps-mini-table">
+        <colgroup><col style="width:26%"><col style="width:44%"><col style="width:30%"></colgroup>
+        <thead><tr><th>Method</th><th>Reference</th><th>Amount (Tk)</th></tr></thead>
+        <tbody>` +
+        payments.map(p => {
+          const cash = isCashMethod(p.method);
+          if (cash) totalCash += (p.amountCents || 0); else totalOther += (p.amountCents || 0);
+          return `<tr>
+              <td class="method">${escapeHtml(p.method || '-')}</td>
+              <td>${escapeHtml(p.ref || '-')}</td>
+              <td class="num">${num2(p.amountCents)}</td>
+            </tr>`;
+        }).join('') + '</tbody></table>';
+    }
+
+    grandTotal += (r.totalCents || 0);
+    html += `<div class="ps-receipt-total-line">Receipt Total: ৳${num2(r.totalCents)}</div></div>`;
+  });
+  return { html, totalCash, totalOther, grandTotal };
+}
+
+document.getElementById('vPrintBtn').onclick = () => {
+  if (!state.filtered.length) { alert('No receipts to print.'); return; }
+  const built = buildVesselPrintHtml(state.filtered);
+  const meta = `Period: ${escapeHtml(dateRangeLabel())}${SEP}Generated: ${escapeHtml(formatDateTime(new Date().toISOString()))}`;
+  const footer = `<div class="ps-footer">Cash total: ৳${(built.totalCash/100).toFixed(2)}${SEP}Other methods total: ৳${(built.totalOther/100).toFixed(2)}${SEP}Grand total: ৳${(built.grandTotal/100).toFixed(2)}</div>`;
+  document.getElementById('printSheet').innerHTML = psHeader('Vessel & Payment Report', meta) + built.html + footer;
+  setPrintPageStyle('portrait', 0.5);
+  window.print();
+};
+
+/* Master Export print — same statement-card structure: header line
+   (receipt/date/client), a narrow items table, a payment summary
+   line, and a total. */
+function buildMasterPrintHtml(receipts) {
+  let html = '';
+  receipts.forEach((r, ri) => {
+    const paySummary = (r.payments || []).map(p => (p.method || '-') + ': ৳' + num2(p.amountCents) + ' (Ref: ' + (p.ref || '-') + ')').join(', ') || '-';
+    const items = r.items.length ? r.items : [{ vessel: '-', name: '-', desc: '', qty: '', unit: '', rateCents: 0, amountCents: r.totalCents }];
+
+    html += `<div class="ps-group ps-receipt-card">
+      <div class="ps-receipt-head">
+        <span class="lbl">SL</span>${ri + 1}<span class="sep"></span>
+        <span class="lbl">Receipt</span>${escapeHtml(r.receiptId)}<span class="sep"></span>
+        <span class="lbl">Date</span>${escapeHtml(formatDateTime(r.submittedAt))}<span class="sep"></span>
+        <span class="lbl">Client</span>${escapeHtml((r.client && r.client.name) || '-')} (${escapeHtml((r.client && r.client.phone) || '-')})
+      </div>
+      <table class="ps-mini-table">
+        <colgroup><col style="width:14%"><col style="width:22%"><col style="width:18%"><col style="width:10%"><col style="width:8%"><col style="width:13%"><col style="width:15%"></colgroup>
+        <thead><tr><th>Vessel</th><th>Item</th><th>Description</th><th>Qty</th><th>Unit</th><th>Rate (Tk)</th><th>Amount (Tk)</th></tr></thead>
+        <tbody>` +
+      items.map(it => `<tr>
+          <td>${escapeHtml(it.vessel || '-')}</td>
+          <td>${escapeHtml(it.name || '-')}</td>
+          <td>${escapeHtml(it.desc || '')}</td>
+          <td class="num">${escapeHtml(it.qty != null ? it.qty : '')}</td>
+          <td>${escapeHtml(it.unit || '')}</td>
+          <td class="num">${Number.isFinite(it.rateCents) ? num2(it.rateCents) : ''}</td>
+          <td class="num">${Number.isFinite(it.amountCents) ? num2(it.amountCents) : ''}</td>
+        </tr>`).join('') +
+      '</tbody></table>' +
+      `<div style="font-size:8pt;color:#555;margin-bottom:2px">Payments: ${escapeHtml(paySummary)}</div>` +
+      `<div class="ps-receipt-total-line">Receipt Total: ৳${num2(r.totalCents)}</div></div>`;
+  });
+  return html;
+}
+
+document.getElementById('mPrintBtn').onclick = () => {
+  if (!state.receipts.length) { alert('No receipts to print.'); return; }
+  const meta = `All receipts${SEP}Generated: ${escapeHtml(formatDateTime(new Date().toISOString()))}`;
+  document.getElementById('printSheet').innerHTML = psHeader('Master Export', meta) + buildMasterPrintHtml(state.receipts);
+  setPrintPageStyle('portrait', 0.5);
+  window.print();
+};
+
+/* Cash Summary print — short, portrait, bank-statement style ledger. */
+document.getElementById('sPrintBtn').onclick = () => {
+  const bf = Math.round((parseFloat(document.getElementById('sBalanceForward').value) || 0) * 100);
+  const cashReceived = lastVesselResult ? lastVesselResult.totalCash : 0;
+  const outgoingTotal = state.outgoing.reduce((s, o) => s + o.amountCents, 0);
+  const balanceCD = bf + cashReceived - outgoingTotal;
+  const meta = `Period: ${escapeHtml(dateRangeLabel())}${SEP}Generated: ${escapeHtml(formatDateTime(new Date().toISOString()))}`;
+
+  let html = `<table class="ps-summary-table">
+    <tr><td>Balance Forward</td><td>${money(bf)}</td></tr>
+    <tr><td>Cash Received (Vessel &amp; Payment Report)</td><td>${money(cashReceived)}</td></tr>
+    <tr><td>Outgoing Total</td><td>&minus; ${money(outgoingTotal)}</td></tr>
+    <tr class="ps-divider"><td colspan="2"></td></tr>
+    <tr class="ps-final"><td>Balance C/D</td><td>${money(balanceCD)}</td></tr>
+  </table>`;
+
+  if (state.outgoing.length) {
+    html += `<div style="margin-top:20px;font-weight:700;font-size:9.5pt;margin-bottom:6px">Outgoing detail</div>
+      <table class="ps-mini-table"><colgroup><col style="width:32%"><col style="width:48%"><col style="width:20%"></colgroup>
+      <thead><tr><th>Category</th><th>Description</th><th>Amount (Tk)</th></tr></thead><tbody>` +
+      state.outgoing.map(o => `<tr><td>${escapeHtml(o.category)}</td><td>${escapeHtml(o.desc||'')}</td><td class="num">${num2(o.amountCents)}</td></tr>`).join('') +
+      '</tbody></table>';
+  }
+
+  document.getElementById('printSheet').innerHTML = psHeader('Cash Summary', meta) + html;
+  setPrintPageStyle('portrait', 0.6);
+  window.print();
+};
+
+renderOutgoing();
+</script>
+</body>
+</html>
