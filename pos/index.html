@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#001f3f" />
     <title>MSR Retail POS</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20x%3D%2250%22%20y%3D%2278%22%20font-size%3D%2288%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20Helvetica%2C%20sans-serif%22%20fill%3D%22%23001f3f%22%3E%26%239096%3B%3C%2Ftext%3E%3C%2Fsvg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -10,6 +14,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Big+Shoulders+Display:wght@700;800&display=swap" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" defer></script>
     <style id="dynamicPageStyle">@page { size: A4 portrait; margin: 0.5in; }</style>
     <style>
         * {
@@ -18,14 +24,14 @@
             padding: 0;
         }
         :root {
-            --bg: #f2f2f7;
+            --bg: #f6f6f4;
             --surface: #ffffff;
-            --surface-2: #f6f6f8;
-            --ink: #1c1c1e;
-            --ink-soft: #6e6e73;
-            --ink-muted: #a1a1a6;
-            --border: #e5e5ea;
-            --border-light: #f0f0f2;
+            --surface-2: #f2f2f0;
+            --ink: #0a0a0a;
+            --ink-soft: #545456;
+            --ink-muted: #8e8e93;
+            --border: #e8e8e6;
+            --border-light: #f1f1ef;
             --primary: #0a3d62;
             --primary-hover: #0d4d7a;
             --primary-light: #e9f1f9;
@@ -34,23 +40,27 @@
             --on-oxford: #ffffff;
             --brand-font: 'Big Shoulders Display', var(--sans);
             --accent: #0071e3;
-            --green: #248a3d;
+            --cta: #0a0a0a;
+            --cta-hover: #262626;
+            --green: #1a7d3c;
             --green-bg: #e5f6e9;
             --red: #d70015;
             --red-bg: #fdebec;
             --gold: #b8860b;
             --gold-bg: #faf3e2;
-            --shadow: 0 2px 10px rgba(28, 28, 30, 0.05), 0 1px 2px rgba(28, 28, 30, 0.04);
-            --shadow-lg: 0 12px 32px rgba(28, 28, 30, 0.12);
-            --radius: 14px;
-            --radius-sm: 10px;
-            --radius-xs: 8px;
+            --shadow: 0 1px 2px rgba(10, 10, 10, 0.04), 0 1px 8px rgba(10, 10, 10, 0.04);
+            --shadow-lg: 0 16px 40px rgba(10, 10, 10, 0.16);
+            --radius: 18px;
+            --radius-sm: 14px;
+            --radius-xs: 12px;
             --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
             --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
             --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', system-ui, sans-serif;
             --mono: 'SF Mono', 'IBM Plex Mono', ui-monospace, 'Menlo', monospace;
             --serif: 'Source Serif 4', Georgia, serif;
             --max-w: 880px;
+            --safe-b: env(safe-area-inset-bottom, 0px);
+            --safe-t: env(safe-area-inset-top, 0px);
         }
         html {
             font-size: 15px;
@@ -95,7 +105,7 @@
             background: var(--oxford);
             border-bottom: 1px solid var(--oxford);
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
-            padding: 10px 0;
+            padding: calc(10px + var(--safe-t)) 0 10px;
         }
         .header-row {
             display: flex;
@@ -154,7 +164,7 @@
             background: #ffffff;
             border: 1px solid #ffffff;
             cursor: pointer;
-            padding: 6px 10px;
+            padding: 9px 12px;
             border-radius: var(--radius-sm);
             color: #000000;
             display: flex;
@@ -163,6 +173,11 @@
             transition: background 0.15s, transform 0.1s;
             font-size: 14px;
             gap: 4px;
+            min-height: 42px;
+            min-width: 42px;
+        }
+        .btn-icon:active {
+            transform: scale(0.94);
         }
         .btn-icon:hover {
             background: var(--surface-2);
@@ -266,7 +281,7 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 20px 22px;
+            padding: 20px 20px;
             margin-bottom: 14px;
             box-shadow: var(--shadow);
         }
@@ -294,7 +309,7 @@
             color: var(--ink-soft);
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
         }
         .field .hint,
         .hint {
@@ -308,14 +323,15 @@
         select,
         textarea {
             width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--border);
+            padding: 13px 14px;
+            border: 1.5px solid var(--border);
             border-radius: var(--radius-sm);
             font-family: var(--sans);
-            font-size: 14px;
+            font-size: 16px;
             color: var(--ink);
             background: var(--surface);
             transition: border 0.15s, box-shadow 0.15s;
+            min-height: 48px;
         }
         input:focus,
         select:focus,
@@ -326,7 +342,7 @@
         }
         textarea {
             resize: vertical;
-            min-height: 50px;
+            min-height: 60px;
         }
         .row2 {
             display: grid;
@@ -344,14 +360,14 @@
             justify-content: center;
             gap: 8px;
             font-family: var(--sans);
-            font-weight: 600;
-            font-size: 14px;
+            font-weight: 700;
+            font-size: 15px;
             letter-spacing: -0.01em;
-            padding: 10px 22px;
-            border-radius: var(--radius-xs);
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
             border: none;
             cursor: pointer;
-            min-height: 44px;
+            min-height: 50px;
             transition: background 0.18s var(--ease), transform 0.15s var(--spring), box-shadow 0.18s var(--ease), opacity 0.18s var(--ease);
         }
         .btn:active {
@@ -359,14 +375,14 @@
             opacity: 0.85;
         }
         .btn-primary {
-            background: var(--primary);
+            background: var(--cta);
             color: #fff;
         }
         .btn-primary:hover {
-            background: var(--primary-hover);
+            background: var(--cta-hover);
         }
         .btn-primary:disabled {
-            background: #bcc3cd;
+            background: #c4c4c2;
             cursor: not-allowed;
             transform: none;
         }
@@ -386,22 +402,49 @@
         }
         .btn-ghost {
             background: transparent;
-            border: 1px solid var(--border);
+            border: 1.5px solid var(--border);
             color: var(--ink);
         }
         .btn-ghost:hover {
             background: var(--surface-2);
         }
         .btn-sm {
-            font-size: 12px;
-            padding: 6px 14px;
-            min-height: 34px;
+            font-size: 13px;
+            padding: 8px 16px;
+            min-height: 38px;
         }
         .btn-row {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
             margin-top: 16px;
+        }
+        /* The primary action per step stays reachable with a thumb no
+           matter how long the screen scrolls — the same pattern as the
+           persistent bottom button in ride-hailing/delivery apps. Plain
+           `position: sticky` against the page's own scroll (there's no
+           separate scroll container) is enough; no JS needed. */
+        .step-cta-bar {
+            position: sticky;
+            bottom: 0;
+            z-index: 20;
+            background: rgba(246, 246, 244, 0.92);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            margin-left: -16px;
+            margin-right: -16px;
+            padding: 12px 16px calc(12px + var(--safe-b));
+            border-top: 1px solid var(--border);
+        }
+        @media (min-width:640px) {
+            .step-cta-bar {
+                position: static;
+                background: none;
+                backdrop-filter: none;
+                margin: 16px 0 0;
+                padding: 0;
+                border-top: none;
+            }
         }
         .btn svg {
             width: 18px;
@@ -609,7 +652,7 @@
             position: fixed;
             inset: 0;
             z-index: 200;
-            background: rgba(0, 0, 0, 0.35);
+            background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(3px);
             display: none;
             align-items: center;
@@ -629,6 +672,41 @@
             padding: 28px 30px 24px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
             animation: fadeUp 0.2s ease;
+        }
+        /* On phones, modals behave like a native bottom sheet: pinned
+           to the bottom edge, full width, rounded top corners only,
+           sliding up rather than fading in — the pattern people
+           already know from ride-hailing and delivery apps. */
+        @media (max-width:640px) {
+            .modal-overlay {
+                align-items: flex-end;
+                padding: 0;
+            }
+            .modal {
+                max-width: none;
+                width: 100%;
+                max-height: 86vh;
+                border-radius: 22px 22px 0 0;
+                padding: 22px 18px calc(20px + var(--safe-b));
+                animation: sheetUp 0.28s var(--ease);
+            }
+            .modal::before {
+                content: '';
+                display: block;
+                width: 36px;
+                height: 4px;
+                border-radius: 3px;
+                background: var(--border);
+                margin: -6px auto 14px;
+            }
+        }
+        @keyframes sheetUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
         }
         .modal-close {
             float: right;
@@ -723,7 +801,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: calc(20px + var(--safe-t)) 20px calc(20px + var(--safe-b));
         }
         .lock-screen.unlocked {
             display: none;
@@ -769,12 +847,37 @@
         }
         .lock-input {
             width: 100%;
-            padding: 12px 14px;
-            font-size: 15px;
-            border: 1px solid var(--border);
+            padding: 14px;
+            font-size: 17px;
+            border: 1.5px solid var(--border);
             border-radius: var(--radius-sm);
             text-align: center;
             letter-spacing: 0.06em;
+            min-height: 52px;
+        }
+        #totpCodeInput {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 0.35em;
+            font-family: var(--mono);
+            padding-left: 20px;
+        }
+        .admin-screen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: var(--surface-2);
+            overflow-y: auto;
+            padding: 20px 0 60px;
+        }
+        .admin-screen.open {
+            display: block;
+        }
+        .admin-card {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 0 16px;
         }
         #printArea {
             display: none;
@@ -1162,37 +1265,6 @@
             color: var(--ink-soft);
             text-align: center;
         }
-        .speaker-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--primary);
-            color: #fff;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            transition: 0.15s;
-            margin: 6px auto 0;
-        }
-        .speaker-btn:hover {
-            background: var(--primary-hover);
-        }
-        .speaker-btn svg {
-            width: 20px;
-            height: 20px;
-        }
-        .speaker-btn .repeat-label {
-            font-size: 11px;
-            font-weight: 400;
-            opacity: 0.8;
-        }
-        .speaker-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
         .pay-line-item {
             display: flex;
             align-items: center;
@@ -1359,14 +1431,104 @@
             </div>
             <div class="lock-title">&#9096;MSR</div>
             <div class="lock-sub">Mehreen Ship Recycling HKC &middot; Cashier Portal</div>
-            <p class="lock-label" style="margin-top:14px">Cashier name</p>
-            <input type="text" id="loginCashierName" class="lock-input" autocomplete="off" placeholder="e.g. Rahim Uddin" />
-            <p class="lock-label">Cashier phone number</p>
-            <input type="tel" id="loginCashierPhone" class="lock-input" autocomplete="off" inputmode="tel" placeholder="01XXXXXXXXX" />
-            <p class="lock-label">Access code</p>
-            <input type="password" id="lockCodeInput" class="lock-input" autocomplete="off" inputmode="text" placeholder="Access code" />
+            <p class="lock-label" style="margin-top:14px">Enter your 6-digit authenticator code</p>
+            <input type="text" id="totpCodeInput" class="lock-input" autocomplete="off" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" />
             <div class="err" id="lockErr" style="text-align:center"></div>
             <button class="btn btn-primary" id="lockSubmitBtn" style="width:100%;margin-top:6px">Unlock</button>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL — full-screen, separate from the cashier POS view -->
+    <div id="adminPanel" class="admin-screen">
+        <div class="admin-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+                <div class="lock-title" style="font-size:22px">Admin Panel</div>
+                <div class="btn-row" style="margin:0">
+                    <button class="btn btn-ghost btn-sm" id="adminTabCashiersBtn">Cashiers</button>
+                    <button class="btn btn-ghost btn-sm" id="adminTabReceiptsBtn">Receipts</button>
+                    <button class="btn btn-ghost btn-sm" id="adminTabSettingsBtn">Settings</button>
+                    <button class="btn btn-red btn-sm" id="adminSignOutBtn">Sign out</button>
+                </div>
+            </div>
+
+            <div id="adminCashiersView">
+                <div class="card">
+                    <div style="font-weight:700;margin-bottom:10px">Add a cashier</div>
+                    <div class="row2">
+                        <div class="field"><label>Name</label><input id="newCashierName" placeholder="e.g. Rahim Uddin" /></div>
+                        <div class="field"><label>Phone</label><input id="newCashierPhone" inputmode="tel" placeholder="01XXXXXXXXX" /></div>
+                    </div>
+                    <div class="err" id="newCashierErr"></div>
+                    <button class="btn btn-primary btn-sm" id="newCashierAddBtn" style="margin-top:8px">Add &amp; generate QR code</button>
+                    <div id="newCashierEnroll" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--border-light);text-align:center">
+                        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px">Have <strong id="enrollName"></strong> scan this in Google Authenticator, Authy, or similar — shown once.</div>
+                        <canvas id="enrollQrCanvas" style="margin:0 auto"></canvas>
+                        <div class="hint" style="margin-top:8px">Can't scan? Manual key: <code id="enrollSecretText" style="font-family:var(--mono)"></code></div>
+                        <button class="btn btn-ghost btn-sm" id="enrollDoneBtn" style="margin-top:10px">Done</button>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:16px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                        <div style="font-weight:700">Cashier profiles</div>
+                        <span class="hint" id="cashiersLiveHint" style="display:none">● live</span>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="items" id="cashiersTable">
+                            <thead><tr><th>Name</th><th>Phone</th><th>Status</th><th></th></tr></thead>
+                            <tbody id="cashiersTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminReceiptsView" style="display:none">
+                <div class="card">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                        <input id="receiptsSearch" placeholder="Search by receipt ID, client, or cashier…" style="flex:1;min-width:180px;padding:8px 12px;font-size:13px" />
+                        <button class="btn btn-ghost btn-sm" id="receiptsRefreshBtn">Refresh</button>
+                        <span class="hint" id="receiptsLiveHint" style="display:none;align-self:center">● live</span>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="items" id="receiptsTable">
+                            <thead><tr><th>Receipt</th><th>Date</th><th>Cashier</th><th>Client</th><th>Total</th><th></th></tr></thead>
+                            <tbody id="receiptsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card" id="receiptDetailCard" style="display:none;margin-top:16px">
+                    <div class="receipt-box" id="receiptDetailText"></div>
+                    <div class="btn-row no-print" style="margin-top:12px;flex-wrap:wrap">
+                        <button class="btn btn-ghost btn-sm" id="receiptDetailPrintBtn">Print</button>
+                        <button class="btn btn-green btn-sm" id="receiptDetailSendCustomerBtn">Send to Customer (WhatsApp)</button>
+                        <button class="btn btn-green btn-sm" id="receiptDetailSendOfficeBtn">Send to Office (WhatsApp)</button>
+                        <button class="btn btn-green btn-sm" id="receiptDetailSendOwnerBtn">Send to Owner (WhatsApp)</button>
+                        <button class="btn btn-ghost btn-sm" id="receiptDetailCloseBtn">Close</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminSettingsView" style="display:none">
+                <div class="card">
+                    <div style="font-weight:700;margin-bottom:10px">Bank &amp; QR details</div>
+                    <div class="row2">
+                        <div class="field"><label>Bank</label><input id="setBankName" /></div>
+                        <div class="field"><label>Branch</label><input id="setBankBranch" /></div>
+                    </div>
+                    <div class="row2">
+                        <div class="field"><label>Account name</label><input id="setBankAccName" /></div>
+                        <div class="field"><label>Account no.</label><input id="setBankAccNo" /></div>
+                    </div>
+                    <div class="field"><label>Routing number</label><input id="setBankRouting" /></div>
+                    <div style="font-weight:700;margin:18px 0 10px;padding-top:14px;border-top:1px solid var(--border-light)">WhatsApp numbers</div>
+                    <div class="row2">
+                        <div class="field"><label>Office</label><input id="setWaOffice" inputmode="tel" placeholder="8801XXXXXXXXX" /></div>
+                        <div class="field"><label>Owner</label><input id="setWaOwner" inputmode="tel" placeholder="8801XXXXXXXXX" /></div>
+                    </div>
+                    <div class="err" id="settingsSaveErr"></div>
+                    <button class="btn btn-primary btn-sm" id="settingsSaveAdminBtn" style="margin-top:10px">Save settings</button>
+                    <div class="hint" id="settingsSavedHint" style="display:none;margin-top:8px">Saved — pushed live to every device.</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1413,7 +1575,7 @@
                 </div>
                 <div class="err" id="clientErr"></div>
             </div>
-            <div class="btn-row"><button class="btn btn-primary" id="toStep2">Continue →</button></div>
+            <div class="btn-row step-cta-bar"><button class="btn btn-primary" id="toStep2">Continue →</button></div>
         </section>
 
         <!-- STEP 2: ITEMS -->
@@ -1438,7 +1600,7 @@
                     <span class="amt" id="itemsTotal">Tk 0.00</span>
                 </div>
             </div>
-            <div class="btn-row">
+            <div class="btn-row step-cta-bar">
                 <button class="btn btn-ghost" id="backTo1">← Back</button>
                 <button class="btn btn-primary" id="toStep3" disabled>Review & confirm →</button>
             </div>
@@ -1493,7 +1655,7 @@
             </div>
 
             <p class="text-muted" style="font-size:13px;margin-bottom:6px">Read the total to the client. Prices cannot be edited after payment starts.</p>
-            <div class="btn-row">
+            <div class="btn-row step-cta-bar">
                 <button class="btn btn-ghost" id="backTo2">← Edit items</button>
                 <button class="btn btn-green" id="toStep4">Client confirmed — proceed to payment →</button>
             </div>
@@ -1509,12 +1671,6 @@
                     <div class="fee-line" id="overviewFeeLine"></div>
                     <div class="total-big" id="overviewTotal">Tk 0.00</div>
                     <div class="method-big" id="overviewMethod">Payment method: Cash</div>
-                    <button class="speaker-btn" id="speakBtn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                        <span id="speakLabel">Announce total</span>
-                        <span class="repeat-label">(repeat)</span>
-                    </button>
-                    <div id="speechStatus" style="font-size:11px;color:var(--ink-muted);margin-top:4px;text-align:center;"></div>
                 </div>
             </div>
 
@@ -1560,7 +1716,7 @@
             </div>
             <div class="err" id="payErr"></div>
 
-            <div class="btn-row">
+            <div class="btn-row step-cta-bar">
                 <button class="btn btn-ghost" id="backTo3">← Back</button>
                 <button class="btn btn-primary" id="toStep5">Finalise →</button>
             </div>
@@ -1586,8 +1742,8 @@
             </div>
             <div class="card no-print">
                 <label class="checkline"><input type="checkbox" id="checkAccurate" /> I confirm every detail — client, items, amounts and payment — is correct.</label>
-                <div id="submitWrap" style="display:none">
-                    <button class="btn btn-red" id="submitBtn" style="width:100%;margin-top:12px">
+                <div id="submitWrap" class="step-cta-bar" style="display:none">
+                    <button class="btn btn-red" id="submitBtn" style="width:100%">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                         Confirm &amp; save receipt
                     </button>
@@ -1637,7 +1793,7 @@
         <div class="modal">
             <button class="modal-close" id="helpClose">✕</button>
             <h2>How to use the POS</h2>
-            <div class="help-step"><div class="num">1</div><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="content"><strong>Enter client &amp; cashier</strong><p>Fill in the client's name and phone number, then enter your cashier ID or name.</p></div></div>
+            <div class="help-step"><div class="num">1</div><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="content"><strong>Sign in &amp; enter client</strong><p>You're already signed in as your cashier profile. Fill in the client's name and phone number to begin.</p></div></div>
             <div class="help-step"><div class="num">2</div><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div><div class="content"><strong>Add items</strong><p>Enter the item name, description, vessel/source, quantity, unit (kg/lot/item/unit/custom), and rate. Click <strong>Add</strong>.</p></div></div>
             <div class="help-step"><div class="num">3</div><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></div><div class="content"><strong>Add payment lines</strong><p>Add one or more payment methods (Cash, QR, Card, NPSB, RTGS, Payorder, Cheque, Prepaid). Enter amounts. QR/Card incur 2% fee.</p></div></div>
             <div class="help-step"><div class="num">4</div><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></div><div class="content"><strong>References &amp; reimbursement</strong><p>Enter ref for each payment line. If overpaid, fill reimbursement method and details.</p></div></div>
@@ -1710,11 +1866,11 @@
                     </div>
                 </div>
                 <div class="bank-details">
-                    <div><span>Bank</span><span>Southeast Bank PLC</span></div>
-                    <div><span>Branch</span><span>Madam Bibir Hat, CTG</span></div>
-                    <div><span>Account</span><span>Mehreen Ship Recycling</span></div>
-                    <div><span>A/C No.</span><span>004811100001128</span></div>
-                    <div><span>Routing</span><span>205154698</span></div>
+                    <div><span>Bank</span><span id="bdBank">Southeast Bank PLC</span></div>
+                    <div><span>Branch</span><span id="bdBranch">Madam Bibir Hat, CTG</span></div>
+                    <div><span>Account</span><span id="bdAccName">Mehreen Ship Recycling</span></div>
+                    <div><span>A/C No.</span><span id="bdAccNo">004811100001128</span></div>
+                    <div><span>Routing</span><span id="bdRouting">205154698</span></div>
                 </div>
             </div>
             <div style="font-size:12px;color:var(--ink-muted);margin-top:12px;text-align:center">Use this information for NPSB, RTGS, or QR payments.</div>
@@ -1729,62 +1885,454 @@
 
     <script>
         /* ═══════════════════════════════════════════════════
-           ACCESS LOCK — change the code below to update it.
+           SUPABASE CONFIG — fill these in after running
+           supabase_setup.sql and deploying both Edge Functions.
+           See the setup guide for where to find each value.
            ═══════════════════════════════════════════════════ */
-        const APP_ACCESS_CODE = '2026#';
+        const SUPABASE_URL = 'https://mxwiqsnihnzyzitkstbx.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_-rlwRpiyMRozO945Vu8avg_CaKrJ9C4';
+        const VERIFY_TOTP_URL = SUPABASE_URL + '/functions/v1/verify-totp';
+        const SUBMIT_RECEIPT_URL = SUPABASE_URL + '/functions/v1/submit-receipt';
+
+        let sb = null;
+        try {
+            if (window.supabase && SUPABASE_URL.indexOf('YOUR-PROJECT') === -1) {
+                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (_) { sb = null; }
+
+        function randomBase32Secret(byteLen) {
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            const bytes = new Uint8Array(byteLen || 20);
+            crypto.getRandomValues(bytes);
+            let bits = '';
+            for (const b of bytes) bits += b.toString(2).padStart(8, '0');
+            let out = '';
+            for (let i = 0; i + 5 <= bits.length; i += 5) out += alphabet[parseInt(bits.substring(i, i + 5), 2)];
+            return out;
+        }
+
+        /* The ONLY path that can create a receipt row. Requires the
+           session token issued by verify-totp — the receipts table
+           itself has no anon-insert policy, so this Edge Function call
+           (which validates the token server-side before writing) is
+           the sole way a submission reaches Supabase. Best-effort: if
+           the backend isn't configured, the device is offline, or the
+           session has expired, this fails silently and the receipt is
+           still printed/saved locally exactly as before — a sync
+           failure never blocks a sale. */
+        async function submitReceiptToBackend(record) {
+            if (SUPABASE_URL.includes('YOUR-PROJECT')) return;
+            let token = '';
+            try { token = sessionStorage.getItem('msr_session_token') || ''; } catch (_) {}
+            if (!token) return;
+            try {
+                await fetch(SUBMIT_RECEIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' +
+                        SUPABASE_ANON_KEY },
+                    body: JSON.stringify({ token, record })
+                });
+            } catch (_) {}
+        }
+
+        /* Bank/QR details and WhatsApp numbers, admin-editable, synced
+           live to every device via Supabase Realtime. Falls back to
+           the values baked into the HTML if the backend isn't
+           configured, so the app still works standalone. */
+        let appSettingsCache = {};
+        function applyBankDetails(v) {
+            if (!v) return;
+            const map = { bdBank: 'bank', bdBranch: 'branch', bdAccName: 'account_name', bdAccNo: 'account_no', bdRouting: 'routing' };
+            Object.keys(map).forEach(id => {
+                const el = document.getElementById(id);
+                if (el && v[map[id]]) el.textContent = v[map[id]];
+            });
+        }
+        async function loadAppSettings() {
+            if (!sb) return;
+            try {
+                const { data, error } = await sb.from('app_settings').select('key,value');
+                if (error || !data) return;
+                data.forEach(row => { appSettingsCache[row.key] = row.value; });
+                applyBankDetails(appSettingsCache.bank_details);
+            } catch (_) {}
+        }
+        function subscribeAppSettingsRealtime() {
+            if (!sb) return;
+            sb.channel('app_settings_live')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'app_settings' }, (payload) => {
+                    if (payload.new && payload.new.key) {
+                        appSettingsCache[payload.new.key] = payload.new.value;
+                        if (payload.new.key === 'bank_details') applyBankDetails(payload.new.value);
+                    }
+                })
+                .subscribe();
+        }
+
+        /* ═══════════════════════════════════════════════════
+           LOGIN — one code field for everyone. The code itself is
+           checked server-side against every active cashier's secret,
+           then the admin's secret. Whichever matches decides what
+           this device shows next — there is no separate admin button,
+           gesture, or hint anywhere in the UI. A cashier's device has
+           no way to even discover an admin panel exists.
+           ═══════════════════════════════════════════════════ */
         (function initLock() {
             const screen = document.getElementById('lockScreen');
-            const input = document.getElementById('lockCodeInput');
-            const nameInput = document.getElementById('loginCashierName');
-            const phoneInput = document.getElementById('loginCashierPhone');
+            const codeInput = document.getElementById('totpCodeInput');
             const err = document.getElementById('lockErr');
             const btn = document.getElementById('lockSubmitBtn');
-            try {
-                nameInput.value = localStorage.getItem('msr_last_cashier') || '';
-                phoneInput.value = localStorage.getItem('msr_last_cashier_phone') || '';
-            } catch (_) {}
+            const panel = document.getElementById('adminPanel');
+
             function applyCashierToHeader(name) {
                 const disp = document.getElementById('cashierDisplay');
                 if (disp) disp.textContent = name || 'Cashier';
             }
-            function tryUnlock() {
-                const name = nameInput.value.trim();
-                const phone = phoneInput.value.trim();
-                if (!name) { err.textContent = 'Enter the cashier name.'; nameInput.focus(); return; }
-                if (!phone) { err.textContent = 'Enter the cashier phone number.'; phoneInput.focus(); return; }
-                if (input.value !== APP_ACCESS_CODE) {
-                    err.textContent = 'Incorrect code. Please try again.';
-                    input.value = '';
-                    input.focus();
-                    return;
-                }
+
+            async function enterAsAdmin(result) {
+                if (!sb) return false;
+                const { error } = await sb.auth.verifyOtp({ token_hash: result.tokenHash, type: 'email' });
+                if (error) { err.textContent = 'Admin session could not be started. Try again.'; return false; }
+                screen.classList.add('unlocked');
+                panel.classList.add('open');
+                if (typeof onAdminEnter === 'function') onAdminEnter();
+                return true;
+            }
+
+            function enterAsCashier(result) {
                 try {
                     sessionStorage.setItem('msr_pos_unlocked', '1');
-                    sessionStorage.setItem('msr_session_cashier', name);
-                    sessionStorage.setItem('msr_session_cashier_phone', phone);
-                    localStorage.setItem('msr_last_cashier', name);
-                    localStorage.setItem('msr_last_cashier_phone', phone);
+                    sessionStorage.setItem('msr_session_cashier', result.name);
+                    sessionStorage.setItem('msr_session_cashier_phone', result.phone || '');
+                    sessionStorage.setItem('msr_session_token', result.token);
+                    sessionStorage.setItem('msr_session_expires', result.expiresAt || '');
                 } catch (_) {}
-                try { if (typeof S !== 'undefined') { S.cashier = name; S.cashierPhone = phone; } } catch (_) {}
-                applyCashierToHeader(name);
+                try { if (typeof S !== 'undefined') { S.cashier = result.name;
+                        S.cashierPhone = result.phone || ''; } } catch (_) {}
+                applyCashierToHeader(result.name);
                 screen.classList.add('unlocked');
-                err.textContent = '';
             }
+
+            async function tryUnlock() {
+                const code = codeInput.value.trim();
+                if (!/^\d{6}$/.test(code)) { err.textContent = 'Enter the 6-digit code from your authenticator app.';
+                    codeInput.focus();
+                    return; }
+                if (SUPABASE_URL.includes('YOUR-PROJECT')) { err.textContent = 'Backend not connected. Ask an admin to finish setup.';
+                    return; }
+                btn.disabled = true;
+                err.textContent = '';
+                try {
+                    const res = await fetch(VERIFY_TOTP_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' +
+                            SUPABASE_ANON_KEY },
+                        body: JSON.stringify({ code })
+                    });
+                    const result = await res.json();
+                    if (!result.ok) {
+                        err.textContent = 'Incorrect code. Please try again.';
+                        codeInput.value = '';
+                        codeInput.focus();
+                        btn.disabled = false;
+                        return;
+                    }
+                    if (result.role === 'admin') {
+                        const ok = await enterAsAdmin(result);
+                        if (!ok) { btn.disabled = false; return; }
+                    } else {
+                        enterAsCashier(result);
+                    }
+                    err.textContent = '';
+                } catch (_) {
+                    err.textContent = 'Network error — check your connection and try again.';
+                }
+                btn.disabled = false;
+            }
+
             let alreadyUnlocked = false;
             let sessionCashier = '';
+            let sessionExpires = '';
             try {
                 alreadyUnlocked = sessionStorage.getItem('msr_pos_unlocked') === '1';
                 sessionCashier = sessionStorage.getItem('msr_session_cashier') || '';
+                sessionExpires = sessionStorage.getItem('msr_session_expires') || '';
             } catch (_) {}
+            // A session past its 12-hour token expiry is treated as
+            // logged out, so a device left open overnight doesn't sit
+            // there able to submit receipts on an invalid token.
+            if (alreadyUnlocked && sessionExpires && new Date(sessionExpires).getTime() < Date.now()) {
+                alreadyUnlocked = false;
+                try {
+                    sessionStorage.removeItem('msr_pos_unlocked');
+                    sessionStorage.removeItem('msr_session_token');
+                } catch (_) {}
+            }
             if (alreadyUnlocked) {
                 screen.classList.add('unlocked');
                 applyCashierToHeader(sessionCashier);
             }
+            // An admin's session is Supabase Auth itself, so on reload
+            // check whether one is already live and, if so, skip
+            // straight back into the panel rather than asking again.
+            if (sb) {
+                sb.auth.getSession().then(({ data }) => {
+                    if (data && data.session) {
+                        screen.classList.add('unlocked');
+                        panel.classList.add('open');
+                        if (typeof onAdminEnter === 'function') onAdminEnter();
+                    }
+                });
+            }
             btn.onclick = tryUnlock;
-            [input, nameInput, phoneInput].forEach(el => {
-                el.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
+            codeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
+            loadAppSettings();
+            subscribeAppSettingsRealtime();
+        })();
+
+        /* ═══════════════════════════════════════════════════
+           ADMIN PANEL — reached only when the code entered on the
+           ordinary login screen matches the admin's TOTP secret
+           instead of a cashier's (see initLock/onAdminEnter below).
+           There is no button, gesture, or visual hint anywhere in the
+           UI that this exists — a cashier's device has no way to even
+           discover it's here.
+           ═══════════════════════════════════════════════════ */
+        (function initAdmin() {
+            const panel = document.getElementById('adminPanel');
+
+            let realtimeChannels = [];
+            function teardownRealtime() {
+                realtimeChannels.forEach(ch => { try { sb.removeChannel(ch); } catch (_) {} });
+                realtimeChannels = [];
+            }
+            function setupAdminRealtime() {
+                if (!sb) return;
+                const hint1 = document.getElementById('cashiersLiveHint');
+                const hint2 = document.getElementById('receiptsLiveHint');
+                const chCashiers = sb.channel('admin_cashiers_live')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'cashiers' }, () => loadCashiersTab())
+                    .subscribe(status => { if (hint1) hint1.style.display = status === 'SUBSCRIBED' ? '' : 'none'; });
+                const chReceipts = sb.channel('admin_receipts_live')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'receipts' }, () => loadReceiptsTab())
+                    .subscribe(status => { if (hint2) hint2.style.display = status === 'SUBSCRIBED' ? '' : 'none'; });
+                realtimeChannels = [chCashiers, chReceipts];
+            }
+
+            /* Called by initLock once a TOTP code matched the admin
+               and a real Supabase Auth session was established. */
+            window.onAdminEnter = function() {
+                loadCashiersTab();
+                loadSettingsTab();
+                setupAdminRealtime();
+            };
+
+            document.getElementById('adminSignOutBtn').onclick = async () => {
+                teardownRealtime();
+                if (sb) { try { await sb.auth.signOut(); } catch (_) {} }
+                panel.classList.remove('open');
+                try { sessionStorage.removeItem('msr_pos_unlocked'); } catch (_) {}
+                location.reload();
+            };
+
+            const cashiersView = document.getElementById('adminCashiersView');
+            const receiptsView = document.getElementById('adminReceiptsView');
+            const settingsView = document.getElementById('adminSettingsView');
+            function showAdminTab(which) {
+                cashiersView.style.display = which === 'cashiers' ? '' : 'none';
+                receiptsView.style.display = which === 'receipts' ? '' : 'none';
+                settingsView.style.display = which === 'settings' ? '' : 'none';
+                if (which === 'cashiers') loadCashiersTab();
+                if (which === 'receipts') loadReceiptsTab();
+                if (which === 'settings') loadSettingsTab();
+            }
+            document.getElementById('adminTabCashiersBtn').onclick = () => showAdminTab('cashiers');
+            document.getElementById('adminTabReceiptsBtn').onclick = () => showAdminTab('receipts');
+            document.getElementById('adminTabSettingsBtn').onclick = () => showAdminTab('settings');
+
+            /* ── Cashiers tab ── */
+            async function loadCashiersTab() {
+                const body = document.getElementById('cashiersTableBody');
+                if (!sb) { body.innerHTML = '<tr><td colspan="4">Backend not connected.</td></tr>'; return; }
+                body.innerHTML = '<tr><td colspan="4">Loading…</td></tr>';
+                const { data, error } = await sb.from('cashiers').select('id,name,phone,active').order('name');
+                if (error) { body.innerHTML = '<tr><td colspan="4">Could not load cashiers.</td></tr>'; return; }
+                body.innerHTML = (data || []).map(c => `
+                    <tr>
+                        <td><strong>${escapeHtml(c.name)}</strong></td>
+                        <td>${escapeHtml(c.phone)}</td>
+                        <td>${c.active ? 'Active' : 'Deactivated'}</td>
+                        <td style="white-space:nowrap">
+                            <button class="btn btn-ghost btn-sm" data-toggle="${c.id}" data-active="${c.active}">${c.active ? 'Deactivate' : 'Reactivate'}</button>
+                            <button class="btn btn-ghost btn-sm" data-regen="${c.id}" data-name="${escapeHtml(c.name)}">New QR</button>
+                        </td>
+                    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--ink-muted)">No cashiers yet.</td></tr>';
+                body.querySelectorAll('[data-toggle]').forEach(b => {
+                    b.onclick = async () => {
+                        const active = b.dataset.active === 'true';
+                        await sb.from('cashiers').update({ active: !active }).eq('id', b.dataset.toggle);
+                        loadCashiersTab();
+                    };
+                });
+                body.querySelectorAll('[data-regen]').forEach(b => {
+                    b.onclick = async () => {
+                        if (!confirm('Issue a new QR code for ' + b.dataset.name + '? Their old code will stop working immediately.')) return;
+                        const secret = randomBase32Secret(20);
+                        await sb.from('cashiers').update({ totp_secret: secret }).eq('id', b.dataset.regen);
+                        showEnrollQr(b.dataset.name, secret);
+                    };
+                });
+            }
+
+            function showEnrollQr(name, secret) {
+                const uri = 'otpauth://totp/' + encodeURIComponent('MSR POS:' + name) + '?secret=' + secret +
+                    '&issuer=' + encodeURIComponent('MSR POS') + '&digits=6&period=30';
+                document.getElementById('enrollName').textContent = name;
+                document.getElementById('enrollSecretText').textContent = secret;
+                document.getElementById('newCashierEnroll').style.display = 'block';
+                document.getElementById('newCashierEnroll').scrollIntoView({ behavior: 'smooth' });
+                if (window.QRCode) {
+                    QRCode.toCanvas(document.getElementById('enrollQrCanvas'), uri, { width: 200 }, () => {});
+                }
+            }
+
+            document.getElementById('newCashierAddBtn').onclick = async () => {
+                const name = document.getElementById('newCashierName').value.trim();
+                const phone = document.getElementById('newCashierPhone').value.trim();
+                const errEl = document.getElementById('newCashierErr');
+                if (!name || !phone) { errEl.textContent = 'Enter both name and phone.'; return; }
+                if (!sb) { errEl.textContent = 'Backend not connected.'; return; }
+                errEl.textContent = '';
+                const secret = randomBase32Secret(20);
+                const { error } = await sb.from('cashiers').insert({ name, phone, totp_secret: secret, active: true });
+                if (error) { errEl.textContent = error.message.includes('duplicate') ? 'A cashier with that name already exists.' :
+                        'Could not add cashier.';
+                    return; }
+                showEnrollQr(name, secret);
+                document.getElementById('newCashierName').value = '';
+                document.getElementById('newCashierPhone').value = '';
+                loadCashiersTab();
+            };
+            document.getElementById('enrollDoneBtn').onclick = () => {
+                document.getElementById('newCashierEnroll').style.display = 'none';
+            };
+
+            /* ── Receipts tab ── */
+            let allReceipts = [];
+            async function loadReceiptsTab() {
+                const body = document.getElementById('receiptsTableBody');
+                if (!sb) { body.innerHTML = '<tr><td colspan="6">Backend not connected.</td></tr>'; return; }
+                const { data, error } = await sb.from('receipts').select('*').order('submitted_at', { ascending: false })
+                    .limit(500);
+                if (error) { body.innerHTML = '<tr><td colspan="6">Could not load receipts.</td></tr>'; return; }
+                allReceipts = data || [];
+                const q = document.getElementById('receiptsSearch').value.trim().toLowerCase();
+                renderReceiptsTable(q ? allReceipts.filter(r =>
+                    (r.receipt_id || '').toLowerCase().includes(q) ||
+                    (r.client_name || '').toLowerCase().includes(q) ||
+                    (r.cashier_name || '').toLowerCase().includes(q)) : allReceipts);
+            }
+            function renderReceiptsTable(rows) {
+                const body = document.getElementById('receiptsTableBody');
+                body.innerHTML = rows.map(r => `
+                    <tr>
+                        <td>${escapeHtml(r.receipt_id)}</td>
+                        <td>${escapeHtml(new Date(r.submitted_at).toLocaleString())}</td>
+                        <td>${escapeHtml(r.cashier_name || '-')}</td>
+                        <td>${escapeHtml(r.client_name || '-')}</td>
+                        <td>${r.total_cents != null ? 'Tk ' + (r.total_cents/100).toFixed(2) : '-'}</td>
+                        <td><button class="btn btn-ghost btn-sm" data-view="${r.id}">View</button></td>
+                    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--ink-muted)">No receipts yet.</td></tr>';
+                body.querySelectorAll('[data-view]').forEach(b => {
+                    b.onclick = () => showReceiptDetail(rows.find(r => r.id === b.dataset.view));
+                });
+            }
+            document.getElementById('receiptsSearch').addEventListener('input', (e) => {
+                const q = e.target.value.trim().toLowerCase();
+                renderReceiptsTable(q ? allReceipts.filter(r =>
+                    (r.receipt_id || '').toLowerCase().includes(q) ||
+                    (r.client_name || '').toLowerCase().includes(q) ||
+                    (r.cashier_name || '').toLowerCase().includes(q)) : allReceipts);
             });
-            if (!alreadyUnlocked) { setTimeout(() => nameInput.focus(), 50); }
+            document.getElementById('receiptsRefreshBtn').onclick = loadReceiptsTab;
+
+            let currentDetailRecord = null;
+            function showReceiptDetail(row) {
+                if (!row) return;
+                currentDetailRecord = row.record;
+                document.getElementById('receiptDetailText').textContent = buildReceipt('final', row.record, { hidePrices: false });
+                document.getElementById('receiptDetailCard').style.display = '';
+                document.getElementById('receiptDetailCard').scrollIntoView({ behavior: 'smooth' });
+            }
+            document.getElementById('receiptDetailCloseBtn').onclick = () => {
+                document.getElementById('receiptDetailCard').style.display = 'none';
+            };
+            document.getElementById('receiptDetailPrintBtn').onclick = () => {
+                if (!currentDetailRecord) return;
+                printReceiptDoc('receipt', currentDetailRecord, { hidePrices: false, stage: 'final' });
+            };
+            document.getElementById('receiptDetailSendCustomerBtn').onclick = () => {
+                if (!currentDetailRecord) return;
+                const phone = currentDetailRecord.client && currentDetailRecord.client.phone;
+                if (!phone) { alert('No customer phone number on this receipt.'); return; }
+                sendWhatsApp(phone, buildCustomerMessage(currentDetailRecord, { hidePrices: false }));
+            };
+            document.getElementById('receiptDetailSendOfficeBtn').onclick = () => {
+                if (!currentDetailRecord) return;
+                const num = (appSettingsCache.whatsapp_numbers && appSettingsCache.whatsapp_numbers.office) || '';
+                if (!num) { alert('No office WhatsApp number set. Add one in the Settings tab.'); return; }
+                sendWhatsApp(num, buildOfficeMessage(currentDetailRecord));
+            };
+            document.getElementById('receiptDetailSendOwnerBtn').onclick = () => {
+                if (!currentDetailRecord) return;
+                const num = (appSettingsCache.whatsapp_numbers && appSettingsCache.whatsapp_numbers.owner) || '';
+                if (!num) { alert('No owner WhatsApp number set. Add one in the Settings tab.'); return; }
+                sendWhatsApp(num, buildOfficeMessage(currentDetailRecord));
+            };
+
+            /* ── Settings tab ── */
+            async function loadSettingsTab() {
+                if (!sb) return;
+                const { data } = await sb.from('app_settings').select('key,value');
+                (data || []).forEach(row => { appSettingsCache[row.key] = row.value; });
+                const bd = appSettingsCache.bank_details || {};
+                document.getElementById('setBankName').value = bd.bank || '';
+                document.getElementById('setBankBranch').value = bd.branch || '';
+                document.getElementById('setBankAccName').value = bd.account_name || '';
+                document.getElementById('setBankAccNo').value = bd.account_no || '';
+                document.getElementById('setBankRouting').value = bd.routing || '';
+                const wa = appSettingsCache.whatsapp_numbers || {};
+                document.getElementById('setWaOffice').value = wa.office || '';
+                document.getElementById('setWaOwner').value = wa.owner || '';
+            }
+            document.getElementById('settingsSaveAdminBtn').onclick = async () => {
+                const errEl = document.getElementById('settingsSaveErr');
+                const savedHint = document.getElementById('settingsSavedHint');
+                if (!sb) { errEl.textContent = 'Backend not connected.'; return; }
+                errEl.textContent = '';
+                savedHint.style.display = 'none';
+                const bank_details = {
+                    bank: document.getElementById('setBankName').value.trim(),
+                    branch: document.getElementById('setBankBranch').value.trim(),
+                    account_name: document.getElementById('setBankAccName').value.trim(),
+                    account_no: document.getElementById('setBankAccNo').value.trim(),
+                    routing: document.getElementById('setBankRouting').value.trim()
+                };
+                const whatsapp_numbers = {
+                    office: document.getElementById('setWaOffice').value.trim(),
+                    owner: document.getElementById('setWaOwner').value.trim()
+                };
+                const { error: e1 } = await sb.from('app_settings').upsert({ key: 'bank_details', value: bank_details,
+                    updated_at: new Date().toISOString() });
+                const { error: e2 } = await sb.from('app_settings').upsert({ key: 'whatsapp_numbers', value: whatsapp_numbers,
+                    updated_at: new Date().toISOString() });
+                if (e1 || e2) { errEl.textContent = 'Could not save settings.'; return; }
+                appSettingsCache.bank_details = bank_details;
+                appSettingsCache.whatsapp_numbers = whatsapp_numbers;
+                savedHint.style.display = 'block';
+                setTimeout(() => { savedHint.style.display = 'none'; }, 3000);
+            };
         })();
 
         /* ═══════════════════════════════════════════════════
@@ -2096,7 +2644,7 @@
         function renderItemForm() {
             const form = document.getElementById('itemForm');
             form.innerHTML = `
-              <div class="field"><label>Category <span class="hint">(optional, custom)</span></label><input id="f_category" list="categoryList" placeholder="e.g. Machinery, Electricals, Fittings" /><datalist id="categoryList"></datalist></div>
+              <div class="field"><label>Category</label><input id="f_category" list="categoryList" placeholder="e.g. Machinery, Electricals, Fittings" /><datalist id="categoryList"></datalist></div>
               <div class="field" style="margin-top:10px"><label>Item name</label><input id="f_name" placeholder="e.g. Marine diesel generator" /></div>
               <div class="field" style="margin-top:10px"><label>Description / condition</label><textarea id="f_desc" placeholder="Make, model, condition, notes"></textarea></div>
               <div class="field"><label>Vessel / source</label><input id="f_vessel" placeholder="e.g. MV Titan" /></div>
@@ -2556,8 +3104,6 @@
             } else {
                 feeLine.textContent = '';
             }
-            document.getElementById('speakBtn').disabled = false;
-            document.getElementById('speechStatus').textContent = '';
             // update method note
             const noteEl = document.getElementById('methodSpecificNote');
             const hasBank = S.payments.some(p => isBankTransferMethod(p.method));
@@ -2569,46 +3115,6 @@
                 noteEl.style.display = 'none';
             }
         }
-
-        function speakTotal() {
-            const sub = itemsTotalCents();
-            const total = grandTotalCents(sub, S.payments);
-            const totalStr = (total / 100).toFixed(2);
-            let parts = S.payments.map(p => money(p.amountCents) + ' ' + p.method);
-            let msg = 'Grand Total ' + totalStr + ' TAKA. ';
-            if (parts.length === 1) {
-                msg += 'Paid via ' + parts[0] + '.';
-            } else {
-                msg += 'Paid via: ' + parts.join(', ') + '.';
-            }
-            const statusEl = document.getElementById('speechStatus');
-            if (!window.speechSynthesis) { statusEl.textContent = 'Speech not supported.'; return; }
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(msg);
-            utterance.lang = 'en-US';
-            utterance.rate = 0.9;
-            utterance.pitch = 1;
-            utterance.volume = 1;
-            const voices = window.speechSynthesis.getVoices();
-            const fv = voices.find(v => v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes(
-                'Google UK Female'));
-            if (fv) utterance.voice = fv;
-            utterance.onstart = () => { statusEl.textContent = 'Speaking...';
-                document.getElementById('speakBtn').disabled = true; };
-            utterance.onend = () => { statusEl.textContent = 'Done. Click to repeat.';
-                document.getElementById('speakBtn').disabled = false; };
-            utterance.onerror = () => { statusEl.textContent = 'Speech error.';
-                document.getElementById('speakBtn').disabled = false; };
-            window.speechSynthesis.speak(utterance);
-            playTap();
-        }
-
-        document.getElementById('speakBtn').addEventListener('click', () => {
-            if (window.speechSynthesis.getVoices().length === 0) {
-                window.speechSynthesis.onvoiceschanged = () => speakTotal();
-                setTimeout(speakTotal, 300);
-            } else { speakTotal(); }
-        });
 
         document.getElementById('toStep5').onclick = () => {
             const err = document.getElementById('payErr');
@@ -2678,6 +3184,95 @@
                 });
             });
         })();
+
+        /* ═══════════════════════════════════════════════════
+           WHATSAPP — admin panel only. Cashiers never see these;
+           they're wired only to the Receipts tab in the Admin Panel.
+           ═══════════════════════════════════════════════════ */
+        function sendWhatsApp(phone, text) {
+            const cleaned = String(phone).replace(/\D/g, '');
+            const num = cleaned.startsWith('0') ? cleaned.slice(1) : cleaned;
+            const f = num.startsWith('880') ? num : '880' + num;
+            window.open('https://wa.me/' + f + '?text=' + encodeURIComponent(text), '_blank');
+        }
+
+        function waItemLines(items, opts) {
+            const o = opts || {};
+            return (items || []).map((it, i) => {
+                const vessel = it.vessel ? ` (${it.vessel})` : '';
+                const cat = it.category ? `[${it.category}] ` : '';
+                const desc = it.desc ? `\n   ${it.desc}` : '';
+                const base = `${i + 1}. ${cat}${it.name}${vessel} — ${it.qty} ${it.unit}`;
+                if (!o.withAmount) return base + desc;
+                return `${base} × ${money(it.rateCents)} = ${money(it.amountCents)}${desc}`;
+            }).join('\n') || '(no items recorded)';
+        }
+
+        function waPaymentLines(payments) {
+            return (payments || []).map(p => {
+                const ref = p.ref ? ` (Ref: ${p.ref})` : '';
+                const feeLine = calcFee(p.amountCents, p.method);
+                const feeStr = feeLine > 0 ? ` [+${money(feeLine)} fee]` : '';
+                return `${p.method}: ${money(p.amountCents)}${feeStr}${ref}`;
+            }).join('\n') || '(no payment recorded)';
+        }
+
+        /* Sent to the client themselves. */
+        function buildCustomerMessage(data, opts) {
+            const o = opts || {};
+            const hidePrices = !!o.hidePrices;
+            const ts = data.submittedAt ? formatDateTime(new Date(data.submittedAt)) : formatDateTime(new Date());
+            const client = data.client || {};
+            const items = data.items || [];
+            const sub = items.reduce((s, it) => s + (Number.isFinite(it.amountCents) ? it.amountCents : 0), 0);
+            const fee = totalFeeCents(data.payments);
+            const total = Number.isFinite(data.totalCents) ? data.totalCents : sub + fee;
+
+            let msg = `*Mehreen Ship Recycling — HKC*\nPurchase Confirmation\n\n` +
+                `Receipt: ${data.receiptId}\n` +
+                `Date: ${ts}\n` +
+                `Client: ${client.name || '-'} (${client.phone || '-'})\n\n` +
+                `Items:\n${waItemLines(items, { withAmount: !hidePrices })}\n\n`;
+
+            if (!hidePrices) {
+                msg += `Subtotal: ${money(sub)}\n`;
+                if (fee > 0) msg += `Fees (QR/Card): ${money(fee)}\n`;
+                msg += `*Total: ${money(total)}*\n\n`;
+                if ((data.payments || []).length) {
+                    msg += `Payment:\n${waPaymentLines(data.payments)}\n\n`;
+                }
+                if (data.reimbursement && data.reimbursement.amountCents > 0) {
+                    msg += `Overpayment reimbursed: ${money(data.reimbursement.amountCents)} via ${data.reimbursement.method}\n\n`;
+                }
+            }
+            msg += `Status: PAID IN FULL\n\nThank you for choosing MSR.`;
+            return msg;
+        }
+
+        /* Sent to the office/owner — includes cashier identity and full
+           payment references for reconciliation. */
+        function buildOfficeMessage(data) {
+            const ts = data.submittedAt ? formatDateTime(new Date(data.submittedAt)) : formatDateTime(new Date());
+            const client = data.client || {};
+            const items = data.items || [];
+            const sub = items.reduce((s, it) => s + (Number.isFinite(it.amountCents) ? it.amountCents : 0), 0);
+            const fee = totalFeeCents(data.payments);
+            const total = Number.isFinite(data.totalCents) ? data.totalCents : sub + fee;
+            const reimb = data.reimbursement && data.reimbursement.amountCents > 0 ?
+                `\n\nOverpayment reimbursed: ${money(data.reimbursement.amountCents)} via ${data.reimbursement.method}` : '';
+
+            return `*MSR — Office Notification*\n\n` +
+                `Receipt: ${data.receiptId}\n` +
+                `Date: ${ts}\n` +
+                `Cashier: ${data.cashier || '-'}\n` +
+                `Client: ${client.name || '-'} (${client.phone || '-'})\n\n` +
+                `Items:\n${waItemLines(items, { withAmount: true })}\n\n` +
+                `Subtotal: ${money(sub)}\n` +
+                `${fee > 0 ? `Fees (QR/Card): ${money(fee)}\n` : ''}` +
+                `*Grand Total: ${money(total)}*\n\n` +
+                `Payment:\n${waPaymentLines(data.payments)}` +
+                reimb;
+        }
 
         /* ═══════════════════════════════════════════════════
            BUILD RECEIPT (shared)
@@ -3276,6 +3871,7 @@
             }
             clearDraft();
             lastSubmittedRecord = record;
+            submitReceiptToBackend(record);
             document.getElementById('doneReceiptId').textContent = data.receiptId;
             document.getElementById('showPricesToggle').checked = true;
             // Cart is cleared immediately on successful save — the next
