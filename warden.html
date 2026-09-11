@@ -1,0 +1,2435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 rx=%2222%27 fill=%27%230a0a0a%27/%3E%3Ctext x=%2750%27 y=%2768%27 font-size=%2754%27 font-family=%27system-ui,Helvetica,Arial,sans-serif%27 font-weight=%27800%27 text-anchor=%27middle%27 fill=%27%23ffffff%27%3EW%3C/text%3E%3C/svg%3E">
+<meta name="author" content="Hamid Yasir FRSA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="A private, self-hosted, multi-camera viewer. No accounts on our servers, no telemetry.">
+<title>Warden — by Hamid Yasir FRSA</title>
+<style>
+:root{
+  color-scheme: light;
+  --bg:#ffffff; --surface:#f5f5f5; --border:#e4e4e4;
+  --text:#0a0a0a; --text-dim:#6b6b6b; --text-faint:#a3a3a3;
+  --ink:#0a0a0a; --ink-contrast:#ffffff; --danger:#d92d20; --good:#16a34a;
+  --radius-lg:20px; --radius-md:14px; --radius-sm:10px;
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-l:env(safe-area-inset-left,0px); --safe-r:env(safe-area-inset-right,0px);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0a0a0a; --surface:#161616; --border:#262626;
+  --text:#fafafa; --text-dim:#a3a3a3; --text-faint:#6b6b6b;
+  --ink:#fafafa; --ink-contrast:#0a0a0a;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{margin:0;background:var(--bg);color:var(--text);overscroll-behavior:none;}
+button,input,select{font-family:inherit;}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important;}}
+.screen{position:fixed;inset:0;display:none;}
+.screen.active{display:flex;}
+
+/* ---------- Shared primitives (used everywhere for uniformity) ---------- */
+.btn{border:none;border-radius:var(--radius-md);padding:14px 18px;font-size:15px;font-weight:650;cursor:pointer;width:100%;transition:transform .12s ease,opacity .15s ease;}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--ink);color:var(--ink-contrast);}
+.btn-primary:disabled{opacity:.4;cursor:default;}
+.btn-ghost{background:transparent;color:var(--text);border:1.5px solid var(--border);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-sm{padding:9px 14px;font-size:13px;width:auto;}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field label{font-size:12.5px;font-weight:600;color:var(--text-dim);padding-left:2px;}
+.field input,.field select{background:var(--bg);border:1.5px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:12px 13px;font-size:15.5px;outline:none;width:100%;}
+.field input:focus,.field select:focus{border-color:var(--ink);}
+.field .hint{font-size:11.5px;color:var(--text-faint);padding-left:2px;}
+.checkrow{display:flex;align-items:center;gap:10px;padding:11px 2px;cursor:pointer;}
+.checkrow input{width:18px;height:18px;flex-shrink:0;accent-color:var(--ink);}
+.checkrow .txt{display:flex;flex-direction:column;gap:1px;}
+.checkrow .txt .t{font-size:14.5px;font-weight:600;}
+.checkrow .txt .d{font-size:12px;color:var(--text-faint);}
+.icon-btn{width:44px;height:44px;border-radius:50%;border:none;background:rgba(127,127,127,.16);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;flex-shrink:0;transition:background .15s ease,transform .12s ease;font-family:inherit;}
+.icon-btn .glyph{font-size:19px;font-weight:600;line-height:1;}
+.icon-btn:active{transform:scale(.92);}
+.toast{position:fixed;top:calc(66px + var(--safe-t));left:50%;transform:translateX(-50%) translateY(-8px);background:rgba(255,255,255,.95);color:#000;padding:9px 16px;border-radius:100px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;white-space:nowrap;z-index:999;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:200;padding:0 14px calc(14px + var(--safe-b)) 14px;}
+.confirm-overlay.show{display:flex;}
+.confirm-sheet{width:100%;max-width:420px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;display:flex;flex-direction:column;gap:14px;}
+.confirm-sheet .title{font-size:15.5px;font-weight:700;text-align:center;}
+.confirm-sheet .desc{font-size:13.5px;color:var(--text-dim);text-align:center;line-height:1.4;}
+.row2{display:flex;gap:10px;}
+
+/* ---------- Login / signup ---------- */
+#login-screen{flex-direction:column;align-items:center;justify-content:flex-start;padding:calc(28px + var(--safe-t)) calc(24px + var(--safe-r)) calc(28px + var(--safe-b)) calc(24px + var(--safe-l));background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#login-screen .login-card{margin:auto 0;width:100%;}
+.login-card{width:100%;max-width:380px;display:flex;flex-direction:column;gap:18px;}
+.brand{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:4px;}
+.logo-mark{width:44px;height:44px;border-radius:12px;background:var(--ink);color:var(--ink-contrast);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;letter-spacing:-.02em;flex-shrink:0;}
+.brand h1{font-size:21px;font-weight:800;letter-spacing:-.01em;margin:0;}
+.brand p{margin:0;font-size:13.5px;color:var(--text-dim);text-align:center;line-height:1.4;}
+.account-row-wrap{border:1.5px solid var(--border);border-radius:var(--radius-md);overflow:hidden;background:var(--surface);transition:border-color .15s ease;}
+.account-row-wrap.expanded{border-color:var(--ink);}
+.account-row-wrap .account-row{border:none;background:transparent;}
+.account-row-wrap.expanded .account-row{border-bottom:1px solid var(--border);}
+.account-row{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;background:var(--surface);}
+.account-row:active{background:var(--border);}
+.account-row.selected{border-color:var(--ink);background:var(--surface);}
+.account-expand{display:none;flex-direction:column;gap:12px;padding:14px 16px;}
+.account-row-wrap.expanded .account-expand{display:flex;}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--ink-contrast);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;}
+.account-row .who{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;}
+.account-row .who .n{font-size:14.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.account-row .who .r{font-size:11.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em;}
+.error-text{font-size:13px;color:var(--danger);text-align:center;display:none;line-height:1.4;}
+.error-text.show{display:block;}
+.link-btn{background:none;border:none;color:var(--text-dim);font-size:13px;font-weight:600;text-decoration:underline;cursor:pointer;padding:6px;}
+
+/* ---------- Gallery ---------- */
+#gallery-screen{flex-direction:column;background:var(--bg);}
+.gallery-header{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + var(--safe-t)) calc(18px + var(--safe-r)) 12px calc(18px + var(--safe-l));flex-shrink:0;gap:8px;flex-wrap:wrap;row-gap:8px;}
+.gallery-header h1{font-size:21px;font-weight:800;margin:0;letter-spacing:-.01em;flex-shrink:0;}
+.user-pill{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--text-dim);background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 10px 5px 6px;cursor:pointer;max-width:110px;flex-shrink:1;min-width:0;}
+.user-pill span:not(.avatar){white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.user-pill .avatar{width:18px;height:18px;font-size:9px;flex-shrink:0;}
+.header-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;min-width:0;}
+.icon-btn.sm{width:36px;height:36px;}
+.user-menu{position:fixed;z-index:80;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 8px 28px rgba(0,0,0,.18);padding:6px;display:none;min-width:160px;}
+.user-menu.show{display:block;}
+.user-menu button{width:100%;text-align:left;background:none;border:none;padding:10px 12px;font-size:14px;font-weight:600;color:var(--text);border-radius:var(--radius-sm);cursor:pointer;}
+.user-menu button:hover{background:var(--surface);}
+.user-menu button.danger{color:var(--danger);}
+.gallery-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px calc(14px + var(--safe-r)) calc(24px + var(--safe-b)) calc(14px + var(--safe-l));}
+.cam-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media (min-width:640px){.cam-grid{grid-template-columns:repeat(3,1fr);}}
+.cam-tile{position:relative;border-radius:var(--radius-md);overflow:hidden;background:#000;aspect-ratio:4/3;cursor:pointer;border:1px solid var(--border);}
+.cam-tile img,.cam-tile .fallback{width:100%;height:100%;object-fit:cover;display:block;}
+.cam-tile .fallback{display:flex;align-items:center;justify-content:center;background:var(--surface);color:var(--text-faint);}
+.cam-tile .fallback svg{width:28px;height:28px;}
+.cam-tile .label{position:absolute;left:0;right:0;bottom:0;padding:8px 10px;background:linear-gradient(0deg,rgba(0,0,0,.7),transparent);display:flex;align-items:center;gap:6px;}
+.cam-tile .label .dot{width:7px;height:7px;border-radius:50%;background:#8a8a8a;flex-shrink:0;}
+.cam-tile .label .dot.live{background:#fff;box-shadow:0 0 0 0 rgba(255,255,255,.5);animation:pulse 2.2s ease-out infinite;}
+.cam-tile .label .dot.error{background:var(--danger);}
+.cam-tile .label span.name{color:#fff;font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.45);}70%{box-shadow:0 0 0 8px rgba(255,255,255,0);}100%{box-shadow:0 0 0 0 rgba(255,255,255,0);}}
+.add-tile{border:1.5px dashed var(--border);border-radius:var(--radius-md);aspect-ratio:4/3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text-dim);cursor:pointer;background:var(--surface);}
+.add-tile svg{width:24px;height:24px;}
+.add-tile span{font-size:12.5px;font-weight:650;}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:60px 30px;text-align:center;color:var(--text-dim);}
+.empty-state svg{width:38px;height:38px;opacity:.5;}
+.empty-state .btn{max-width:220px;}
+
+/* ---------- Viewer ---------- */
+#viewer-screen{flex-direction:column;background:#000;}
+.video-wrap{position:absolute;inset:0;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+#video,#mjpeg-img{width:100%;height:100%;object-fit:contain;background:#000;display:block;touch-action:none;transform-origin:center center;will-change:transform;}
+.video-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:rgba(255,255,255,.7);text-align:center;padding:0 40px;background:#000;}
+.video-placeholder svg{width:36px;height:36px;opacity:.6;}
+.video-placeholder .msg{font-size:15px;font-weight:600;color:#fff;}
+.video-placeholder .sub{font-size:13px;color:rgba(255,255,255,.5);}
+.chrome{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none;transition:opacity .22s ease;z-index:5;}
+.chrome.hidden{opacity:0;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + var(--safe-t)) calc(16px + var(--safe-r)) 14px calc(16px + var(--safe-l));background:linear-gradient(180deg,rgba(0,0,0,.6),transparent);pointer-events:auto;gap:10px;}
+.cam-id{display:flex;align-items:center;gap:9px;color:#fff;min-width:0;}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4);flex-shrink:0;}
+.dot.live{background:#fff;box-shadow:0 0 0 0 rgba(255,255,255,.5);animation:pulse 2.2s ease-out infinite;}
+.dot.error{background:var(--danger);}
+.cam-text{display:flex;flex-direction:column;line-height:1.25;min-width:0;}
+.cam-name{font-size:15px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;}
+.cam-state{font-size:12px;color:rgba(255,255,255,.65);white-space:nowrap;}
+.topbar .icon-btn{background:rgba(255,255,255,.16);color:#fff;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);}
+.topbar .icon-btn:active{background:rgba(255,255,255,.28);}
+.topbar .icon-btn[hidden]{display:none;}
+.bottombar{display:flex;flex-direction:column;gap:10px;align-items:center;padding:10px calc(16px + var(--safe-r)) calc(18px + var(--safe-b)) calc(16px + var(--safe-l));background:linear-gradient(0deg,rgba(0,0,0,.65),transparent);pointer-events:auto;}
+.ptz{display:none;grid-template-columns:44px 44px 44px;grid-template-rows:44px 44px 44px;gap:4px;margin-bottom:2px;}
+.ptz.show{display:grid;}
+.ptz button{border:none;border-radius:12px;background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.ptz button .glyph{font-size:19px;font-weight:800;line-height:1;}
+.ptz button:active{background:rgba(255,255,255,.32);}
+.ptz .center{background:transparent;}
+.status-line{height:18px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;opacity:0;transition:opacity .15s ease;}
+.status-line.show{opacity:1;}
+.controls-row{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;max-width:460px;flex-wrap:wrap;row-gap:8px;}
+.ctrl-btn{width:46px;height:46px;border-radius:50%;border:none;background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .14s ease,background .15s ease;flex-shrink:0;}
+.ctrl-btn .glyph{font-size:11px;font-weight:800;letter-spacing:.03em;line-height:1;}
+.ctrl-btn:active{transform:scale(.93);}
+.ctrl-btn.active{background:#fff;color:#000;}
+.ctrl-btn.fullscreen-active{background:rgba(255,255,255,.3);color:#fff;}
+.pseudo-fullscreen{position:fixed!important;inset:0!important;z-index:400;}
+.ctrl-btn.talk.pressed{background:var(--danger);color:#fff;transform:scale(1.08);}
+.ctrl-btn[hidden]{display:none;}
+.center-msg{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:0 40px;background:rgba(0,0,0,.92);pointer-events:auto;z-index:10;}
+.center-msg.show{display:flex;}
+.center-msg svg{width:32px;height:32px;color:rgba(255,255,255,.7);}
+.center-msg .title{color:#fff;font-size:16px;font-weight:700;}
+.center-msg .desc{color:rgba(255,255,255,.7);font-size:13.5px;max-width:280px;line-height:1.4;}
+.center-msg .actions{display:flex;flex-direction:column;gap:10px;margin-top:6px;width:100%;max-width:240px;}
+.center-msg .btn{padding:12px 18px;font-size:14px;}
+.center-msg .btn-ghost{border-color:rgba(255,255,255,.3);color:#fff;}
+.center-msg .btn-primary{background:#fff;color:#000;}
+@media (max-height:420px){.ptz{grid-template-columns:38px 38px 38px;grid-template-rows:38px 38px 38px;}.ctrl-btn{width:46px;height:46px;}.bottombar{gap:6px;padding-top:6px;}}
+
+/* ---------- Panel screens (form / settings / access) — one consistent shell ---------- */
+.panel-screen{flex-direction:column;background:var(--bg);}
+.panel-header{display:flex;align-items:center;gap:12px;padding:calc(14px + var(--safe-t)) calc(16px + var(--safe-r)) 14px calc(16px + var(--safe-l));border-bottom:1px solid var(--border);flex-shrink:0;}
+.panel-header h2{font-size:17px;margin:0;font-weight:700;flex:1;}
+.panel-header .icon-btn{background:var(--surface);}
+.panel-header .icon-btn:active{background:var(--border);}
+.panel-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px calc(18px + var(--safe-r)) calc(30px + var(--safe-b)) calc(18px + var(--safe-l));display:flex;flex-direction:column;gap:22px;}
+.group h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);margin:0 0 10px 4px;font-weight:700;}
+.list{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;}
+.row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);gap:12px;min-height:24px;}
+.row:last-child{border-bottom:none;}
+.row .label{font-size:15px;}
+.row .sub{font-size:12px;color:var(--text-faint);}
+.row .value{font-size:14px;color:var(--text-dim);text-align:right;}
+.row.tap{cursor:pointer;}
+.row.tap:active{background:var(--border);}
+.row.danger .label{color:var(--danger);}
+.formfields{display:flex;flex-direction:column;gap:12px;padding:14px 16px;}
+.formfields:not(:first-child){border-top:1px solid var(--border);}
+.seg{display:flex;flex-wrap:wrap;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:3px;gap:3px;flex-shrink:0;}
+.seg button{border:none;background:transparent;color:var(--text-dim);font-size:13px;font-weight:600;padding:7px 11px;border-radius:7px;cursor:pointer;white-space:nowrap;flex:1;}
+.seg button.active{background:var(--ink);color:var(--ink-contrast);}
+.seg-4{display:grid;grid-template-columns:1fr 1fr;gap:3px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:3px;}
+.seg-4 button{border:none;background:transparent;color:var(--text-dim);font-size:12.5px;font-weight:600;padding:9px 8px;border-radius:7px;cursor:pointer;}
+.seg-4 button.active{background:var(--ink);color:var(--ink-contrast);}
+.switch{position:relative;width:46px;height:27px;padding:0;border-radius:100px;background:var(--border);border:none;cursor:pointer;flex-shrink:0;transition:background-color .18s ease;}
+.switch::after{content:"";position:absolute;top:2.5px;left:2.5px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .18s ease;box-shadow:0 1px 3px rgba(0,0,0,.3);will-change:transform;}
+.switch.on{background:var(--good);}
+.switch.on::after{transform:translateX(19px);}
+.switch.pending{background:var(--text-faint);}
+.switch.pending::after{transform:translateX(19px);box-shadow:0 0 0 3px var(--bg),0 1px 3px rgba(0,0,0,.3);}
+.foot-note{text-align:center;font-size:12px;color:var(--text-faint);line-height:1.5;padding:0 4px;}
+.perm-summary{font-size:11.5px;color:var(--text-faint);}
+
+.warn-circle{width:34px;height:34px;border-radius:50%;border:1.6px solid rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:rgba(255,255,255,.9);flex-shrink:0;}
+.credit-line{text-align:center;font-size:11.5px;color:var(--text-faint);letter-spacing:.02em;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+.app-footer{text-align:center;font-size:clamp(8.5px,2.7vw,11px);color:var(--text-faint);letter-spacing:.01em;line-height:1.7;margin-top:28px;padding:18px 12px 4px;border-top:1px solid var(--border);}
+.app-footer div{white-space:nowrap;}
+.app-footer .line2{margin-top:2px;}
+.seg-3{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:3px;}
+.seg-3 button{border:none;background:transparent;color:var(--text-dim);font-size:12px;font-weight:600;padding:8px 4px;border-radius:7px;cursor:pointer;}
+.seg-3 button.active{background:var(--ink);color:var(--ink-contrast);}
+
+/* ---------- cross-browser hardening ---------- */
+input:not([type="checkbox"]):not([type="radio"]),select,textarea,button{-webkit-appearance:none;appearance:none;}
+.row .label,.row .value,.account-row .n,.account-card .n,.brand h1,.brand p{overflow-wrap:anywhere;word-break:break-word;}
+.row{min-width:0;}
+.row .label{min-width:0;}
+/* checkboxes: give a visible custom box that also works pre-accent-color (older Safari) */
+input[type="checkbox"],input[type="radio"]{-webkit-appearance:none;appearance:none;margin:0;width:19px;height:19px;flex-shrink:0;border:1.6px solid var(--border);background:var(--bg);cursor:pointer;position:relative;accent-color:var(--ink);}
+input[type="checkbox"]{border-radius:5px;}
+input[type="radio"]{border-radius:50%;}
+input[type="checkbox"]:checked,input[type="radio"]:checked{background:var(--ink);border-color:var(--ink);}
+input[type="checkbox"]:checked::after{content:"";position:absolute;left:5px;top:1px;width:5px;height:10px;border:solid var(--ink-contrast);border-width:0 2px 2px 0;transform:rotate(40deg);}
+input[type="radio"]:checked::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--ink-contrast);}
+input[type="checkbox"]:focus-visible,input[type="radio"]:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+
+/* ---------- uniform vertical rhythm ---------- */
+.list+.foot-note,.list+.btn,.formfields+.btn,.row+.foot-note{margin-top:12px;}
+.group>.foot-note{margin-top:2px;}
+.panel-body{gap:24px;}
+.dgroup .list,.dgroup .foot-note{margin-top:0;}
+.dgroup>.list+.foot-note{margin-top:10px;}
+
+/* ---------- info bubble (click-to-view) ---------- */
+.info-bubble{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.3px solid var(--text-faint);background:transparent;color:var(--text-faint);font-size:11px;font-weight:700;line-height:1;cursor:pointer;flex-shrink:0;padding:0;margin-left:6px;font-family:inherit;}
+.info-bubble:active{background:var(--surface);}
+.label-row{display:flex;align-items:center;}
+.info-pop-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:260;padding:0 14px calc(14px + var(--safe-b)) 14px;}
+.info-pop-overlay.show{display:flex;}
+.info-pop{width:100%;max-width:400px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;display:flex;flex-direction:column;gap:10px;}
+.info-pop .t{font-size:14.5px;font-weight:700;}
+.info-pop .d{font-size:13px;color:var(--text-dim);line-height:1.5;}
+
+/* ---------- help modal ---------- */
+.help-overlay{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;z-index:300;}
+.help-overlay.show{display:flex;}
+.help-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px calc(18px + var(--safe-r)) calc(30px + var(--safe-b)) calc(18px + var(--safe-l));display:flex;flex-direction:column;gap:20px;}
+.help-sect h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);margin:0 0 8px 2px;font-weight:700;}
+.help-sect .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 15px;display:flex;flex-direction:column;gap:6px;}
+.help-sect .card+.card{margin-top:8px;}
+.help-sect .card .t{font-size:14.5px;font-weight:650;}
+.help-sect .card .d{font-size:13px;color:var(--text-dim);line-height:1.5;}
+.help-sect .card .d code{background:var(--border);padding:1px 5px;border-radius:5px;font-size:12px;}
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media (max-width:380px){.setup-grid{grid-template-columns:1fr;}}
+.setup-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;display:flex;flex-direction:column;gap:8px;text-decoration:none;color:var(--text);transition:border-color .15s ease,transform .12s ease;}
+.setup-card:active{transform:scale(.98);}
+.setup-card:hover{border-color:var(--ink);}
+.setup-card .icon{width:34px;height:34px;border-radius:10px;background:var(--ink);color:var(--ink-contrast);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.setup-card .icon svg{width:18px;height:18px;}
+.setup-card .t{font-size:14px;font-weight:650;display:flex;align-items:center;gap:5px;}
+.setup-card .t .arrow{font-size:12px;color:var(--text-faint);margin-left:auto;}
+.setup-card .d{font-size:12px;color:var(--text-dim);line-height:1.45;}
+
+/* ---------- walkthrough (spotlight) ---------- */
+.wt-overlay{position:fixed;inset:0;z-index:400;display:none;pointer-events:none;}
+.wt-overlay.show{display:block;}
+.wt-dim{position:absolute;inset:0;background:rgba(0,0,0,.6);pointer-events:auto;transition:clip-path .25s ease;}
+.wt-card{position:absolute;max-width:300px;background:var(--bg);color:var(--text);border-radius:var(--radius-md);padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.35);pointer-events:auto;display:flex;flex-direction:column;gap:10px;transition:top .25s ease,left .25s ease;}
+.wt-card .step{font-size:11px;font-weight:700;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;}
+.wt-card .t{font-size:15px;font-weight:700;}
+.wt-card .d{font-size:13px;color:var(--text-dim);line-height:1.45;}
+.wt-card .actions{display:flex;justify-content:space-between;align-items:center;margin-top:2px;}
+.wt-ring{position:absolute;border:2.5px solid #fff;border-radius:14px;box-shadow:0 0 0 4000px rgba(0,0,0,.6);pointer-events:none;transition:top .25s ease,left .25s ease,width .25s ease,height .25s ease;}
+
+/* ---------- scroll navigator (accessibility) ---------- */
+:root{--scrollnav-w:20px;}
+.scrollnav-toggle.active{background:var(--ink);color:var(--ink-contrast);}
+.scroll-nav{position:fixed;right:calc(10px + var(--safe-r));bottom:calc(18px + var(--safe-b));top:auto;transform:none;display:none;flex-direction:column;align-items:center;gap:3px;z-index:70;background:var(--bg);border:1px solid var(--border);border-radius:100px;padding:5px;box-shadow:0 4px 18px rgba(0,0,0,.16);}
+.scroll-nav.show{display:flex;}
+.scroll-nav button{width:26px;height:26px;border-radius:50%;border:none;background:rgba(127,127,127,.12);color:var(--text-dim);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;box-shadow:none;opacity:.85;transition:background .15s ease,color .15s ease,opacity .15s ease,transform .12s ease;}
+.scroll-nav button:hover{background:rgba(127,127,127,.24);color:var(--text);opacity:1;}
+.scroll-nav button:active{transform:scale(.88);}
+.scroll-nav button:disabled{opacity:.22;cursor:default;}
+/* floating bubble no longer reserves layout space */
+.gallery-body,.panel-body{scroll-behavior:smooth;}
+
+/* ---------- dropdown-first add device ---------- */
+.kind-select{background:var(--bg);border:1.5px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:13px;font-size:15.5px;outline:none;width:100%;}
+.kind-select:focus{border-color:var(--ink);}
+#kind-fields-wrap{display:none;flex-direction:column;gap:22px;}
+#kind-fields-wrap.show{display:flex;}
+
+/* ---------- collapsibles (details/summary) ---------- */
+.dgroup>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin:0 0 10px 4px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-weight:700;-webkit-tap-highlight-color:transparent;}
+.dgroup>summary::-webkit-details-marker{display:none;}
+.dgroup>summary::marker{content:"";}
+.dgroup>summary::after{content:"⌄";font-size:13px;color:var(--text-faint);transition:transform .15s ease;flex-shrink:0;margin-left:8px;}
+.dgroup[open]>summary::after{transform:rotate(180deg);}
+.dsub{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--bg);}
+.dsub>summary{list-style:none;cursor:pointer;padding:11px 13px;font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:space-between;-webkit-tap-highlight-color:transparent;}
+.dsub>summary::-webkit-details-marker{display:none;}
+.dsub>summary::after{content:"⌄";font-size:12px;color:var(--text-faint);transition:transform .15s ease;}
+.dsub[open]>summary::after{transform:rotate(180deg);}
+.dsub[open]>summary{border-bottom:1px solid var(--border);}
+.cam-share-list{display:flex;flex-direction:column;max-height:220px;overflow-y:auto;padding:4px;}
+
+/* ---------- account card / tabs / small links ---------- */
+.account-card{display:flex;align-items:center;gap:12px;padding:14px 16px;min-width:0;}
+.account-card .who{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;}
+.account-card .n{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.account-card .r{font-size:11.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em;}
+.tabbar{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:3px;gap:3px;width:100%;flex-shrink:0;}
+.tabbar button{flex:1;border:none;background:transparent;color:var(--text-dim);font-size:14px;font-weight:650;padding:9px 10px;border-radius:100px;cursor:pointer;}
+.tabbar button.active{background:var(--ink);color:var(--ink-contrast);}
+.small-links{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;}
+@supports (-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px)){.confirm-overlay{-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);}}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN / SIGNUP ============ -->
+<div id="login-screen" class="screen">
+  <div class="login-card">
+    <div class="brand">
+      <div class="logo-mark" aria-hidden="true">W</div>
+      <h1 id="login-heading">Warden</h1>
+      <p id="login-sub">A private, self-hosted camera viewer.</p>
+    </div>
+    <div id="login-inner" style="display:flex;flex-direction:column;gap:14px;"></div>
+    <footer class="app-footer">
+      <div>(CC) <span class="footer-year"></span> Warden CCTV Management Tool. No rights reserved.</div>
+      <div class="line2">Built with &#10084;&#65038; in Chittagong by Hamid Yasir &amp; Co. — Not in California.</div>
+    </footer>
+  </div>
+</div>
+
+<!-- ============ GALLERY ============ -->
+<div id="gallery-screen" class="screen">
+  <div class="gallery-header">
+    <h1>Warden</h1>
+    <div class="header-actions">
+      <div class="user-pill" id="user-pill" role="button" tabindex="0" aria-haspopup="true"><span class="avatar" id="user-avatar">A</span><span id="user-pill-name">—</span></div>
+      <button class="icon-btn sm scrollnav-toggle" id="header-scrollnav-toggle" aria-label="Scroll navigator">
+        <span class="glyph" style="font-size:14px;">&#8693;</span>
+      </button>
+      <button class="icon-btn sm" id="open-help" aria-label="Help">
+        <span class="glyph" style="font-size:15px;">?</span>
+      </button>
+      <button class="icon-btn sm" id="open-settings" aria-label="Settings">
+        <span class="glyph" style="font-size:16px;">&#9881;</span>
+      </button>
+    </div>
+  </div>
+  <div class="user-menu" id="user-menu" role="menu">
+    <button type="button" id="user-menu-switch" role="menuitem">Switch account</button>
+    <button type="button" id="user-menu-logout" class="danger" role="menuitem">Log out</button>
+  </div>
+  <div class="gallery-body">
+    <div class="cam-grid" id="cam-grid"></div>
+    <div class="empty-state" id="empty-state" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5a1.5 1.5 0 0 1 1.5-1.5h2l1-1.5h9l1 1.5h2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      <div id="empty-msg">No cameras yet.<br>Add your first camera to get started.</div>
+      <button class="btn btn-primary" id="empty-add-btn">Add camera</button>
+    </div>
+    <footer class="app-footer">
+      <div>(CC) <span class="footer-year"></span> Warden CCTV Management Tool. No rights reserved.</div>
+      <div class="line2">Built with &#10084;&#65038; in Chittagong by Hamid Yasir &amp; Co. — Not in California.</div>
+    </footer>
+  </div>
+</div>
+
+<!-- ============ VIEWER ============ -->
+<div id="viewer-screen" class="screen">
+  <div class="video-wrap" id="video-wrap">
+    <video id="video" playsinline autoplay muted style="display:none"></video>
+    <img id="mjpeg-img" style="display:none" alt="">
+    <div class="video-placeholder" id="video-placeholder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5a1.5 1.5 0 0 1 1.5-1.5h2l1-1.5h9l1 1.5h2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      <div class="msg" id="placeholder-msg">Connecting…</div>
+      <div class="sub" id="placeholder-sub">Reaching your camera</div>
+    </div>
+  </div>
+  <div class="chrome" id="chrome">
+    <div class="topbar">
+      <button class="icon-btn" id="back-to-gallery" aria-label="Back">
+        <span class="glyph">&#8249;</span>
+      </button>
+      <div class="cam-id" style="flex:1;justify-content:center;">
+        <span class="dot" id="status-dot"></span>
+        <div class="cam-text">
+          <span class="cam-name" id="cam-name">Camera</span>
+          <span class="cam-state" id="cam-state">Connecting…</span>
+        </div>
+      </div>
+      <button class="icon-btn" id="settings-open" aria-label="Camera settings">
+        <span class="glyph">&#8943;</span>
+      </button>
+    </div>
+    <div class="bottombar">
+      <div class="ptz" id="ptz">
+        <div></div>
+        <button data-ptz="up" aria-label="Tilt up"><span class="glyph">&#8593;</span></button>
+        <div></div>
+        <button data-ptz="left" aria-label="Pan left"><span class="glyph">&#8592;</span></button>
+        <button class="center" aria-hidden="true" tabindex="-1"><span class="glyph" style="opacity:.5;font-size:14px;">&#9679;</span></button>
+        <button data-ptz="right" aria-label="Pan right"><span class="glyph">&#8594;</span></button>
+        <div></div>
+        <button data-ptz="down" aria-label="Tilt down"><span class="glyph">&#8595;</span></button>
+        <div></div>
+      </div>
+      <div class="status-line" id="status-line">Talking…</div>
+      <div class="controls-row">
+        <button class="ctrl-btn talk" id="btn-talk" aria-label="Hold to talk">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v4M9 22h6"/></svg>
+        </button>
+        <button class="ctrl-btn" id="btn-snapshot" aria-label="Snapshot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.3"/></svg>
+        </button>
+        <button class="ctrl-btn" id="btn-audio" aria-label="Mute audio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 8a5 5 0 0 1 0 8"/></svg>
+        </button>
+        <button class="ctrl-btn" id="btn-quality" aria-label="Stream quality">
+          <span class="glyph" style="font-size:11px;">HQ</span>
+        </button>
+        <button class="ctrl-btn" id="btn-fullscreen" aria-label="Fullscreen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M8 4H4v4M16 4h4v4M8 20H4v-4M16 20h4v-4"/></svg>
+        </button>
+        <button class="ctrl-btn" id="btn-more" aria-label="More controls" hidden>
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="user-menu" id="more-menu" role="menu">
+    <button type="button" id="menu-siren" role="menuitem" hidden>Trigger siren</button>
+    <button type="button" id="menu-ai" role="menuitem" hidden>Ask AI</button>
+  </div>
+  <div class="center-msg" id="center-msg">
+    <button class="icon-btn sm" id="center-close" aria-label="Close" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,.16);color:#fff;">
+      <span class="glyph" style="font-size:14px;">&#10005;</span>
+    </button>
+    <span class="warn-circle">!</span>
+    <div class="title" id="center-title">Camera unavailable</div>
+    <div class="desc" id="center-desc">Check that the camera and its go2rtc bridge are online.</div>
+    <div class="actions">
+      <button class="btn btn-primary" id="center-retry">Try again</button>
+      <button class="btn btn-ghost" id="center-settings">Camera settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CAMERA FORM (device-management only) ============ -->
+<div id="form-screen" class="screen panel-screen">
+  <div class="panel-header">
+    <button class="icon-btn" id="form-close" aria-label="Close"><span class="glyph">&#8249;</span></button>
+    <h2 id="form-title">Add camera</h2>
+  </div>
+  <div class="panel-body">
+    <div class="group">
+      <h3>Name</h3>
+      <div class="list"><div class="formfields">
+        <div class="field"><label>Name <span style="font-weight:500;color:var(--text-faint)">(optional — for the device or channel)</span></label><input id="f-name" type="text" placeholder="Front Door" autocomplete="off"></div>
+      </div></div>
+    </div>
+    <div class="group">
+      <h3>Source type</h3>
+      <div class="list"><div class="formfields">
+        <div class="field">
+          <select class="kind-select" id="f-kind-select">
+            <option value="" disabled selected>Choose camera type…</option>
+            <option value="rtsp">RTSP camera (via go2rtc)</option>
+            <option value="onvif">ONVIF camera / PTZ (via go2rtc)</option>
+            <option value="nvr">NVR / DVR / XVR — multiple channels (via go2rtc)</option>
+            <option value="whep">WebRTC (WHEP)</option>
+            <option value="hls">HLS stream</option>
+            <option value="mjpeg">MJPEG stream</option>
+          </select>
+        </div>
+        <div class="field hint" style="padding-left:2px;color:var(--text-faint);font-size:12px" id="kind-hint"></div>
+      </div></div>
+    </div>
+    <div id="kind-fields-wrap">
+      <div class="group" id="go2rtc-fields">
+        <h3>go2rtc connection</h3>
+        <div class="list"><div class="formfields">
+          <div class="field"><label>go2rtc server URL</label><input id="f-go2rtc" type="text" placeholder="http://192.168.1.10:1984" autocomplete="off"></div>
+          <div class="field" id="f-stream-field"><label>Stream name <span style="font-weight:500;color:var(--text-faint)">(optional — defaults to the camera name)</span></label><input id="f-stream" type="text" placeholder="front_door" autocomplete="off"></div>
+          <div class="field" id="f-channels-field" style="display:none">
+            <div class="label-row"><label>Channels <span style="font-weight:500;color:var(--text-faint)">(one per line — the name each channel is configured with in go2rtc)</span></label><button type="button" class="link-btn" id="f-discover-channels" style="margin-left:auto">Discover from server</button></div>
+            <textarea id="f-channels" rows="4" placeholder="entrance&#10;driveway&#10;backyard&#10;garage" style="background:var(--bg);border:1.5px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:12px 13px;font-size:15px;outline:none;width:100%;resize:vertical;font-family:inherit;"></textarea>
+            <div class="hint">Each channel is added as its own camera card, grouped under this device. "Discover from server" reads every stream go2rtc already knows about — add or remove lines afterward as needed.</div>
+          </div>
+          <div class="field" id="f-host-field"><label id="f-host-label">ONVIF host (for PTZ, optional)</label><input id="f-host" type="text" placeholder="192.168.1.50" autocomplete="off"></div>
+          <div class="field" id="f-onvif-auth-field"><label>ONVIF username</label><input id="f-user" type="text" autocomplete="off"></div>
+          <div class="field" id="f-onvif-pass-field"><label>ONVIF password</label><input id="f-pass" type="password" autocomplete="new-password"></div>
+        </div></div>
+      </div>
+      <div class="group" id="direct-fields">
+        <h3 id="direct-fields-title">Direct source</h3>
+        <div class="list"><div class="formfields">
+          <div class="field"><label>URL</label><input id="f-direct-url" type="text" placeholder="https://..." autocomplete="off"></div>
+          <div class="field"><label>Auth token / header (optional)</label><input id="f-direct-auth" type="text" placeholder="Bearer ..." autocomplete="off"></div>
+        </div></div>
+      </div>
+      <div class="group">
+        <h3>Automation <span style="font-weight:500;color:var(--text-faint)">(optional)</span></h3>
+        <div class="list"><div class="formfields">
+          <div class="field"><div class="label-row"><label>Webhook URL</label><button type="button" class="info-bubble" data-info="automation">i</button></div><input id="f-automation" type="text" placeholder="https://your-nvr-or-hub/trigger" autocomplete="off"></div>
+          <div class="field"><label>Siren / alarm webhook <span style="font-weight:500;color:var(--text-faint)">(optional)</span></label><input id="f-siren" type="text" placeholder="https://your-nvr/api/siren/on" autocomplete="off"></div>
+        </div></div>
+      </div>
+      <button class="btn btn-primary" id="form-save">Save camera</button>
+      <div class="foot-note">Connection details are only ever shown to people with device-management access.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CAMERA SETTINGS SHEET ============ -->
+<div id="camsettings-screen" class="screen panel-screen">
+  <div class="panel-header">
+    <button class="icon-btn" id="camsettings-close" aria-label="Close"><span class="glyph">&#8249;</span></button>
+    <h2>Camera settings</h2>
+  </div>
+  <div class="panel-body">
+    <div class="group">
+      <div class="list">
+        <div class="row tap" id="camsettings-edit"><span class="label">Edit connection</span><span class="value">›</span></div>
+        <div class="row tap" id="camsettings-playback"><span class="label">Playback / recordings</span><span class="value">›</span></div>
+        <div class="row tap" id="camsettings-automation"><span class="label">Run automation</span></div>
+        <div class="row tap" id="camsettings-siren"><span class="label">Trigger siren / alarm</span></div>
+        <div class="row danger tap" id="camsettings-delete"><span class="label">Remove camera</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PLAYBACK ============ -->
+<div id="playback-screen" class="screen panel-screen">
+  <div class="panel-header">
+    <button class="icon-btn" id="playback-close" aria-label="Close"><span class="glyph">&#8249;</span></button>
+    <h2>Playback</h2>
+  </div>
+  <div class="panel-body">
+    <div class="group">
+      <h3>Recording source</h3>
+      <div class="list"><div class="formfields">
+        <div class="field"><div class="label-row"><label>Clip / HLS URL</label><button type="button" class="info-bubble" data-info="playback">i</button></div><input id="pb-url" type="text" placeholder="https://your-nvr/api/camera/recordings/clip.mp4" autocomplete="off"></div>
+      </div></div>
+      <button class="btn btn-primary" id="pb-load" style="margin-top:12px">Load recording</button>
+    </div>
+    <div class="group">
+      <video id="pb-video" controls playsinline style="width:100%;border-radius:var(--radius-md);background:#000;display:none"></video>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MANAGE ACCESS (owner / device-management only) ============ -->
+<div id="access-screen" class="screen panel-screen">
+  <div class="panel-header">
+    <button class="icon-btn" id="access-close" aria-label="Close"><span class="glyph">&#8249;</span></button>
+    <h2>Manage access</h2>
+  </div>
+  <div class="panel-body">
+    <div class="group">
+      <h3>Your cameras</h3>
+      <div class="list" id="my-cams-list"></div>
+      <div class="foot-note">Every account is the master of the cameras it adds. Share individual cameras with other accounts on this device below — they'll see it on their own dashboard with only the capabilities you allow.</div>
+    </div>
+    <div class="group" id="share-group">
+      <h3>Share a camera</h3>
+      <div class="list"><div class="formfields">
+        <div class="field"><label>Camera</label><select id="sh-camera"></select></div>
+        <div class="field"><label>Share with</label><select id="sh-account"></select></div>
+        <div style="padding:2px 2px 2px;display:flex;flex-direction:column;">
+          <label class="checkrow"><input type="checkbox" id="sh-perm-audio"><span class="txt"><span class="t">Audio &amp; talk</span><span class="d">Hear and speak through this camera</span></span></label>
+          <label class="checkrow"><input type="checkbox" id="sh-perm-ptz"><span class="txt"><span class="t">Video control</span><span class="d">Pan / tilt / zoom, if the camera supports it</span></span></label>
+        </div>
+      </div></div>
+      <button class="btn btn-primary" id="sh-add-btn" style="margin-top:12px">Share camera</button>
+      <div class="foot-note" id="share-empty-note" style="display:none">Add another account first (Log in to another account from the login screen), then come back here to share a camera with them.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP SETTINGS ============ -->
+<div id="settings-screen" class="screen panel-screen">
+  <div class="panel-header">
+    <button class="icon-btn" id="settings-close" aria-label="Close"><span class="glyph">&#8249;</span></button>
+    <h2>Settings</h2>
+  </div>
+  <div class="panel-body">
+    <div class="group">
+      <h3>Account</h3>
+      <div class="list">
+        <div class="account-card">
+          <span class="avatar" id="settings-avatar">—</span>
+          <span class="who"><span class="n" id="settings-username">—</span><span class="r" id="settings-role-badge">Owner</span></span>
+          <button class="icon-btn" id="edit-profile-btn" aria-label="Edit profile" style="margin-left:auto"><span class="glyph" style="font-size:15px">&#9998;</span></button>
+        </div>
+        <div class="row tap" id="switch-account-row"><span class="label">Log in as someone else</span><span class="value">›</span></div>
+        <div class="row tap" id="logout-row"><span class="label" style="color:var(--danger)">Log out</span></div>
+      </div>
+    </div>
+
+    <details class="group dgroup" id="acct-backup-group">
+      <summary><span class="label-row">Account backup <button type="button" class="info-bubble" data-info="backup">i</button></span></summary>
+      <div class="list">
+        <div class="row tap" id="backup-accounts-row"><span class="label">Back up accounts to cloud</span><span class="value">›</span></div>
+        <div class="row tap" id="restore-accounts-row"><span class="label">Restore accounts from cloud</span><span class="value">›</span></div>
+      </div>
+    </details>
+
+    <div class="group">
+      <h3>Appearance</h3>
+      <div class="list"><div class="row"><span class="label">Theme</span>
+        <div class="seg" id="theme-seg"><button data-theme="light" class="active">Light</button><button data-theme="dark">Dark</button></div>
+      </div></div>
+    </div>
+
+    <div class="group" id="access-group">
+      <h3>Sharing</h3>
+      <div class="list"><div class="row tap" id="open-access"><span class="label">Manage access</span><span class="value">›</span></div></div>
+      <div class="foot-note">Give other people in your home a login with exactly the permissions and cameras you choose — one camera, a few, or all of them.</div>
+    </div>
+
+    <details class="group dgroup">
+      <summary><span class="label-row">Security <button type="button" class="info-bubble" data-info="security">i</button></span></summary>
+      <div class="list">
+        <div class="row"><span class="label">Two-factor (TOTP)</span><button class="switch" id="totp-toggle"></button></div>
+        <div class="formfields" id="totp-fields" style="display:none">
+          <div class="field"><label>Secret key</label><input id="totp-secret" type="text" readonly></div>
+          <div class="field"><label>Confirm 6-digit code</label><input id="totp-code" type="text" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="off"></div>
+          <div class="row2"><button class="btn btn-ghost btn-sm" id="totp-cancel" style="width:100%">Cancel</button><button class="btn btn-primary btn-sm" id="totp-confirm" style="width:100%">Confirm &amp; enable</button></div>
+        </div>
+        <div class="row tap" id="passkey-row"><span class="label" id="passkey-label">Add a passkey</span><span class="value">›</span></div>
+      </div>
+    </details>
+
+    <details class="group dgroup">
+      <summary><span class="label-row">Automation &amp; AI (optional) <button type="button" class="info-bubble" data-info="ai">i</button></span></summary>
+      <div class="list"><div class="formfields">
+        <div class="field"><label>FOSS AI endpoint (OpenAI/Ollama-compatible)</label><input id="ai-endpoint" type="text" placeholder="http://localhost:11434 (Ollama, LocalAI, etc.)" autocomplete="off"></div>
+        <div class="field"><label>Model name</label><input id="ai-model" type="text" placeholder="llava" autocomplete="off"></div>
+        <div class="field"><label>API key (optional)</label><input id="ai-key" type="password" autocomplete="new-password"></div>
+      </div></div>
+    </details>
+
+    <details class="group dgroup" id="cloud-group">
+      <summary><span class="label-row">Cloud backup (optional) <button type="button" class="info-bubble" data-info="cloud">i</button></span></summary>
+      <div class="list">
+        <div class="row"><span class="label">Connect to cloud</span><button class="switch" id="cloud-toggle"></button></div>
+        <div class="formfields" id="cloud-fields" style="display:none">
+          <div class="seg-3" id="cloud-provider-seg"><button data-provider="custom" class="active">Custom / S3</button><button data-provider="nextcloud">Nextcloud</button></div>
+          <div id="cloud-custom-fields">
+            <div class="field"><label>Upload endpoint (your server / S3-compatible URL)</label><input id="cloud-endpoint" type="text" placeholder="https://your-backup-endpoint/upload" autocomplete="off"></div>
+            <div class="field"><label>API token (optional)</label><input id="cloud-token" type="password" autocomplete="new-password"></div>
+          </div>
+          <div id="cloud-nc-fields" style="display:none">
+            <div class="field"><label>Nextcloud server URL</label><input id="nc-server" type="text" placeholder="https://cloud.example.com" autocomplete="off"></div>
+            <div class="field"><label>Nextcloud username</label><input id="nc-user" type="text" autocomplete="off"></div>
+            <div class="field"><label>App password</label><input id="nc-pass" type="password" autocomplete="new-password"></div>
+          </div>
+          <div class="field"><label>Snapshot interval</label>
+            <select id="cloud-interval"><option value="300000">Every 5 minutes</option><option value="900000">Every 15 minutes</option><option value="1800000">Every 30 minutes</option><option value="3600000">Every hour</option></select>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <div class="group">
+      <h3>Data <button type="button" class="info-bubble" data-info="data">i</button></h3>
+      <div class="list">
+        <div class="row tap" id="export-data-row"><span class="label">Export all data</span><span class="value">›</span></div>
+        <div class="row tap" id="import-data-row"><span class="label">Import data</span><span class="value">›</span></div>
+        <input type="file" id="import-file-input" accept="application/json" style="display:none">
+        <div class="row tap" id="clear-data-row"><span class="label" style="color:var(--danger)">Clear all data</span></div>
+        <div class="row tap" id="delete-account-row"><span class="label" style="color:var(--danger)">Delete my account</span></div>
+      </div>
+    </div>
+
+    <details class="group dgroup">
+      <summary><span class="label-row">About</span></summary>
+      <div class="list">
+        <div class="row"><span class="label">Warden</span><span class="value">Local-first</span></div>
+      </div>
+      <div class="foot-note" style="text-align:left">Warden is a private, self-hosted camera viewer — one screen for every camera, NVR and FOSS tool you already run, with no account on our servers and no telemetry. It exists because most CCTV apps hold footage hostage behind subscriptions, ads or a vendor's cloud; Warden keeps your cameras and your data yours, wherever you choose to store them.</div>
+      <div class="foot-note" style="text-align:left">Built by Hamid Yasir &amp; Co. on the belief that the software running your home should be owned by you, not rented to you — free and open-source by default, interoperable with whatever FOSS stack you prefer, and built for the collective good rather than a single company's bottom line.</div>
+    </details>
+    <footer class="app-footer">
+      <div>(CC) <span class="footer-year"></span> Warden CCTV Management Tool. No rights reserved.</div>
+      <div class="line2">Built with &#10084;&#65038; in Chittagong by Hamid Yasir &amp; Co. — Not in California.</div>
+    </footer>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-sheet">
+    <div class="title" id="confirm-title">Remove camera?</div>
+    <div class="desc" id="confirm-desc">This only removes it from this device.</div>
+    <div class="row2"><button class="btn btn-ghost" id="confirm-cancel">Cancel</button><button class="btn btn-danger" id="confirm-ok">Remove</button></div>
+  </div>
+</div>
+<div class="confirm-overlay" id="auth-overlay">
+  <div class="confirm-sheet">
+    <div class="title" id="auth-title">Enter password</div>
+    <div class="field"><input id="auth-input" type="password" placeholder="Password"></div>
+    <div class="error-text" id="auth-error">Incorrect password.</div>
+    <div class="row2"><button class="btn btn-ghost" id="auth-cancel">Cancel</button><button class="btn btn-primary" id="auth-ok">Continue</button></div>
+  </div>
+</div>
+<div class="confirm-overlay" id="reveal-overlay">
+  <div class="confirm-sheet">
+    <div class="title">Save your recovery code</div>
+    <div class="desc">This is the only way back into this account if the password is forgotten. Store it in a password manager — Warden can't show it again.</div>
+    <div class="field"><input id="reveal-code" type="text" readonly style="text-align:center;font-weight:700;letter-spacing:.06em;"></div>
+    <div class="row2"><button class="btn btn-ghost" id="reveal-copy">Copy</button><button class="btn btn-primary" id="reveal-ok">I've saved it</button></div>
+  </div>
+</div>
+<div class="confirm-overlay" id="reset-overlay">
+  <div class="confirm-sheet">
+    <div class="title">Reset password</div>
+    <div class="desc" id="reset-desc">Enter the recovery code shown when this account was created.</div>
+    <div class="field"><input id="reset-code" type="text" placeholder="Recovery code" autocomplete="off" autocapitalize="off"></div>
+    <div class="field"><input id="reset-pass" type="password" placeholder="New password (min 6 characters)" autocomplete="new-password"></div>
+    <div class="error-text" id="reset-error">That code doesn't match.</div>
+    <div class="row2"><button class="btn btn-ghost" id="reset-cancel">Cancel</button><button class="btn btn-primary" id="reset-ok">Reset</button></div>
+  </div>
+</div>
+<div class="confirm-overlay" id="editprofile-overlay">
+  <div class="confirm-sheet">
+    <div class="title">Edit profile</div>
+    <div class="field"><label>Name</label><input id="ep-name" type="text" autocomplete="off"></div>
+    <div class="field"><label>Current password</label><input id="ep-current-pass" type="password" autocomplete="current-password" placeholder="Required to save changes"></div>
+    <div class="field"><label>New password (optional)</label><input id="ep-new-pass" type="password" autocomplete="new-password" placeholder="Leave blank to keep current password"></div>
+    <div class="error-text" id="ep-error">Something went wrong.</div>
+    <div class="row2"><button class="btn btn-ghost" id="ep-cancel">Cancel</button><button class="btn btn-primary" id="ep-save">Save</button></div>
+  </div>
+</div>
+<div class="confirm-overlay" id="cloudauth-overlay">
+  <div class="confirm-sheet">
+    <div class="title">Restore accounts from cloud</div>
+    <div class="desc">Enter the backup passphrase you set when you last backed up accounts (Settings → Account → Back up accounts).</div>
+    <div class="field"><input id="cloudauth-server" type="text" placeholder="Nextcloud/WebDAV URL" autocomplete="off"></div>
+    <div class="field"><input id="cloudauth-user" type="text" placeholder="Username" autocomplete="off"></div>
+    <div class="field"><input id="cloudauth-pass" type="password" placeholder="App password" autocomplete="off"></div>
+    <div class="field"><input id="cloudauth-phrase" type="password" placeholder="Backup passphrase" autocomplete="off"></div>
+    <div class="error-text" id="cloudauth-error">Couldn't restore — check the details and passphrase.</div>
+    <div class="row2"><button class="btn btn-ghost" id="cloudauth-cancel">Cancel</button><button class="btn btn-primary" id="cloudauth-ok">Restore</button></div>
+  </div>
+</div>
+
+<!-- ============ INFO BUBBLE POPOVER ============ -->
+<div class="info-pop-overlay" id="info-pop-overlay">
+  <div class="info-pop">
+    <div class="t" id="info-pop-title"></div>
+    <div class="d" id="info-pop-desc"></div>
+    <button class="btn btn-primary btn-sm" id="info-pop-close" style="width:100%">Got it</button>
+  </div>
+</div>
+
+<!-- ============ HELP MODAL ============ -->
+<div class="help-overlay" id="help-overlay">
+  <div class="panel-header">
+    <button class="icon-btn" id="help-close" aria-label="Close"><span class="glyph">&#8249;</span></button>
+    <h2>Help</h2>
+  </div>
+  <div class="help-body">
+    <button class="btn btn-primary" id="help-start-walkthrough">Start guided walkthrough</button>
+    <div class="help-sect">
+      <h3>Suggested setup</h3>
+      <div class="setup-grid">
+        <a class="setup-card" href="https://docs.frigate.video/frigate/installation/" target="_blank" rel="noopener">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="14" height="11" rx="2"/><path d="M17 10.5 21 8v9l-4-2.5"/></svg></span>
+          <span class="t">Set up Frigate<span class="arrow">↗</span></span>
+          <span class="d">Self-hosted NVR with AI object detection. Feeds it your RTSP/ONVIF cameras and point Warden at its streams.</span>
+        </a>
+        <a class="setup-card" href="https://docs.nextcloud.com/server/latest/admin_manual/installation/index.html" target="_blank" rel="noopener">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M9 14 6.8 15.5M15 14l2.2 1.5"/></svg></span>
+          <span class="t">Set up Nextcloud<span class="arrow">↗</span></span>
+          <span class="d">A FOSS cloud you control. Use it for account backup and continuous footage backup via WebDAV.</span>
+        </a>
+        <a class="setup-card" href="https://github.com/AlexxIT/go2rtc" target="_blank" rel="noopener">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="10" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M2 8.5h1M18 9.5l4-2v9l-4-2"/></svg></span>
+          <span class="t">Connect a camera<span class="arrow">↗</span></span>
+          <span class="d">RTSP/ONVIF cameras and NVRs route through go2rtc so any browser can play them — install it once, then add the camera in Warden.</span>
+        </a>
+        <a class="setup-card" href="https://github.com/AlexxIT/go2rtc#module-webrtc" target="_blank" rel="noopener">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v6M8 6l4-3 4 3"/><rect x="4" y="11" width="16" height="9" rx="2"/></svg></span>
+          <span class="t">FOSS-ify an old camera<span class="arrow">↗</span></span>
+          <span class="d">Turn a cheap ONVIF/RTSP camera into a proper CCTV feed — go2rtc republishes it as WebRTC/WHEP that Warden can view directly.</span>
+        </a>
+      </div>
+    </div>
+    <div class="help-sect">
+      <h3>Getting started</h3>
+      <div class="card"><div class="t">Adding a camera</div><div class="d">Tap the + tile on the dashboard, choose a source type from the dropdown, then fill in only the fields that appear. RTSP/ONVIF/NVR cameras route through your self-hosted <code>go2rtc</code>; WHEP, HLS and MJPEG connect directly.</div></div>
+      <div class="card"><div class="t">Viewing a camera</div><div class="d">Tap any tile to open the live viewer. Tap the video once to show or hide the on-screen controls. Swipe/scroll or use the device back button to return to the dashboard.</div></div>
+      <div class="card"><div class="t">Navigation</div><div class="d">Every screen has a back arrow in the top-left, and your device or browser's back button always works the same way inside Warden — it never leaves the app or loses your place.</div></div>
+    </div>
+    <div class="help-sect">
+      <h3>People &amp; access</h3>
+      <div class="card"><div class="t">Multiple accounts</div><div class="d">Use "Log in as someone else" in Settings to add another account on this same device — switch between them anytime without signing out.</div></div>
+      <div class="card"><div class="t">Sharing with others</div><div class="d">In Settings → Manage access, add a person with their own name and password, pick exactly which capabilities they get (audio/talk, PTZ control, device management), and choose whether they see all cameras or only specific ones you select.</div></div>
+      <div class="card"><div class="t">Security</div><div class="d">Add TOTP two-factor from any FOSS authenticator app (Aegis, andOTP, FreeOTP) or a device passkey (WebAuthn) for faster unlocking. Both are optional and local to this device.</div></div>
+    </div>
+    <div class="help-sect">
+      <h3>Cloud &amp; backup</h3>
+      <div class="card"><div class="t">Account backup</div><div class="d">Encrypts your account list (name + password hash only, never plain-text) with a passphrase you choose and uploads it to your cloud endpoint, so you can restore your logins on a new device.</div></div>
+      <div class="card"><div class="t">Footage backup</div><div class="d">Warden stays fully offline until you turn on Cloud backup. Once on, it sends a periodic snapshot per camera to Nextcloud (WebDAV) or any S3/custom endpoint you provide — but only while this tab is open, since it's a client-only app with no server component.</div></div>
+      <div class="card"><div class="t">Continuous recording &amp; remote retrieval</div><div class="d">Browser tabs can't run while closed, so for footage that keeps recording and backing up when Warden itself is offline, point a FOSS NVR you already control — go2rtc or Frigate — at your cameras and let it push finished clips to remote storage itself (e.g. with rclone to Nextcloud/S3). Warden then just plays those clips back through the Playback screen. This is the standard FOSS workaround since no purely client-side app can record while the device sleeps.</div></div>
+    </div>
+    <div class="help-sect">
+      <h3>Look &amp; feel</h3>
+      <div class="card"><div class="t">Theme</div><div class="d">Choose Light or Dark in Settings → Appearance — your choice is remembered on this device.</div></div>
+      <div class="card"><div class="t">Automation &amp; AI</div><div class="d">Point Warden at any OpenAI/Ollama-compatible endpoint (Ollama, LocalAI, etc.) to enable the "Ask AI" button in the viewer, and set a per-camera webhook to trigger automations in Frigate, Home Assistant or Node-RED.</div></div>
+    </div>
+    <div class="foot-note">Warden is built entirely on open standards — RTSP, ONVIF, WebRTC/WHEP, HLS, MJPEG, WebDAV — with no accounts on our servers, no ads, no paywalled features and no telemetry.</div>
+  </div>
+</div>
+
+<!-- ============ WALKTHROUGH (spotlight) ============ -->
+<div class="wt-overlay" id="wt-overlay">
+  <div class="wt-dim" id="wt-dim"></div>
+  <div class="wt-ring" id="wt-ring"></div>
+  <div class="wt-card" id="wt-card">
+    <div class="step" id="wt-step">Step 1 of 5</div>
+    <div class="t" id="wt-title"></div>
+    <div class="d" id="wt-desc"></div>
+    <div class="actions">
+      <button class="link-btn" id="wt-skip">Skip</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" id="wt-back">Back</button>
+        <button class="btn btn-primary btn-sm" id="wt-next">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SCROLL NAVIGATOR (accessibility) ============ -->
+<div class="scroll-nav" id="scroll-nav" role="navigation" aria-label="Scroll navigator">
+  <button id="sn-top" aria-label="Scroll to top" type="button">⤒</button>
+  <button id="sn-up" aria-label="Scroll up" type="button">▲</button>
+  <button id="sn-down" aria-label="Scroll down" type="button">▼</button>
+  <button id="sn-bottom" aria-label="Scroll to bottom" type="button">⤓</button>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $ = id => document.getElementById(id);
+const el = new Proxy({}, { get:(_,k)=>$(k.replace(/([A-Z])/g,'-$1').toLowerCase()) });
+document.querySelectorAll(".footer-year").forEach(e=>e.textContent = new Date().getFullYear());
+
+/* ===================== IndexedDB ===================== */
+let dbp = null;
+function openDb(){
+  if (dbp) return dbp;
+  dbp = new Promise((res,rej)=>{
+    const r = indexedDB.open("warden", 3);
+    r.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains("cameras")) db.createObjectStore("cameras", { keyPath:"id" });
+      if (!db.objectStoreNames.contains("meta")) db.createObjectStore("meta", { keyPath:"id" });
+      if (!db.objectStoreNames.contains("accounts")) db.createObjectStore("accounts", { keyPath:"id" });
+    };
+    r.onsuccess = ()=>res(r.result);
+    r.onerror = ()=>rej(r.error);
+  });
+  return dbp;
+}
+async function storeAll(store){ const db = await openDb(); return new Promise((res,rej)=>{ const tx = db.transaction(store,"readonly"); const rq = tx.objectStore(store).getAll(); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); }
+async function storePut(store, rec){ const db = await openDb(); return new Promise((res,rej)=>{ const tx = db.transaction(store,"readwrite"); tx.objectStore(store).put(rec); tx.oncomplete=()=>res(rec); tx.onerror=()=>rej(tx.error); }); }
+async function storeDel(store, id){ const db = await openDb(); return new Promise((res,rej)=>{ const tx = db.transaction(store,"readwrite"); tx.objectStore(store).delete(id); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }); }
+async function storeGet(store, id){ const db = await openDb(); return new Promise((res,rej)=>{ const tx = db.transaction(store,"readonly"); const rq = tx.objectStore(store).get(id); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>rej(rq.error); }); }
+
+/* ===================== Crypto helpers (device-local) ===================== */
+let deviceKeyP = null;
+async function getDeviceKey(){
+  if (deviceKeyP) return deviceKeyP;
+  deviceKeyP = (async ()=>{
+    const rec = await storeGet("meta","cryptoKey");
+    if (rec) return crypto.subtle.importKey("jwk", rec.jwk, {name:"AES-GCM"}, true, ["encrypt","decrypt"]);
+    const key = await crypto.subtle.generateKey({name:"AES-GCM", length:256}, true, ["encrypt","decrypt"]);
+    const jwk = await crypto.subtle.exportKey("jwk", key);
+    await storePut("meta", { id:"cryptoKey", jwk });
+    return key;
+  })();
+  return deviceKeyP;
+}
+async function encryptText(text){
+  const key = await getDeviceKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, enc);
+  return { iv: Array.from(iv), data: Array.from(new Uint8Array(buf)) };
+}
+async function decryptText(payload){
+  if (!payload) return "";
+  const key = await getDeviceKey();
+  const iv = new Uint8Array(payload.iv);
+  const data = new Uint8Array(payload.data);
+  const buf = await crypto.subtle.decrypt({name:"AES-GCM", iv}, key, data);
+  return new TextDecoder().decode(buf);
+}
+function bytesToHex(b){ return Array.from(b).map(x=>x.toString(16).padStart(2,"0")).join(""); }
+function hexToBytes(h){ const a=new Uint8Array(h.length/2); for(let i=0;i<a.length;i++) a[i]=parseInt(h.substr(i*2,2),16); return a; }
+async function pbkdf2Hash(password, saltBytes){
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), {name:"PBKDF2"}, false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({name:"PBKDF2", salt: saltBytes, iterations: 100000, hash:"SHA-256"}, keyMaterial, 256);
+  return bytesToHex(new Uint8Array(bits));
+}
+async function hashPassword(password){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await pbkdf2Hash(password, salt);
+  return { saltHex: bytesToHex(salt), hashHex: hash };
+}
+async function verifyPassword(account, password){
+  const hash = await pbkdf2Hash(password, hexToBytes(account.saltHex));
+  return hash === account.hashHex;
+}
+
+/* ===================== State ===================== */
+let cameras = [];
+let accounts = [];
+let currentUser = null;      // logged-in account record
+let camera = null;
+let pc = null;
+let reconnectAttempt = 0;
+let reconnectTimer = null;
+let talkStream = null;
+let audioMuted = true;
+let ptzCapable = false;
+let chromeVisible = true;
+let streamQuality = "hq";
+let thumbTimer = null;
+let cloudTimer = null;
+let editingCameraId = null;
+
+/* ===================== Utilities ===================== */
+let historyInited = false;
+let suppressPush = false;
+function showScreen(name){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $(name + "-screen").classList.add("active");
+  if (typeof hideScrollNav === "function") hideScrollNav();
+  if (typeof closeUserMenu === "function") closeUserMenu();
+  if (suppressPush) return;
+  if (!historyInited){
+    historyInited = true;
+    history.replaceState({screen:name}, "", "#"+name);
+  } else if (!history.state || history.state.screen !== name){
+    history.pushState({screen:name}, "", "#"+name);
+  }
+}
+/* Popups/overlays also respond to the device/browser back button: opening one pushes
+   a lightweight history entry, so the first back press closes it instead of navigating. */
+const OVERLAY_CANCEL_BTN = { "confirm-overlay":"confirm-cancel", "auth-overlay":"auth-cancel", "reveal-overlay":"reveal-ok", "reset-overlay":"reset-cancel", "editprofile-overlay":"ep-cancel", "cloudauth-overlay":"cloudauth-cancel", "info-pop-overlay":"info-pop-close", "help-overlay":"help-close", "wt-overlay":"wt-skip" };
+document.querySelectorAll(".confirm-overlay,.info-pop-overlay,.help-overlay,.wt-overlay").forEach(ov=>{
+  new MutationObserver(()=>{
+    const open = ov.classList.contains("show");
+    if (open){ if (ov.dataset.pushed !== "1"){ ov.dataset.pushed = "1"; history.pushState(Object.assign({},history.state,{overlayOpen:ov.id}), "", location.hash); } if (typeof hideScrollNav==="function") hideScrollNav(); }
+    else ov.dataset.pushed = "0";
+  }).observe(ov, {attributes:true, attributeFilter:["class"]});
+});
+function closeAnyOpenOverlay(){
+  let closed = false;
+  Object.keys(OVERLAY_CANCEL_BTN).forEach(id=>{
+    const ov = $(id);
+    if (ov && ov.classList.contains("show")){ const btn = $(OVERLAY_CANCEL_BTN[id]); if (btn) btn.click(); else ov.classList.remove("show"); closed = true; }
+  });
+  return closed;
+}
+window.addEventListener("popstate", (e)=>{
+  closeAnyOpenOverlay();
+  let name = (e.state && e.state.screen) || (currentUser ? "gallery" : "login");
+  if (name !== "login" && !currentUser) name = "login"; // never let back-button reveal app screens while signed out
+  suppressPush = true;
+  showScreen(name);
+  suppressPush = false;
+  if (name === "gallery"){ stopStream(); camera = null; renderGallery(); }
+});
+function toast(msg){
+  el.toast.textContent = msg;
+  el.toast.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>el.toast.classList.remove("show"), 2200);
+}
+function go2rtcUrlFor(cam){ return cam.kind === "go2rtc" ? (cam.go2rtcUrl||"").replace(/\/$/,"") : null; }
+function canPtzTalk(cam){ return cam && cam.kind === "go2rtc"; }
+function initials(name){ return (name||"?").trim().slice(0,1).toUpperCase(); }
+function perms(){ return currentUser ? currentUser.permissions : { audio:false, ptz:false, manage:false }; }
+function camOwnerId(cam){ return cam.ownerId || "owner"; } // legacy cameras created before per-account ownership default to the original owner
+function camPerms(cam){
+  if (!cam || !currentUser) return { audio:false, ptz:false, manage:false };
+  if (camOwnerId(cam) === currentUser.id) return { audio:true, ptz:true, manage:true };
+  const s = (cam.sharedWith||[]).find(s=>s.accountId===currentUser.id);
+  return s ? { audio:!!s.audio, ptz:!!s.ptz, manage:false } : { audio:false, ptz:false, manage:false };
+}
+
+/* ===================== Login / accounts ===================== */
+let authTab = "login";
+function authTabsHtml(){
+  return `<div class="tabbar" id="auth-tabs">
+    <button data-tab="login" class="${authTab==="login"?"active":""}" type="button">Log in</button>
+    <button data-tab="signup" class="${authTab==="signup"?"active":""}" type="button">Sign up</button>
+  </div>`;
+}
+function wireAuthTabs(){
+  const bar = $("auth-tabs");
+  if (!bar) return;
+  bar.querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click", ()=>{ authTab = b.dataset.tab; renderAuth(); });
+  });
+}
+function genRecoveryCode(){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s = "";
+  for (let i=0;i<10;i++){ s += chars[Math.floor(Math.random()*chars.length)]; if (i===4) s += "-"; }
+  return s;
+}
+function showRecoveryCode(code){
+  return new Promise(resolve=>{
+    el.revealCode.value = code;
+    el.revealOverlay.classList.add("show");
+    const cleanup = ()=>{ el.revealOverlay.classList.remove("show"); el.revealOk.onclick=null; el.revealCopy.onclick=null; resolve(); };
+    el.revealOk.onclick = cleanup;
+    el.revealCopy.onclick = async ()=>{ try{ await navigator.clipboard.writeText(code); toast("Copied"); }catch(e){ toast("Couldn't copy — select and copy manually"); } };
+  });
+}
+async function bootAuth(){
+  accounts = await storeAll("accounts");
+  const rememberedId = localStorage.getItem("warden-remember-account");
+  const remembered = rememberedId && accounts.find(a=>a.id===rememberedId);
+  if (remembered){ await finishLogin(remembered); if (currentUser) return; }
+  authTab = accounts.length ? "login" : "signup";
+  renderAuth();
+}
+function renderAuth(){
+  if (authTab === "signup") renderSignupTab(); else renderLoginTab();
+}
+function renderSignupTab(){
+  const first = accounts.length === 0;
+  el.loginSub.textContent = "Every account on Warden manages its own cameras. Add cameras as soon as you're in, and see anything others share with you on the same dashboard.";
+  el.loginInner.innerHTML = authTabsHtml() + `
+    <div class="field"><label>Your name</label><input id="su-name" type="text" placeholder="Alex" autocomplete="off"></div>
+    <div class="field"><label>Password</label><input id="su-pass" type="password" autocomplete="new-password"></div>
+    <div class="field"><label>Confirm password</label><input id="su-pass2" type="password" autocomplete="new-password"></div>
+    <div class="error-text" id="su-error"></div>
+    <button class="btn btn-primary" id="su-submit">Create account</button>
+    <div class="foot-note">You're the master of any camera you add — full control, always. You'll get a recovery code — save it somewhere safe.</div>
+  `;
+  showScreen("login");
+  wireAuthTabs();
+  $("su-submit").addEventListener("click", async ()=>{
+    const name = $("su-name").value.trim();
+    const p1 = $("su-pass").value, p2 = $("su-pass2").value;
+    const err = $("su-error");
+    err.classList.remove("show");
+    if (!name){ err.textContent="Enter your name."; err.classList.add("show"); return; }
+    if (accounts.some(a=>a.username.toLowerCase()===name.toLowerCase())){ err.textContent="That name is already used on this device."; err.classList.add("show"); return; }
+    if (p1.length < 6){ err.textContent="Password must be at least 6 characters."; err.classList.add("show"); return; }
+    if (p1 !== p2){ err.textContent="Passwords don't match."; err.classList.add("show"); return; }
+    const { saltHex, hashHex } = await hashPassword(p1);
+    const acct = { id: first?"owner":("user-"+Date.now()), username:name, saltHex, hashHex, isOwner:true, permissions:{audio:true, ptz:true, manage:true}, createdAt: Date.now() };
+    const code = genRecoveryCode();
+    const rc = await hashPassword(code);
+    acct.recoverySaltHex = rc.saltHex; acct.recoveryHashHex = rc.hashHex;
+    await storePut("accounts", acct);
+    accounts = await storeAll("accounts");
+    currentUser = acct;
+    await showRecoveryCode(code);
+    enterApp();
+  });
+}
+async function finishLogin(acct){
+  if (acct.encryptedTotpSecret){
+    const secret = await decryptText(acct.encryptedTotpSecret);
+    const ok2 = await promptPassword("Enter your 6-digit code", async code=>await totpVerify(secret, code), "Verify");
+    if (!ok2) return;
+  }
+  currentUser = acct; enterApp();
+}
+function openResetFlow(acct){
+  if (!acct){ toast("Choose an account first"); return; }
+  if (!acct.recoveryHashHex){ toast("No recovery code was set for this account"); return; }
+  el.resetDesc.textContent = `Enter the recovery code shown when ${acct.username}'s account was created.`;
+  el.resetCode.value = ""; el.resetPass.value = "";
+  el.resetError.classList.remove("show");
+  el.resetOverlay.classList.add("show");
+  const cleanup = ()=>{ el.resetOverlay.classList.remove("show"); el.resetOk.onclick=null; el.resetCancel.onclick=null; };
+  el.resetCancel.onclick = cleanup;
+  el.resetOk.onclick = async ()=>{
+    el.resetError.classList.remove("show");
+    const code = el.resetCode.value.trim().toUpperCase();
+    const hash = await pbkdf2Hash(code, hexToBytes(acct.recoverySaltHex));
+    if (hash !== acct.recoveryHashHex){ el.resetError.textContent = "That code doesn't match."; el.resetError.classList.add("show"); return; }
+    if (el.resetPass.value.length < 6){ el.resetError.textContent = "New password must be at least 6 characters."; el.resetError.classList.add("show"); return; }
+    const { saltHex, hashHex } = await hashPassword(el.resetPass.value);
+    acct.saltHex = saltHex; acct.hashHex = hashHex;
+    await storePut("accounts", acct);
+    accounts = await storeAll("accounts");
+    cleanup();
+    toast("Password updated — log in with your new password");
+  };
+}
+function renderLoginTab(){
+  if (accounts.length === 0){
+    el.loginSub.textContent = "No accounts on this device yet.";
+    el.loginInner.innerHTML = authTabsHtml() + `
+      <div class="foot-note" style="padding:8px 4px;">Setting up a new device but already backed up your accounts to the cloud? Restore them here instead of signing up again.</div>
+      <button class="btn btn-ghost" id="restore-link" type="button">Restore accounts from cloud</button>
+    `;
+    showScreen("login");
+    wireAuthTabs();
+    $("restore-link").addEventListener("click", ()=>openCloudAuth("restore"));
+    return;
+  }
+  el.loginSub.textContent = accounts.length > 1 ? "Choose an account to log in." : "Tap your account to log in.";
+  const rows = accounts.map(a=>`
+    <div class="account-row-wrap" data-id="${a.id}">
+      <div class="account-row" data-id="${a.id}">
+        <span class="avatar">${initials(a.username)}</span>
+        <span class="who"><span class="n">${escapeHtml(a.username)}</span><span class="r">Master</span></span>
+        ${a.passkeyId ? `<button class="link-btn" data-passkey-id="${a.id}" style="margin-left:auto">Use passkey</button>` : ""}
+        <button class="icon-btn sm acct-remove" data-remove-id="${a.id}" aria-label="Remove or close" style="margin-left:8px;width:28px;height:28px;flex-shrink:0;">&#10005;</button>
+      </div>
+      <div class="account-expand" data-id="${a.id}">
+        <div class="field"><input type="password" class="acct-pass-input" placeholder="Password" autocomplete="current-password"></div>
+        <div class="error-text acct-pass-error">Incorrect password.</div>
+        <label class="check-row acct-remember-row" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-dim);"><input type="checkbox" class="acct-remember"> Remember me on this device</label>
+        <div class="row2">
+          <button class="btn btn-ghost btn-sm acct-forgot" type="button" style="width:100%">Forgot password?</button>
+          <button class="btn btn-primary btn-sm acct-login-btn" type="button" style="width:100%">Log in</button>
+        </div>
+      </div>
+    </div>`).join("");
+  el.loginInner.innerHTML = authTabsHtml() + rows + `<button class="btn btn-ghost" id="login-another-btn" type="button">Log in to another account</button>`;
+  showScreen("login");
+  wireAuthTabs();
+  function collapseAll(){
+    el.loginInner.querySelectorAll(".account-row-wrap").forEach(w=>w.classList.remove("expanded"));
+    $("login-another-btn").style.display = "";
+  }
+  function expand(wrap){
+    collapseAll();
+    wrap.classList.add("expanded");
+    $("login-another-btn").style.display = "none";
+    const input = wrap.querySelector(".acct-pass-input");
+    wrap.querySelector(".acct-pass-error").classList.remove("show");
+    input.value = "";
+    setTimeout(()=>input.focus(), 50);
+  }
+  $("login-another-btn").addEventListener("click", ()=>{ authTab = "signup"; renderAuth(); });
+  async function attemptLogin(wrap, acct){
+    const input = wrap.querySelector(".acct-pass-input");
+    const err = wrap.querySelector(".acct-pass-error");
+    const ok = await verifyPassword(acct, input.value);
+    if (!ok){ err.classList.add("show"); return; }
+    err.classList.remove("show");
+    if (wrap.querySelector(".acct-remember").checked) localStorage.setItem("warden-remember-account", acct.id);
+    finishLogin(acct);
+  }
+  el.loginInner.querySelectorAll(".account-row-wrap").forEach(wrap=>{
+    const acct = accounts.find(a=>a.id===wrap.dataset.id);
+    const row = wrap.querySelector(".account-row");
+    row.addEventListener("click", async (e)=>{
+      if (e.target.closest("[data-remove-id]")){
+        if (wrap.classList.contains("expanded")){ collapseAll(); return; }
+        el.confirmTitle.textContent = "Remove this account?";
+        el.confirmDesc.textContent = `"${acct.username}" and every camera it owns will be removed from this device. This cannot be undone.`;
+        el.confirmOverlay.classList.add("show");
+        el.confirmOk.onclick = async ()=>{
+          el.confirmOverlay.classList.remove("show");
+          await storeDel("accounts", acct.id);
+          const allCams = await storeAll("cameras");
+          for (const cam of allCams){
+            if (camOwnerId(cam) === acct.id){ await storeDel("cameras", cam.id); }
+            else if ((cam.sharedWith||[]).some(s=>s.accountId===acct.id)){
+              cam.sharedWith = cam.sharedWith.filter(s=>s.accountId!==acct.id);
+              await storePut("cameras", cam);
+            }
+          }
+          if (localStorage.getItem("warden-remember-account")===acct.id) localStorage.removeItem("warden-remember-account");
+          accounts = await storeAll("accounts");
+          renderLoginTab();
+        };
+        return;
+      }
+      if (e.target.closest("[data-passkey-id]")){
+        const ok = await authWithPasskey(acct);
+        if (ok) finishLogin(acct); else toast("Passkey didn't match");
+        return;
+      }
+      if (wrap.classList.contains("expanded")){ collapseAll(); return; }
+      expand(wrap);
+    });
+    const input = wrap.querySelector(".acct-pass-input");
+    input.addEventListener("keydown", (e)=>{ if (e.key==="Enter") attemptLogin(wrap, acct); });
+    wrap.querySelector(".acct-login-btn").addEventListener("click", ()=>attemptLogin(wrap, acct));
+    wrap.querySelector(".acct-forgot").addEventListener("click", ()=>openResetFlow(acct));
+  });
+}
+function promptPassword(title, verifyFn, buttonLabel){
+  return new Promise(resolve=>{
+    el.authTitle.textContent = title;
+    el.authInput.value = "";
+    el.authError.classList.remove("show");
+    el.authOk.textContent = buttonLabel || "Continue";
+    el.authOverlay.classList.add("show");
+    el.authInput.focus();
+    const cleanup = (ok)=>{ el.authOverlay.classList.remove("show"); el.authOk.onclick=null; el.authCancel.onclick=null; resolve(ok); };
+    el.authOk.onclick = async ()=>{
+      const ok = await verifyFn(el.authInput.value);
+      if (ok) cleanup(true); else { el.authError.classList.add("show"); }
+    };
+    el.authCancel.onclick = ()=>cleanup(false);
+  });
+}
+function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function slugify(s){ return (s||"camera").toLowerCase().trim().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"") || "camera"; }
+
+function applyPermissionsUi(){
+  const p = perms();
+  el.userAvatar.textContent = initials(currentUser.username);
+  el.userPillName.textContent = currentUser.username;
+  el.settingsAvatar.textContent = initials(currentUser.username);
+  el.settingsUsername.textContent = currentUser.username;
+  el.settingsRoleBadge.textContent = "Master";
+  el.accessGroup.style.display = p.manage ? "" : "none";
+  el.cloudGroup.style.display = p.manage ? "" : "none";
+  el.acctBackupGroup.style.display = currentUser.isOwner ? "" : "none";
+  const cp = camPerms(camera);
+  el.btnTalk.hidden = !cp.audio || !canPtzTalk(camera);
+  el.ptz.classList.toggle("show", ptzCapable && cp.ptz);
+  el.settingsOpen.hidden = !cp.manage;
+}
+
+/* ===================== Edit profile ===================== */
+el.editProfileBtn.addEventListener("click", ()=>{
+  el.epName.value = currentUser.username;
+  el.epCurrentPass.value = ""; el.epNewPass.value = "";
+  el.epError.classList.remove("show");
+  el.editprofileOverlay.classList.add("show");
+});
+el.epCancel.addEventListener("click", ()=>el.editprofileOverlay.classList.remove("show"));
+el.epSave.addEventListener("click", async ()=>{
+  const err = el.epError;
+  err.classList.remove("show");
+  const name = el.epName.value.trim();
+  if (!name){ err.textContent = "Name can't be empty."; err.classList.add("show"); return; }
+  const ok = await verifyPassword(currentUser, el.epCurrentPass.value);
+  if (!ok){ err.textContent = "Current password is incorrect."; err.classList.add("show"); return; }
+  if (el.epNewPass.value && el.epNewPass.value.length < 6){ err.textContent = "New password must be at least 6 characters."; err.classList.add("show"); return; }
+  currentUser.username = name;
+  if (el.epNewPass.value){
+    const { saltHex, hashHex } = await hashPassword(el.epNewPass.value);
+    currentUser.saltHex = saltHex; currentUser.hashHex = hashHex;
+  }
+  await storePut("accounts", currentUser);
+  accounts = await storeAll("accounts");
+  applyPermissionsUi();
+  el.editprofileOverlay.classList.remove("show");
+  toast("Profile updated");
+});
+
+function enterApp(){
+  showScreen("gallery");
+  renderGallery();
+  applyPermissionsUi();
+  startThumbLoop();
+  loadCloudSettings();
+  setTimeout(updateScrollNav, 150);
+  if (!localStorage.getItem("warden-walkthrough-seen")) setTimeout(()=>toast("New here? Tap ? for help & a quick walkthrough"), 900);
+}
+function goToLogin(){
+  stopStream();
+  stopThumbLoop();
+  stopCloudBackup();
+  currentUser = null;
+  camera = null;
+  localStorage.removeItem("warden-remember-account");
+  bootAuth();
+}
+el.logoutRow.addEventListener("click", goToLogin);
+el.switchAccountRow.addEventListener("click", goToLogin);
+
+/* Header user-pill menu (multi-account: switch or log out from any screen) */
+function closeUserMenu(){ el.userMenu.classList.remove("show"); }
+function toggleUserMenu(){
+  if (el.userMenu.classList.contains("show")){ closeUserMenu(); return; }
+  const r = el.userPill.getBoundingClientRect();
+  el.userMenu.style.top = (r.bottom + 6) + "px";
+  el.userMenu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 172)) + "px";
+  el.userMenu.classList.add("show");
+}
+el.userPill.addEventListener("click", toggleUserMenu);
+el.userPill.addEventListener("keydown", (e)=>{ if (e.key==="Enter" || e.key===" "){ e.preventDefault(); toggleUserMenu(); } });
+el.userMenuSwitch.addEventListener("click", ()=>{ closeUserMenu(); goToLogin(); });
+el.userMenuLogout.addEventListener("click", ()=>{ closeUserMenu(); goToLogin(); });
+document.addEventListener("click", (e)=>{ if (!el.userMenu.contains(e.target) && !el.userPill.contains(e.target)) closeUserMenu(); });
+window.addEventListener("resize", closeUserMenu);
+
+/* ===================== Manage access (per-camera sharing between master accounts) ===================== */
+function accountName(id){ const a = accounts.find(x=>x.id===id); return a ? a.username : "Removed account"; }
+function renderMyCamsList(){
+  const list = el.myCamsList;
+  const mine = cameras.filter(c=>camOwnerId(c)===currentUser.id);
+  if (!mine.length){ list.innerHTML = `<div class="foot-note" style="padding:8px 0">Add a camera first — then share it here.</div>`; return; }
+  list.innerHTML = mine.map(c=>{
+    const shares = c.sharedWith||[];
+    const shareRows = shares.map(s=>{
+      const caps = [s.audio&&"Audio", s.ptz&&"Video control"].filter(Boolean).join(", ") || "View only";
+      return `<div class="row" style="padding-left:14px"><span class="label" style="font-weight:500;font-size:13px;">${escapeHtml(accountName(s.accountId))}</span><span class="perm-summary">${caps}</span><button class="icon-btn sm" data-unshare="${c.id}|${s.accountId}" style="margin-left:8px;width:28px;height:28px;"><span class="glyph" style="font-size:13px;">&#10005;</span></button></div>`;
+    }).join("");
+    return `<div class="row"><span class="label">${escapeHtml(c.name)}</span><span class="perm-summary">${shares.length ? `Shared with ${shares.length}` : "Not shared"}</span></div>${shareRows}`;
+  }).join("");
+  list.querySelectorAll("[data-unshare]").forEach(btn=>{
+    btn.addEventListener("click", async ()=>{
+      const [camId, accountId] = btn.dataset.unshare.split("|");
+      const cam = cameras.find(c=>c.id===camId);
+      cam.sharedWith = (cam.sharedWith||[]).filter(s=>s.accountId!==accountId);
+      await storePut("cameras", cam);
+      cameras = await storeAll("cameras");
+      renderMyCamsList(); populateShareForm();
+      toast("Access removed");
+    });
+  });
+}
+function populateShareForm(){
+  const mine = cameras.filter(c=>camOwnerId(c)===currentUser.id);
+  const others = accounts.filter(a=>a.id!==currentUser.id);
+  el.shCamera.innerHTML = mine.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+  el.shAccount.innerHTML = others.map(a=>`<option value="${a.id}">${escapeHtml(a.username)}</option>`).join("");
+  const canShare = mine.length && others.length;
+  $("share-group").style.display = mine.length ? "" : "none";
+  el.shAddBtn.style.display = canShare ? "" : "none";
+  el.shareEmptyNote.style.display = mine.length && !others.length ? "" : "none";
+  el.shPermAudio.checked = false; el.shPermPtz.checked = false;
+}
+el.openAccess.addEventListener("click", ()=>{ renderMyCamsList(); populateShareForm(); showScreen("access"); });
+el.accessClose.addEventListener("click", ()=>{ showScreen("settings"); renderSecuritySettings(); });
+el.shAddBtn.addEventListener("click", async ()=>{
+  const camId = el.shCamera.value, accountId = el.shAccount.value;
+  if (!camId || !accountId) return;
+  const cam = cameras.find(c=>c.id===camId);
+  cam.sharedWith = (cam.sharedWith||[]).filter(s=>s.accountId!==accountId);
+  cam.sharedWith.push({ accountId, audio: el.shPermAudio.checked, ptz: el.shPermPtz.checked });
+  await storePut("cameras", cam);
+  cameras = await storeAll("cameras");
+  renderMyCamsList(); populateShareForm();
+  toast(`Shared with ${accountName(accountId)}`);
+});
+
+/* ===================== Gallery ===================== */
+function visibleCameras(){
+  if (!currentUser) return [];
+  return cameras.filter(c=>camOwnerId(c)===currentUser.id || (c.sharedWith||[]).some(s=>s.accountId===currentUser.id));
+}
+function renderGallery(){
+  const grid = el.camGrid;
+  grid.innerHTML = "";
+  const shown = visibleCameras();
+  el.emptyState.style.display = shown.length ? "none" : "flex";
+  el.emptyAddBtn.style.display = perms().manage ? "" : "none";
+  el.emptyMsg.innerHTML = shown.length===0 && !perms().manage ? "No cameras have been shared with you yet." : "No cameras yet.<br>Add your first camera to get started.";
+  const seenDevices = new Set();
+  shown.forEach(cam=>{
+    if (cam.deviceId && !seenDevices.has(cam.deviceId)){
+      seenDevices.add(cam.deviceId);
+      const head = document.createElement("div");
+      head.style.cssText = "grid-column:1/-1;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);margin:10px 2px 0;";
+      head.textContent = cam.deviceName || "Device";
+      grid.appendChild(head);
+    }
+    const tile = document.createElement("div");
+    tile.className = "cam-tile";
+    tile.dataset.id = cam.id;
+    const label = document.createElement("div");
+    label.className = "label";
+    label.innerHTML = `<span class="dot" data-dot></span><span class="name">${escapeHtml(cam.name)}</span>`;
+    if (cam.kind === "go2rtc" && cam.go2rtcUrl){
+      const img = document.createElement("img");
+      img.loading = "lazy";
+      img.alt = "";
+      const dot = ()=>tile.querySelector("[data-dot]");
+      img.onload = ()=>{ const d=dot(); if (d){ d.classList.add("live"); d.classList.remove("error"); } };
+      img.onerror = ()=>{ const d=dot(); if (d){ d.classList.remove("live"); d.classList.add("error"); } };
+      img.src = `${go2rtcUrlFor(cam)}/api/stream.mjpeg?src=${encodeURIComponent(cam.stream)}`;
+      tile.appendChild(img);
+    } else if (cam.kind === "mjpeg" && cam.directUrl){
+      const img = document.createElement("img");
+      img.loading = "lazy";
+      img.alt = "";
+      const dot = ()=>tile.querySelector("[data-dot]");
+      img.onload = ()=>{ const d=dot(); if (d){ d.classList.add("live"); d.classList.remove("error"); } };
+      img.onerror = ()=>{ const d=dot(); if (d){ d.classList.remove("live"); d.classList.add("error"); } };
+      img.src = cam.directUrl;
+      tile.appendChild(img);
+    } else {
+      const fb = document.createElement("div");
+      fb.className = "fallback";
+      fb.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5a1.5 1.5 0 0 1 1.5-1.5h2l1-1.5h9l1 1.5h2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="13" r="3.5"/></svg>`;
+      tile.appendChild(fb);
+    }
+    tile.appendChild(label);
+    tile.addEventListener("click", ()=>openViewer(cam));
+    grid.appendChild(tile);
+  });
+  if (perms().manage && shown.length){
+    const add = document.createElement("div");
+    add.className = "add-tile";
+    add.innerHTML = `<span class="glyph" style="font-size:22px;font-weight:400;">+</span><span>Add camera</span>`;
+    add.addEventListener("click", ()=>openForm(null));
+    grid.appendChild(add);
+  }
+}
+// Dashboard tiles now embed the live go2rtc/MJPEG stream directly (continuous
+// multipart image), so no polling loop is needed — the <img> updates itself.
+function startThumbLoop(){}
+function stopThumbLoop(){}
+el.openSettings.addEventListener("click", ()=>{ showScreen("settings"); renderSecuritySettings(); loadAiSettings(); });
+el.emptyAddBtn.addEventListener("click", ()=>openForm(null));
+
+/* ===================== Camera form (device-management only) ===================== */
+const GO2RTC_SUBTYPES = ["rtsp","onvif","nvr"];
+const KIND_INFO = {
+  rtsp: { hint:"A plain RTSP camera, bridged through your self-hosted go2rtc (FOSS).", title:null },
+  onvif: { hint:"An ONVIF-capable camera, bridged through go2rtc — enables pan/tilt/zoom.", title:null },
+  nvr: { hint:"A multi-channel NVR, XVR, DVR or other recorder — each channel becomes its own camera card, grouped together, exactly like the Dahua/Hikvision-style apps.", title:null },
+  whep: { hint:"Connects directly over the open WHEP protocol — no bridge needed.", title:"WebRTC (WHEP) source" },
+  hls: { hint:"Plays an HTTP Live Streaming (.m3u8) source directly.", title:"HLS source" },
+  mjpeg: { hint:"Plays a raw MJPEG HTTP stream — the lightest option.", title:"MJPEG source" }
+};
+function setKind(kind){
+  el.fKindSelect.value = kind || "";
+  if (!kind){ el.kindFieldsWrap.classList.remove("show"); el.kindHint.textContent = ""; return; }
+  el.kindFieldsWrap.classList.add("show");
+  const isGo2rtc = GO2RTC_SUBTYPES.includes(kind);
+  el.go2rtcFields.style.display = isGo2rtc ? "" : "none";
+  el.directFields.style.display = isGo2rtc ? "none" : "";
+  if (!isGo2rtc) el.directFieldsTitle.textContent = KIND_INFO[kind].title;
+  el.kindHint.textContent = KIND_INFO[kind].hint;
+  if (isGo2rtc){
+    const isNvr = kind === "nvr";
+    el.fChannelsField.style.display = isNvr ? "" : "none";
+    el.fStreamField.style.display = isNvr ? "none" : "";
+    el.fHostField.style.display = kind === "onvif" ? "" : "none";
+    el.fOnvifAuthField.style.display = kind === "onvif" ? "" : "none";
+    el.fOnvifPassField.style.display = kind === "onvif" ? "" : "none";
+  }
+}
+el.fKindSelect.addEventListener("change", ()=>setKind(el.fKindSelect.value));
+function openForm(cam){
+  if (!perms().manage){ toast("You don't have device-management access"); return; }
+  editingCameraId = cam ? cam.id : null;
+  el.formTitle.textContent = cam ? "Edit camera" : "Add camera";
+  el.fName.value = cam ? cam.name : "";
+  setKind(cam ? (cam.subtype || (cam.kind==="go2rtc" ? "rtsp" : cam.kind)) : "");
+  el.fGo2rtc.value = cam ? (cam.go2rtcUrl||"") : "";
+  el.fStream.value = cam ? (cam.stream||"") : "";
+  el.fChannels.value = "";
+  el.fHost.value = cam ? (cam.host||"") : "";
+  el.fUser.value = cam ? (cam.onvifUsername||"") : "";
+  el.fPass.value = "";
+  el.fDirectUrl.value = cam ? (cam.directUrl||"") : "";
+  el.fDirectAuth.value = "";
+  el.fAutomation.value = cam ? (cam.automationWebhook||"") : "";
+  el.fSiren.value = cam ? (cam.sirenWebhook||"") : "";
+  showScreen("form");
+}
+el.formClose.addEventListener("click", ()=>showScreen(camera ? "viewer" : "gallery"));
+el.fDiscoverChannels.addEventListener("click", async ()=>{
+  const go2rtcUrl = el.fGo2rtc.value.trim().replace(/\/$/,"");
+  if (!go2rtcUrl){ toast("Enter the go2rtc server URL first"); return; }
+  try{
+    const res = await fetch(`${go2rtcUrl}/api/streams`);
+    if (!res.ok) throw new Error("bad response");
+    const streams = await res.json();
+    const names = Object.keys(streams || {});
+    if (!names.length){ toast("Server has no streams configured yet"); return; }
+    el.fChannels.value = names.join("\n");
+    toast(`Found ${names.length} channel${names.length===1?"":"s"}`);
+  } catch(e){
+    toast("Couldn't reach go2rtc — check the server URL");
+  }
+});
+el.formSave.addEventListener("click", async ()=>{
+  const subtype = el.fKindSelect.value;
+  if (!subtype){ toast("Choose a camera type first"); return; }
+  const name = el.fName.value.trim() || `Camera ${cameras.length + 1}`;
+  const isGo2rtc = GO2RTC_SUBTYPES.includes(subtype);
+  let rec = editingCameraId ? cameras.find(c=>c.id===editingCameraId) : null;
+  const id = rec ? rec.id : "cam-" + Date.now();
+  if (isGo2rtc){
+    const go2rtcUrl = el.fGo2rtc.value.trim().replace(/\/$/,"");
+    if (!go2rtcUrl){ toast("go2rtc server URL is required"); return; }
+    let encryptedOnvifPassword = rec ? rec.encryptedOnvifPassword : null;
+    if (el.fPass.value) encryptedOnvifPassword = await encryptText(el.fPass.value);
+    const common = { kind:"go2rtc", subtype, go2rtcUrl, host: subtype==="onvif" ? el.fHost.value.trim() : "", onvifUsername: el.fUser.value.trim(), encryptedOnvifPassword, automationWebhook: el.fAutomation.value.trim(), sirenWebhook: el.fSiren.value.trim() };
+    if (subtype === "nvr"){
+      const channels = el.fChannels.value.split(/\r?\n|,/).map(s=>s.trim()).filter(Boolean);
+      if (!channels.length){ toast("List at least one channel"); return; }
+      const deviceId = rec ? (rec.deviceId || id) : id;
+      // remove any previously-generated channel cards for this device before re-creating them
+      if (editingCameraId){
+        const stale = cameras.filter(c=>c.deviceId===deviceId);
+        for (const c of stale) await storeDel("cameras", c.id);
+      }
+      let i = 0;
+      for (const ch of channels){
+        const chId = `${deviceId}-ch${i}`;
+        await storePut("cameras", { id: chId, deviceId, deviceName: name, name: `${name} — ${ch}`, stream: ch, ownerId: currentUser.id, sharedWith: [], ...common, createdAt: Date.now(), updatedAt: Date.now() });
+        i++;
+      }
+      cameras = await storeAll("cameras");
+      renderGallery();
+      toast(`${channels.length} channel${channels.length>1?"s":""} added`);
+      showScreen("gallery");
+      return;
+    }
+    const stream = el.fStream.value.trim() || slugify(name);
+    rec = { id, name, stream, ownerId: rec?rec.ownerId:currentUser.id, sharedWith: rec?(rec.sharedWith||[]):[], ...common, createdAt: rec?rec.createdAt:Date.now(), updatedAt: Date.now() };
+  } else {
+    const directUrl = el.fDirectUrl.value.trim();
+    if (!directUrl){ toast("URL is required"); return; }
+    let encryptedAuth = rec ? rec.encryptedAuth : null;
+    if (el.fDirectAuth.value) encryptedAuth = await encryptText(el.fDirectAuth.value);
+    rec = { id, kind: subtype, name, directUrl, encryptedAuth, ownerId: rec?rec.ownerId:currentUser.id, sharedWith: rec?(rec.sharedWith||[]):[], automationWebhook: el.fAutomation.value.trim(), sirenWebhook: el.fSiren.value.trim(), createdAt: rec?rec.createdAt:Date.now(), updatedAt: Date.now() };
+  }
+  await storePut("cameras", rec);
+  cameras = await storeAll("cameras");
+  renderGallery();
+  toast("Camera saved");
+  if (camera && camera.id === id){ camera = rec; openViewer(camera); } else { showScreen("gallery"); }
+});
+
+/* ===================== Camera settings sheet ===================== */
+el.settingsOpen.addEventListener("click", ()=>{ if (!camPerms(camera).manage) return; showScreen("camsettings"); });
+el.camsettingsClose.addEventListener("click", ()=>showScreen("viewer"));
+el.camsettingsEdit.addEventListener("click", ()=>openForm(camera));
+el.camsettingsPlayback.addEventListener("click", ()=>{ el.pbUrl.value=""; el.pbVideo.style.display="none"; el.pbVideo.pause&&el.pbVideo.pause(); showScreen("playback"); });
+el.playbackClose.addEventListener("click", ()=>showScreen("camsettings"));
+el.pbLoad.addEventListener("click", ()=>{
+  const url = el.pbUrl.value.trim();
+  if (!url){ toast("Enter a recording URL"); return; }
+  el.pbVideo.src = url; el.pbVideo.style.display = "block"; el.pbVideo.play().catch(()=>{});
+});
+el.camsettingsAutomation.addEventListener("click", async ()=>{
+  if (!camera || !camera.automationWebhook){ toast("Add a webhook URL in Edit connection first"); return; }
+  toast("Running automation…");
+  try{ await fetch(camera.automationWebhook, { method:"POST" }); toast("Automation triggered"); }
+  catch(e){ toast("Automation request failed"); }
+});
+el.camsettingsSiren.addEventListener("click", async ()=>{
+  if (!camera || !camera.sirenWebhook){ toast("Add a siren webhook URL in Edit connection first"); return; }
+  toast("Triggering siren…");
+  try{ await fetch(camera.sirenWebhook, { method:"POST" }); toast("Siren triggered"); }
+  catch(e){ toast("Siren request failed"); }
+});
+el.camsettingsDelete.addEventListener("click", ()=>{
+  el.confirmTitle.textContent = "Remove camera?";
+  el.confirmDesc.textContent = "This only removes it from this device.";
+  el.confirmOverlay.classList.add("show");
+});
+el.confirmCancel.addEventListener("click", ()=>el.confirmOverlay.classList.remove("show"));
+el.confirmOk.addEventListener("click", async ()=>{
+  el.confirmOverlay.classList.remove("show");
+  if (camera){
+    stopStream();
+    await storeDel("cameras", camera.id);
+    cameras = await storeAll("cameras");
+    camera = null;
+  }
+  renderGallery();
+  showScreen("gallery");
+});
+
+/* ===================== Streaming engine ===================== */
+function setStatus(state, text){
+  el.statusDot.className = "dot" + (state==="live"?" live":state==="error"?" error":"");
+  el.camState.textContent = text;
+}
+function showPlaceholder(msg, sub){
+  el.videoPlaceholder.style.display = "flex";
+  el.placeholderMsg.textContent = msg;
+  el.placeholderSub.textContent = sub || "";
+  el.video.style.display = "none";
+  el.mjpegImg.style.display = "none";
+}
+function hidePlaceholder(){ el.videoPlaceholder.style.display = "none"; }
+function showCenterMsg(title, desc){ hidePlaceholder(); el.centerTitle.textContent = title; el.centerDesc.textContent = desc; el.centerMsg.classList.add("show"); }
+function hideCenterMsg(){ el.centerMsg.classList.remove("show"); }
+
+async function connectStream(cam){
+  hideCenterMsg();
+  showPlaceholder("Connecting…", "Reaching your camera");
+  setStatus("", "Connecting…");
+  stopPeer();
+  try{
+    if (cam.kind === "go2rtc"){
+      if (streamQuality === "lq"){
+        connectMjpeg(`${go2rtcUrlFor(cam)}/api/stream.mjpeg?src=${encodeURIComponent(cam.stream)}`);
+      } else {
+        await connectWebRTC(`${go2rtcUrlFor(cam)}/api/webrtc?src=${encodeURIComponent(cam.stream)}`);
+      }
+    } else if (cam.kind === "whep"){
+      await connectWebRTC(cam.directUrl, await decryptText(cam.encryptedAuth));
+    } else if (cam.kind === "hls"){
+      await connectHls(cam.directUrl);
+    } else if (cam.kind === "mjpeg"){
+      connectMjpeg(cam.directUrl);
+    }
+  } catch(e){ handleStreamError(cam); }
+}
+function stopPeer(){ if (pc){ try{ pc.close(); }catch(e){} pc = null; } }
+function stopStream(){
+  stopPeer();
+  if (reconnectTimer){ clearTimeout(reconnectTimer); reconnectTimer=null; }
+  el.video.srcObject = null;
+  el.video.src = "";
+  el.mjpegImg.src = "";
+}
+async function connectWebRTC(url, authHeader){
+  pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+  pc.addTransceiver("video", { direction: "recvonly" });
+  pc.addTransceiver("audio", { direction: "sendrecv" });
+  const remoteStream = new MediaStream();
+  pc.ontrack = (e)=>{ remoteStream.addTrack(e.track); el.video.srcObject = remoteStream; el.video.style.display="block"; el.video.muted = audioMuted; hidePlaceholder(); onStreamGood(); updateAudioAvailability(); };
+  pc.onconnectionstatechange = ()=>{ if (["failed","disconnected","closed"].includes(pc.connectionState)) onStreamBad(); };
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  const headers = { "Content-Type": "application/sdp" };
+  if (authHeader) headers["Authorization"] = authHeader;
+  const res = await fetch(url, { method:"POST", headers, body: offer.sdp });
+  if (!res.ok) throw new Error("webrtc-signal-failed");
+  const answerSdp = await res.text();
+  await pc.setRemoteDescription({ type:"answer", sdp: answerSdp });
+}
+function connectHls(url){
+  return new Promise((resolve,reject)=>{
+    el.video.style.display = "block";
+    if (el.video.canPlayType("application/vnd.apple.mpegurl")){
+      el.video.src = url;
+      el.video.oncanplay = ()=>{ hidePlaceholder(); onStreamGood(); updateAudioAvailability(); resolve(); };
+      el.video.onerror = ()=>reject(new Error("hls-native-failed"));
+    } else if (window.Hls && window.Hls.isSupported()){
+      const hls = new window.Hls();
+      hls.loadSource(url); hls.attachMedia(el.video);
+      hls.on(window.Hls.Events.MANIFEST_PARSED, ()=>{ el.video.play().catch(()=>{}); hidePlaceholder(); onStreamGood(); updateAudioAvailability(); resolve(); });
+      hls.on(window.Hls.Events.ERROR, (_,d)=>{ if (d.fatal) reject(new Error("hls-failed")); });
+    } else {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.15/hls.min.js";
+      s.onload = ()=>connectHls(url).then(resolve).catch(reject);
+      s.onerror = ()=>reject(new Error("hls-lib-failed"));
+      document.head.appendChild(s);
+    }
+  });
+}
+function connectMjpeg(url){
+  el.mjpegImg.style.display = "block";
+  el.mjpegImg.onload = ()=>{ hidePlaceholder(); onStreamGood(); el.btnAudio.hidden = true; };
+  el.mjpegImg.onerror = ()=>onStreamBad();
+  el.mjpegImg.src = url;
+}
+function updateAudioAvailability(){
+  const v = el.video;
+  const hasAudio = v.srcObject ? (v.srcObject.getAudioTracks().length>0) : (v.mozHasAudio || Boolean(v.webkitAudioDecodedByteCount) || (v.audioTracks && v.audioTracks.length>0) || true);
+  el.btnAudio.hidden = !hasAudio;
+}
+function onStreamGood(){ reconnectAttempt = 0; setStatus("live", "Live"); }
+function onStreamBad(){ setStatus("error", "Reconnecting…"); scheduleReconnect(); }
+function handleStreamError(cam){
+  setStatus("error", "Unavailable");
+  showCenterMsg("Camera unavailable", camPerms(camera).manage ? "Check that the camera and its bridge (go2rtc) are online and reachable from this device." : "This camera is temporarily unreachable. Ask its owner to check it.");
+  scheduleReconnect();
+}
+function scheduleReconnect(){
+  if (reconnectTimer) return;
+  reconnectAttempt++;
+  const delay = Math.min(30000, 1500 * Math.pow(1.6, reconnectAttempt));
+  reconnectTimer = setTimeout(()=>{ reconnectTimer=null; if (camera) connectStream(camera); }, delay);
+}
+el.centerRetry.addEventListener("click", ()=>{ if (camera){ reconnectAttempt=0; connectStream(camera); } });
+el.centerSettings.addEventListener("click", ()=>{ if (camPerms(camera).manage) showScreen("camsettings"); });
+
+/* ===================== Viewer open/close ===================== */
+function openViewer(cam){
+  camera = cam;
+  el.camName.textContent = cam.name;
+  audioMuted = true;
+  el.btnAudio.classList.remove("active");
+  streamQuality = "hq";
+  resetZoom();
+  showScreen("viewer");
+  showChrome();
+  detectPtz(cam);
+  reconnectAttempt = 0;
+  connectStream(cam);
+  el.btnQuality.hidden = cam.kind !== "go2rtc";
+  el.menuSiren.hidden = !cam.sirenWebhook;
+  updateMoreVisibility();
+  applyPermissionsUi();
+  el.btnAudio.hidden = false;
+}
+el.backToGallery.addEventListener("click", exitViewer);
+function exitViewer(){ stopStream(); camera = null; showScreen("gallery"); renderGallery(); resetZoom(); hideCenterMsg(); }
+el.centerClose.addEventListener("click", exitViewer);
+el.videoWrap.addEventListener("click", (e)=>{ if (zoomScale>1) return; chromeVisible = !chromeVisible; el.chrome.classList.toggle("hidden", !chromeVisible); });
+function showChrome(){ chromeVisible = true; el.chrome.classList.remove("hidden"); }
+
+/* ===================== Pinch / wheel zoom (full, unstretched view) ===================== */
+let zoomScale = 1, zoomX = 0, zoomY = 0, pinchStartDist = 0, pinchStartScale = 1;
+function activeVideoEl(){ return el.video.style.display!=="none" ? el.video : el.mjpegImg; }
+function applyZoom(){
+  const t = activeVideoEl();
+  t.style.transform = `translate(${zoomX}px, ${zoomY}px) scale(${zoomScale})`;
+}
+function resetZoom(){ zoomScale=1; zoomX=0; zoomY=0; el.video.style.transform=""; el.mjpegImg.style.transform=""; }
+function clampZoom(){ zoomScale = Math.min(4, Math.max(1, zoomScale)); if (zoomScale===1){ zoomX=0; zoomY=0; } }
+el.videoWrap.addEventListener("wheel", (e)=>{
+  e.preventDefault();
+  zoomScale += (e.deltaY<0 ? 0.15 : -0.15);
+  clampZoom(); applyZoom();
+}, { passive:false });
+el.videoWrap.addEventListener("dblclick", ()=>{ resetZoom(); });
+let touchPts = new Map();
+el.videoWrap.addEventListener("pointerdown", (e)=>{ touchPts.set(e.pointerId, {x:e.clientX,y:e.clientY}); if (touchPts.size===2){ const pts=[...touchPts.values()]; pinchStartDist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y); pinchStartScale = zoomScale; } });
+el.videoWrap.addEventListener("pointermove", (e)=>{
+  if (!touchPts.has(e.pointerId)) return;
+  const prev = touchPts.get(e.pointerId);
+  touchPts.set(e.pointerId, {x:e.clientX,y:e.clientY});
+  if (touchPts.size===2){
+    const pts=[...touchPts.values()];
+    const dist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+    if (pinchStartDist>0){ zoomScale = pinchStartScale * (dist/pinchStartDist); clampZoom(); applyZoom(); }
+  } else if (touchPts.size===1 && zoomScale>1){
+    zoomX += e.clientX - prev.x; zoomY += e.clientY - prev.y; applyZoom();
+  }
+});
+["pointerup","pointercancel","pointerleave"].forEach(ev=>el.videoWrap.addEventListener(ev, (e)=>{ touchPts.delete(e.pointerId); if (touchPts.size<2) pinchStartDist=0; }));
+
+/* ===================== PTZ ===================== */
+async function detectPtz(cam){
+  if (!canPtzTalk(cam) || !cam.host){ setPtzVisible(false); return; }
+  const base = go2rtcUrlFor(cam);
+  try{
+    const res = await fetch(`${base}/onvif/capabilities?host=${encodeURIComponent(cam.host)}`);
+    if (!res.ok) throw new Error("no-ptz");
+    const data = await res.json();
+    setPtzVisible(!!(data && data.ptz));
+  } catch(e){ setPtzVisible(false); }
+}
+function setPtzVisible(v){ ptzCapable = v; el.ptz.classList.toggle("show", ptzCapable && camPerms(camera).ptz); }
+async function ptzMove(dir){
+  if (!camera || !ptzCapable || !camPerms(camera).ptz) return;
+  const base = go2rtcUrlFor(camera);
+  try{ await fetch(`${base}/onvif/ptz`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ host: camera.host, action:"move", direction: dir }) }); } catch(e){}
+}
+async function ptzStop(){
+  if (!camera || !ptzCapable || !camPerms(camera).ptz) return;
+  const base = go2rtcUrlFor(camera);
+  try{ await fetch(`${base}/onvif/ptz`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ host: camera.host, action:"stop" }) }); } catch(e){}
+}
+el.ptz.querySelectorAll("button[data-ptz]").forEach(btn=>{
+  const dir = btn.dataset.ptz;
+  const start = e=>{ e.preventDefault(); ptzMove(dir); };
+  const stop = e=>{ e.preventDefault(); ptzStop(); };
+  btn.addEventListener("pointerdown", start);
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev, stop));
+});
+
+/* ===================== Talk ===================== */
+async function startTalk(){
+  if (talkStream || !camera || !canPtzTalk(camera) || !camPerms(camera).audio) return;
+  try{
+    talkStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+    if (pc){
+      talkStream.getAudioTracks().forEach(track=>{
+        const sender = pc.getSenders().find(s=>s.track && s.track.kind==="audio");
+        if (sender) sender.replaceTrack(track); else pc.addTrack(track, talkStream);
+      });
+    }
+    el.btnTalk.classList.add("pressed");
+    el.statusLine.textContent = "Talking…";
+    el.statusLine.classList.add("show");
+  } catch(e){ toast("Microphone unavailable"); }
+}
+function stopTalk(){
+  if (talkStream){ talkStream.getTracks().forEach(t=>t.stop()); talkStream=null; }
+  el.btnTalk.classList.remove("pressed");
+  el.statusLine.classList.remove("show");
+}
+el.btnTalk.addEventListener("pointerdown", e=>{ e.preventDefault(); startTalk(); });
+["pointerup","pointerleave","pointercancel"].forEach(ev=>el.btnTalk.addEventListener(ev, stopTalk));
+
+/* ===================== Audio / snapshot / fullscreen ===================== */
+el.btnAudio.addEventListener("click", ()=>{ audioMuted = !audioMuted; el.video.muted = audioMuted; el.btnAudio.classList.toggle("active", audioMuted); });
+/* Viewer "more" menu (uncertain/less-common controls: siren, AI) */
+function closeMoreMenu(){ el.moreMenu.classList.remove("show"); }
+function toggleMoreMenu(){
+  if (el.moreMenu.classList.contains("show")){ closeMoreMenu(); return; }
+  const r = el.btnMore.getBoundingClientRect();
+  el.moreMenu.style.top = "";
+  el.moreMenu.style.bottom = (window.innerHeight - r.top + 8) + "px";
+  el.moreMenu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 172)) + "px";
+  el.moreMenu.classList.add("show");
+}
+function updateMoreVisibility(){ el.btnMore.hidden = el.menuSiren.hidden && el.menuAi.hidden; }
+el.btnMore.addEventListener("click", toggleMoreMenu);
+document.addEventListener("click", (e)=>{ if (!el.moreMenu.contains(e.target) && !el.btnMore.contains(e.target)) closeMoreMenu(); });
+
+el.btnQuality.addEventListener("click", ()=>{
+  if (!camera || camera.kind !== "go2rtc") return;
+  streamQuality = streamQuality === "hq" ? "lq" : "hq";
+  el.btnQuality.querySelector(".glyph").textContent = streamQuality.toUpperCase();
+  el.btnQuality.classList.toggle("active", streamQuality==="lq");
+  toast(streamQuality === "lq" ? "Low quality — lighter on slow connections" : "High quality");
+  reconnectAttempt = 0;
+  connectStream(camera);
+});
+el.menuSiren.addEventListener("click", async ()=>{
+  closeMoreMenu();
+  if (!camera || !camera.sirenWebhook) return;
+  toast("Triggering siren…");
+  try{ await fetch(camera.sirenWebhook, { method:"POST" }); toast("Siren triggered"); }
+  catch(e){ toast("Siren request failed"); }
+});
+el.btnSnapshot.addEventListener("click", ()=>{
+  try{
+    const source = el.video.style.display!=="none" ? el.video : el.mjpegImg;
+    const w = source.videoWidth || source.naturalWidth, h = source.videoHeight || source.naturalHeight;
+    if (!w){ toast("No frame available"); return; }
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    canvas.getContext("2d").drawImage(source, 0, 0, w, h);
+    canvas.toBlob(blob=>{
+      if (!blob){ toast("Snapshot failed"); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `${(camera&&camera.name)||"camera"}-${Date.now()}.png`;
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 4000);
+      toast("Snapshot saved");
+    }, "image/png");
+  } catch(e){ toast("Snapshot failed"); }
+});
+el.btnFullscreen.addEventListener("click", async ()=>{
+  const on = el.btnFullscreen.classList.toggle("fullscreen-active");
+  $("viewer-screen").classList.toggle("pseudo-fullscreen", on);
+  try{
+    if (on && !document.fullscreenElement) await $("viewer-screen").requestFullscreen();
+    else if (!on && document.fullscreenElement) await document.exitFullscreen();
+  } catch(e){ /* CSS fullscreen fallback already applied — no error shown */ }
+});
+document.addEventListener("fullscreenchange", ()=>{
+  if (!document.fullscreenElement){ el.btnFullscreen.classList.remove("fullscreen-active"); $("viewer-screen").classList.remove("pseudo-fullscreen"); }
+});
+
+/* ===================== App settings screen ===================== */
+el.settingsClose.addEventListener("click", ()=>showScreen(camera ? "viewer" : "gallery"));
+function applyTheme(mode){
+  if (mode==="system") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", mode);
+  el.themeSeg.querySelectorAll("button").forEach(b=>b.classList.toggle("active", b.dataset.theme===mode));
+  localStorage.setItem("warden-theme", mode);
+}
+el.themeSeg.querySelectorAll("button").forEach(b=>b.addEventListener("click", ()=>applyTheme(b.dataset.theme)));
+
+/* ===================== Cloud backup (optional, client-driven) ===================== */
+async function loadCloudSettings(){
+  const rec = await storeGet("meta","cloud");
+  const enabled = !!(rec && rec.enabled);
+  el.cloudToggle.classList.toggle("on", enabled);
+  el.cloudFields.style.display = enabled ? "flex" : "none";
+  el.cloudEndpoint.value = rec ? (rec.endpoint||"") : "";
+  el.cloudInterval.value = rec ? (rec.interval||300000) : 300000;
+  if (rec && rec.encryptedToken) el.cloudToken.placeholder = "•••• saved ••••";
+  const provider = rec ? (rec.provider||"custom") : "custom";
+  el.cloudProviderSeg.querySelectorAll("button").forEach(b=>b.classList.toggle("active", b.dataset.provider===provider));
+  el.cloudCustomFields.style.display = provider==="nextcloud" ? "none" : "";
+  el.cloudNcFields.style.display = provider==="nextcloud" ? "" : "none";
+  el.ncServer.value = rec ? (rec.ncServer||"") : "";
+  el.ncUser.value = rec ? (rec.ncUser||"") : "";
+  if (rec && rec.encryptedNcPass) el.ncPass.placeholder = "•••• saved ••••";
+  if (enabled) startCloudBackup(rec.interval||300000);
+}
+async function saveCloudSettings(){
+  const enabled = el.cloudToggle.classList.contains("on");
+  const rec = await storeGet("meta","cloud") || { id:"cloud" };
+  rec.enabled = enabled;
+  rec.endpoint = el.cloudEndpoint.value.trim();
+  rec.interval = parseInt(el.cloudInterval.value, 10);
+  rec.provider = el.cloudProviderSeg.querySelector("button.active") ? el.cloudProviderSeg.querySelector("button.active").dataset.provider : "custom";
+  rec.ncServer = el.ncServer.value.trim();
+  rec.ncUser = el.ncUser.value.trim();
+  if (el.cloudToken.value) rec.encryptedToken = await encryptText(el.cloudToken.value);
+  if (el.ncPass.value) rec.encryptedNcPass = await encryptText(el.ncPass.value);
+  await storePut("meta", rec);
+  stopCloudBackup();
+  ncFolderReady = false;
+  if (enabled && (rec.endpoint || rec.ncServer)) startCloudBackup(rec.interval);
+}
+el.cloudToggle.addEventListener("click", async ()=>{
+  el.cloudToggle.classList.toggle("on");
+  el.cloudFields.style.display = el.cloudToggle.classList.contains("on") ? "flex" : "none";
+  await saveCloudSettings();
+});
+[el.cloudEndpoint, el.cloudToken, el.cloudInterval, el.ncServer, el.ncUser, el.ncPass].forEach(input=>input.addEventListener("change", saveCloudSettings));
+function startCloudBackup(interval){ stopCloudBackup(); cloudTimer = setInterval(runCloudBackup, interval); }
+function stopCloudBackup(){ if (cloudTimer){ clearInterval(cloudTimer); cloudTimer=null; } }
+let ncFolderReady = false;
+async function ensureNcFolder(ncServer, ncUser, ncPass){
+  if (ncFolderReady) return;
+  const url = `${ncServer.replace(/\/$/,"")}/remote.php/dav/files/${encodeURIComponent(ncUser)}/Warden`;
+  try{ await fetch(url, { method:"MKCOL", headers:{ "Authorization":"Basic "+btoa(`${ncUser}:${ncPass}`) } }); } catch(e){}
+  ncFolderReady = true;
+}
+async function runCloudBackup(){
+  const rec = await storeGet("meta","cloud");
+  if (!rec || !rec.enabled) return;
+  const isNc = rec.provider === "nextcloud";
+  if (isNc && (!rec.ncServer || !rec.ncUser)) return;
+  if (!isNc && !rec.endpoint) return;
+  const token = rec.encryptedToken ? await decryptText(rec.encryptedToken) : "";
+  const ncPass = rec.encryptedNcPass ? await decryptText(rec.encryptedNcPass) : "";
+  if (isNc) await ensureNcFolder(rec.ncServer, rec.ncUser, ncPass);
+  const headersBase = {};
+  if (token) headersBase["Authorization"] = "Bearer " + token;
+  for (const cam of cameras){
+    if (cam.kind !== "go2rtc") continue;
+    try{
+      const base = go2rtcUrlFor(cam);
+      const imgRes = await fetch(`${base}/api/frame.jpeg?src=${encodeURIComponent(cam.stream)}`);
+      if (!imgRes.ok) continue;
+      const blob = await imgRes.blob();
+      if (isNc){
+        const fname = `${cam.name.replace(/[^a-z0-9_-]+/gi,"_")}-${Date.now()}.jpg`;
+        const url = `${rec.ncServer.replace(/\/$/,"")}/remote.php/dav/files/${encodeURIComponent(rec.ncUser)}/Warden/${fname}`;
+        await fetch(url, { method:"PUT", headers:{ "Authorization":"Basic "+btoa(`${rec.ncUser}:${ncPass}`), "Content-Type":"image/jpeg" }, body: blob });
+      } else {
+        const headers = Object.assign({ "Content-Type": "image/jpeg", "X-Camera-Name": cam.name, "X-Camera-Id": cam.id }, headersBase);
+        await fetch(rec.endpoint, { method:"POST", headers, body: blob });
+      }
+    } catch(e){ /* best-effort */ }
+  }
+}
+
+/* ===================== Account backup/restore (passphrase-encrypted, WebDAV) ===================== */
+function ncFileUrl(server,user,filename){ return `${server.replace(/\/$/,"")}/remote.php/dav/files/${encodeURIComponent(user)}/Warden/${filename}`; }
+async function cloudPutText(server,user,pass,filename,text){
+  await ensureNcFolder(server,user,pass);
+  const res = await fetch(ncFileUrl(server,user,filename), { method:"PUT", headers:{ "Authorization":"Basic "+btoa(`${user}:${pass}`), "Content-Type":"text/plain" }, body:text });
+  return res.ok;
+}
+async function cloudGetText(server,user,pass,filename){
+  const res = await fetch(ncFileUrl(server,user,filename), { headers:{ "Authorization":"Basic "+btoa(`${user}:${pass}`) } });
+  if (!res.ok) throw new Error("not found");
+  return res.text();
+}
+async function encryptWithPassphrase(text, passphrase){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(passphrase), {name:"PBKDF2"}, false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations:100000, hash:"SHA-256"}, keyMaterial, {name:"AES-GCM", length:256}, false, ["encrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const buf = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, new TextEncoder().encode(text));
+  return JSON.stringify({ salt:Array.from(salt), iv:Array.from(iv), data:Array.from(new Uint8Array(buf)) });
+}
+async function decryptWithPassphrase(payloadText, passphrase){
+  const payload = JSON.parse(payloadText);
+  const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(passphrase), {name:"PBKDF2"}, false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey({name:"PBKDF2", salt:new Uint8Array(payload.salt), iterations:100000, hash:"SHA-256"}, keyMaterial, {name:"AES-GCM", length:256}, false, ["decrypt"]);
+  const buf = await crypto.subtle.decrypt({name:"AES-GCM", iv:new Uint8Array(payload.iv)}, key, new Uint8Array(payload.data));
+  return new TextDecoder().decode(buf);
+}
+let cloudAuthMode = "backup";
+function openCloudAuth(mode){
+  cloudAuthMode = mode;
+  el.cloudauthError.classList.remove("show");
+  const titleEl = document.querySelector("#cloudauth-overlay .title");
+  const descEl = document.querySelector("#cloudauth-overlay .desc");
+  titleEl.textContent = mode==="backup" ? "Back up accounts to cloud" : "Restore accounts from cloud";
+  descEl.textContent = mode==="backup"
+    ? "Choose a passphrase to encrypt your account list before it uploads. You'll need this exact passphrase to restore it later — Warden can't recover it for you."
+    : "Enter your cloud details and the passphrase you used when backing up.";
+  el.cloudauthOk.textContent = mode==="backup" ? "Back up" : "Restore";
+  storeGet("meta","cloud").then(rec=>{
+    el.cloudauthServer.value = rec ? (rec.ncServer||"") : "";
+    el.cloudauthUser.value = rec ? (rec.ncUser||"") : "";
+  });
+  el.cloudauthPass.value = ""; el.cloudauthPhrase.value = "";
+  el.cloudauthOverlay.classList.add("show");
+}
+el.backupAccountsRow.addEventListener("click", ()=>openCloudAuth("backup"));
+el.restoreAccountsRow.addEventListener("click", ()=>openCloudAuth("restore"));
+el.cloudauthCancel.addEventListener("click", ()=>el.cloudauthOverlay.classList.remove("show"));
+el.cloudauthOk.addEventListener("click", async ()=>{
+  const server = el.cloudauthServer.value.trim();
+  const user = el.cloudauthUser.value.trim();
+  const pass = el.cloudauthPass.value;
+  const phrase = el.cloudauthPhrase.value;
+  el.cloudauthError.classList.remove("show");
+  if (!server || !user || !pass || phrase.length < 6){
+    el.cloudauthError.textContent = "Fill in every field (passphrase min 6 characters).";
+    el.cloudauthError.classList.add("show");
+    return;
+  }
+  try{
+    if (cloudAuthMode === "backup"){
+      const payload = accounts.map(a=>({ id:a.id, username:a.username, saltHex:a.saltHex, hashHex:a.hashHex, isOwner:a.isOwner, permissions:a.permissions, sharedCameraIds:a.sharedCameraIds, recoverySaltHex:a.recoverySaltHex, recoveryHashHex:a.recoveryHashHex, createdAt:a.createdAt }));
+      const enc = await encryptWithPassphrase(JSON.stringify(payload), phrase);
+      const ok = await cloudPutText(server, user, pass, "accounts.enc", enc);
+      if (!ok) throw new Error("upload failed");
+      el.cloudauthOverlay.classList.remove("show");
+      toast("Accounts backed up");
+    } else {
+      const enc = await cloudGetText(server, user, pass, "accounts.enc");
+      const json = await decryptWithPassphrase(enc, phrase);
+      const restored = JSON.parse(json);
+      for (const a of restored) await storePut("accounts", a);
+      accounts = await storeAll("accounts");
+      el.cloudauthOverlay.classList.remove("show");
+      toast("Accounts restored");
+      if (!currentUser){ authTab = "login"; renderAuth(); }
+    }
+  } catch(e){
+    el.cloudauthError.textContent = "Couldn't reach the cloud, or the passphrase was wrong.";
+    el.cloudauthError.classList.add("show");
+  }
+});
+
+/* ===================== TOTP (FOSS, self-contained HMAC-SHA1) ===================== */
+function base32Encode(bytes){
+  const A="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; let bits="",out="";
+  for (const b of bytes) bits += b.toString(2).padStart(8,"0");
+  for (let i=0;i+5<=bits.length;i+=5) out += A[parseInt(bits.substr(i,5),2)];
+  const rem = bits.length % 5;
+  if (rem) out += A[parseInt(bits.substr(bits.length-rem).padEnd(5,"0"),2)];
+  return out;
+}
+function base32Decode(str){
+  const A="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; str=(str||"").replace(/=+$/,"").toUpperCase(); let bits="";
+  for (const c of str){ const v=A.indexOf(c); if (v<0) continue; bits += v.toString(2).padStart(5,"0"); }
+  const bytes=[]; for (let i=0;i+8<=bits.length;i+=8) bytes.push(parseInt(bits.substr(i,8),2));
+  return new Uint8Array(bytes);
+}
+async function totpCode(secretBytes, offsetSteps){
+  const counter = Math.floor(Date.now()/1000/30) + offsetSteps;
+  const buf = new ArrayBuffer(8); const view = new DataView(buf);
+  view.setUint32(0, Math.floor(counter/2**32)); view.setUint32(4, counter>>>0);
+  const key = await crypto.subtle.importKey("raw", secretBytes, {name:"HMAC", hash:"SHA-1"}, false, ["sign"]);
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, buf));
+  const off = sig[sig.length-1] & 0xf;
+  const code = ((sig[off]&0x7f)<<24 | (sig[off+1]&0xff)<<16 | (sig[off+2]&0xff)<<8 | (sig[off+3]&0xff)) % 1000000;
+  return code.toString().padStart(6,"0");
+}
+async function totpVerify(secretB32, token){
+  const bytes = base32Decode(secretB32);
+  for (const d of [-1,0,1]) if ((await totpCode(bytes, d)) === (token||"").trim()) return true;
+  return false;
+}
+let pendingTotpSecret = null;
+async function renderSecuritySettings(){
+  if (!currentUser) return;
+  const has = !!currentUser.encryptedTotpSecret;
+  el.totpToggle.classList.toggle("on", has);
+  el.totpToggle.classList.remove("pending");
+  el.totpFields.style.display = "none";
+  el.passkeyLabel.textContent = currentUser.passkeyId ? "Passkey added — tap to replace" : "Add a passkey";
+}
+el.totpToggle.addEventListener("click", async ()=>{
+  const has = !!(currentUser && currentUser.encryptedTotpSecret);
+  const pendingOpen = el.totpFields.style.display !== "none";
+  if (has){
+    currentUser.encryptedTotpSecret = null;
+    await storePut("accounts", currentUser);
+    el.totpToggle.classList.remove("on","pending");
+    el.totpFields.style.display = "none";
+    pendingTotpSecret = null;
+    toast("Two-factor turned off");
+  } else if (pendingOpen){
+    // toggle tapped again mid-setup — cancel instead of leaving the fields dangling
+    pendingTotpSecret = null;
+    el.totpToggle.classList.remove("pending");
+    el.totpFields.style.display = "none";
+  } else {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    pendingTotpSecret = base32Encode(bytes);
+    el.totpSecret.value = pendingTotpSecret;
+    el.totpCode.value = "";
+    el.totpFields.style.display = "flex";
+    el.totpToggle.classList.add("pending");
+  }
+});
+el.totpCancel.addEventListener("click", ()=>{ pendingTotpSecret = null; el.totpToggle.classList.remove("pending"); el.totpFields.style.display = "none"; });
+el.totpConfirm.addEventListener("click", async ()=>{
+  if (!pendingTotpSecret) return;
+  const ok = await totpVerify(pendingTotpSecret, el.totpCode.value);
+  if (!ok){ toast("Incorrect code"); return; }
+  currentUser.encryptedTotpSecret = await encryptText(pendingTotpSecret);
+  await storePut("accounts", currentUser);
+  pendingTotpSecret = null;
+  el.totpFields.style.display = "none";
+  el.totpToggle.classList.remove("pending");
+  el.totpToggle.classList.add("on");
+  toast("Two-factor enabled");
+});
+
+/* ===================== Passkeys (WebAuthn, open standard, local unlock) ===================== */
+el.passkeyRow.addEventListener("click", async ()=>{
+  if (!window.PublicKeyCredential){ toast("Passkeys aren't supported on this device"); return; }
+  try{
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const cred = await navigator.credentials.create({ publicKey:{
+      challenge, rp:{ name:"Warden" },
+      user:{ id:new TextEncoder().encode(currentUser.id), name:currentUser.username, displayName:currentUser.username },
+      pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],
+      authenticatorSelection:{ userVerification:"preferred" }, timeout:60000
+    }});
+    currentUser.passkeyId = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
+    await storePut("accounts", currentUser);
+    el.passkeyLabel.textContent = "Passkey added — tap to replace";
+    toast("Passkey added");
+  } catch(e){ toast("Passkey setup cancelled"); }
+});
+async function authWithPasskey(acct){
+  try{
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const idBytes = Uint8Array.from(atob(acct.passkeyId), c=>c.charCodeAt(0));
+    await navigator.credentials.get({ publicKey:{ challenge, allowCredentials:[{ id:idBytes, type:"public-key" }], userVerification:"preferred", timeout:60000 } });
+    return true;
+  } catch(e){ return false; }
+}
+
+/* ===================== AI settings (FOSS, OpenAI/Ollama-compatible endpoint) ===================== */
+async function loadAiSettings(){
+  const rec = await storeGet("meta","ai");
+  el.aiEndpoint.value = rec ? (rec.endpoint||"") : "";
+  el.aiModel.value = rec ? (rec.model||"") : "";
+  if (rec && rec.encryptedKey) el.aiKey.placeholder = "•••• saved ••••";
+  el.menuAi.hidden = !(rec && rec.endpoint);
+  updateMoreVisibility();
+}
+async function saveAiSettings(){
+  const rec = await storeGet("meta","ai") || { id:"ai" };
+  rec.endpoint = el.aiEndpoint.value.trim();
+  rec.model = el.aiModel.value.trim();
+  if (el.aiKey.value) rec.encryptedKey = await encryptText(el.aiKey.value);
+  await storePut("meta", rec);
+  el.menuAi.hidden = !rec.endpoint;
+  updateMoreVisibility();
+}
+[el.aiEndpoint, el.aiModel, el.aiKey].forEach(i=>i.addEventListener("change", saveAiSettings));
+el.menuAi.addEventListener("click", async ()=>{
+  closeMoreMenu();
+  const rec = await storeGet("meta","ai");
+  if (!rec || !rec.endpoint){ toast("Set up an AI endpoint in Settings first"); return; }
+  toast("Asking AI…");
+  try{
+    const source = el.video.style.display!=="none" ? el.video : el.mjpegImg;
+    const w = source.videoWidth||source.naturalWidth, h = source.videoHeight||source.naturalHeight;
+    if (!w){ toast("No frame available"); return; }
+    const canvas = document.createElement("canvas"); canvas.width=w; canvas.height=h;
+    canvas.getContext("2d").drawImage(source,0,0,w,h);
+    const dataUrl = canvas.toDataURL("image/jpeg",0.7);
+    const key = rec.encryptedKey ? await decryptText(rec.encryptedKey) : "";
+    const headers = Object.assign({"Content-Type":"application/json"}, key?{Authorization:"Bearer "+key}:{});
+    const res = await fetch(rec.endpoint.replace(/\/$/,"") + "/v1/chat/completions", { method:"POST", headers, body: JSON.stringify({
+      model: rec.model || "llava",
+      messages:[{ role:"user", content:[{type:"text", text:"Describe what you see in this camera frame in one short sentence."},{type:"image_url", image_url:{url:dataUrl}}] }],
+      max_tokens: 80
+    })});
+    const data = await res.json();
+    const text = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    toast(text || "No response from AI endpoint");
+  } catch(e){ toast("AI request failed"); }
+});
+
+/* ===================== Cloud provider switch (Custom/S3 vs Nextcloud WebDAV) ===================== */
+el.cloudProviderSeg.querySelectorAll("button").forEach(b=>b.addEventListener("click", async ()=>{
+  el.cloudProviderSeg.querySelectorAll("button").forEach(x=>x.classList.toggle("active", x===b));
+  const nc = b.dataset.provider === "nextcloud";
+  el.cloudCustomFields.style.display = nc ? "none" : "";
+  el.cloudNcFields.style.display = nc ? "" : "none";
+  await saveCloudSettings();
+}));
+
+/* ===================== Data export (portability) ===================== */
+async function exportAllData(){
+  const cams = await storeAll("cameras");
+  const cloudRec = await storeGet("meta","cloud");
+  const aiRec = await storeGet("meta","ai");
+  const data = {
+    exportedFrom: "Warden",
+    exportedAt: new Date().toISOString(),
+    formatVersion: 1,
+    theme: localStorage.getItem("warden-theme") || "light",
+    cameras: cams,
+    aiSettings: aiRec ? { endpoint: aiRec.endpoint||"", model: aiRec.model||"" } : null,
+    cloudSettings: cloudRec ? { enabled: !!cloudRec.enabled, provider: cloudRec.provider||"custom", endpoint: cloudRec.endpoint||"", interval: cloudRec.interval||300000, ncServer: cloudRec.ncServer||"", ncUser: cloudRec.ncUser||"" } : null,
+    note: "Passwords, TOTP secrets and saved tokens are intentionally excluded from this file. Use Settings → Account backup to migrate logins separately."
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `warden-export-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  toast("Exported — check your downloads");
+}
+el.exportDataRow.addEventListener("click", exportAllData);
+
+async function importAllData(file){
+  try{
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!Array.isArray(data.cameras)) throw new Error("no cameras array");
+    let added = 0, updated = 0;
+    for (const cam of data.cameras){
+      if (!cam || !cam.id) continue;
+      const existing = await storeGet("cameras", cam.id);
+      await storePut("cameras", { ...cam, updatedAt: Date.now() });
+      if (existing) updated++; else added++;
+    }
+    if (data.cloudSettings){
+      const prevCloud = (await storeGet("meta","cloud")) || {};
+      await storePut("meta", { id:"cloud", ...prevCloud, ...data.cloudSettings });
+    }
+    if (data.aiSettings){
+      const prevAi = (await storeGet("meta","ai")) || {};
+      await storePut("meta", { id:"ai", ...prevAi, ...data.aiSettings });
+    }
+    if (data.theme) applyTheme(data.theme);
+    cameras = await storeAll("cameras");
+    renderGallery();
+    toast(`Imported: ${added} added, ${updated} updated`);
+  } catch(e){
+    toast("Couldn't read that file — is it a Warden export?");
+  }
+}
+el.importDataRow.addEventListener("click", ()=>el.importFileInput.click());
+el.importFileInput.addEventListener("change", async ()=>{
+  const file = el.importFileInput.files[0];
+  el.importFileInput.value = "";
+  if (file) await importAllData(file);
+});
+
+/* ===================== Danger zone ===================== */
+el.clearDataRow.addEventListener("click", ()=>{
+  el.confirmTitle.textContent = "Clear all data?";
+  el.confirmDesc.textContent = "Removes every camera, account and setting from this device. This cannot be undone.";
+  el.confirmOverlay.classList.add("show");
+  el.confirmOk.onclick = async ()=>{
+    el.confirmOverlay.classList.remove("show");
+    const db = await openDb();
+    for (const store of ["cameras","accounts","meta"]){
+      await new Promise(res=>{ const tx=db.transaction(store,"readwrite"); tx.objectStore(store).clear(); tx.oncomplete=res; });
+    }
+    localStorage.removeItem("warden-theme");
+    location.reload();
+  };
+});
+el.deleteAccountRow.addEventListener("click", ()=>{
+  el.confirmTitle.textContent = "Delete your account?";
+  el.confirmDesc.textContent = "Removes your login and every camera you added on this device. Cameras others shared with you stay with them. This cannot be undone.";
+  el.confirmOverlay.classList.add("show");
+  el.confirmOk.onclick = async ()=>{
+    el.confirmOverlay.classList.remove("show");
+    if (!currentUser) return;
+    const uid = currentUser.id;
+    await storeDel("accounts", uid);
+    const allCams = await storeAll("cameras");
+    for (const cam of allCams){
+      if (camOwnerId(cam) === uid){ await storeDel("cameras", cam.id); }
+      else if ((cam.sharedWith||[]).some(s=>s.accountId===uid)){
+        cam.sharedWith = cam.sharedWith.filter(s=>s.accountId!==uid);
+        await storePut("cameras", cam);
+      }
+    }
+    localStorage.removeItem("warden-remember-account");
+    location.reload();
+  };
+});
+
+/* ===================== Info bubbles (click-to-view) ===================== */
+const INFO_TEXT = {
+  automation: ["Automation webhook","Fired when you tap \"Run automation\" in this camera's settings. Works with any NVR/hub that accepts an HTTP trigger — Frigate, Home Assistant, Node-RED, etc."],
+  playback: ["Playback source","Works with any FOSS NVR exposing a direct clip or HLS URL — Frigate (/api/<camera>/recordings), ZoneMinder, Shinobi, or a go2rtc VOD path."],
+  backup: ["Account backup","Encrypts every account (name + password hash only, never plain-text) with a passphrase you choose, then uploads it to your cloud endpoint. Lets you recover your login list on a new device."],
+  security: ["Security","TOTP is required at every sign-in on top of your password once enabled. Passkeys use your device's built-in biometrics/PIN (WebAuthn, an open standard) as a quick unlock."],
+  ai: ["Automation & AI","Powers the \"Ask AI\" button in the viewer (asks a self-hosted vision model to describe the frame) and camera automation webhooks. Nothing leaves your network unless you point it somewhere else."],
+  cloud: ["Cloud backup","Stays fully offline until enabled. Sends a periodic snapshot per camera to the endpoint you set, only while this tab is open. For continuous recording that survives the app being closed, run go2rtc/Frigate on a server you control and push clips out with rclone — see the Help screen for details."],
+  data: ["Export & import","Export gives you a plain JSON file of your cameras and settings so you can move to any other tool, or back it up. Import reads that same file back in — existing cameras with matching IDs are updated, everything else is added alongside what you already have. Passwords and TOTP secrets are never included — everything else lives only on this device, and these buttons are the only way any of it is removed."]
+};
+document.addEventListener("click", (e)=>{
+  const btn = e.target.closest(".info-bubble");
+  if (!btn) return;
+  if (btn.closest("summary")) e.preventDefault(); // don't also toggle the parent <details>
+  const key = btn.dataset.info;
+  const info = INFO_TEXT[key];
+  if (!info) return;
+  el.infoPopTitle.textContent = info[0];
+  el.infoPopDesc.textContent = info[1];
+  el.infoPopOverlay.classList.add("show");
+});
+el.infoPopClose.addEventListener("click", ()=>el.infoPopOverlay.classList.remove("show"));
+el.infoPopOverlay.addEventListener("click", (e)=>{ if (e.target===el.infoPopOverlay) el.infoPopOverlay.classList.remove("show"); });
+
+/* ===================== Help modal ===================== */
+el.openHelp.addEventListener("click", ()=>el.helpOverlay.classList.add("show"));
+el.helpClose.addEventListener("click", ()=>el.helpOverlay.classList.remove("show"));
+
+/* ===================== Guided walkthrough ===================== */
+function wtStepTargets(){
+  return [
+    { el: ()=>document.querySelector(".add-tile") || $("empty-add-btn"), title:"Add a camera", desc:"Tap here to connect your first camera — pick a source type from the dropdown, then fill in only what's needed." },
+    { el: ()=>document.querySelector(".cam-tile"), title:"Open a camera", desc:"Tap any camera tile to watch its live feed full-screen." },
+    { el: ()=>el.openHelp, title:"Help, anytime", desc:"Come back to this Help screen whenever you need it — everything about Warden lives here." },
+    { el: ()=>el.openSettings, title:"Settings", desc:"Theme, security, sharing access with others, and cloud backup all live here. You can log out from your account menu at the top." }
+  ];
+}
+let wtStep = 0, wtSteps = [];
+function wtPosition(){
+  const step = wtSteps[wtStep];
+  const target = step.el();
+  const card = el.wtCard, ring = el.wtRing;
+  if (!target){ wtNext(); return; }
+  const r = target.getBoundingClientRect();
+  ring.style.top = (r.top-6)+"px"; ring.style.left = (r.left-6)+"px";
+  ring.style.width = (r.width+12)+"px"; ring.style.height = (r.height+12)+"px";
+  el.wtStep.textContent = "Step "+(wtStep+1)+" of "+wtSteps.length;
+  el.wtTitle.textContent = step.title;
+  el.wtDesc.textContent = step.desc;
+  const cardW = 300;
+  let top = r.bottom + 16;
+  if (top + 150 > window.innerHeight) top = Math.max(16, r.top - 166);
+  let left = Math.min(Math.max(16, r.left), window.innerWidth - cardW - 16);
+  card.style.top = top+"px"; card.style.left = left+"px";
+  el.wtBack.disabled = wtStep===0;
+  el.wtNext.textContent = wtStep===wtSteps.length-1 ? "Done" : "Next";
+}
+function startWalkthrough(){
+  showScreen("gallery"); renderGallery();
+  wtSteps = wtStepTargets();
+  wtStep = 0;
+  el.wtOverlay.classList.add("show");
+  requestAnimationFrame(wtPosition);
+}
+function wtNext(){
+  if (wtStep >= wtSteps.length-1){ el.wtOverlay.classList.remove("show"); localStorage.setItem("warden-walkthrough-seen","1"); return; }
+  wtStep++; wtPosition();
+}
+function wtBack(){ if (wtStep>0){ wtStep--; wtPosition(); } }
+el.helpStartWalkthrough.addEventListener("click", ()=>{ el.helpOverlay.classList.remove("show"); startWalkthrough(); });
+el.wtNext.addEventListener("click", wtNext);
+el.wtBack.addEventListener("click", wtBack);
+el.wtSkip.addEventListener("click", ()=>{ el.wtOverlay.classList.remove("show"); localStorage.setItem("warden-walkthrough-seen","1"); });
+window.addEventListener("resize", ()=>{ if (el.wtOverlay.classList.contains("show")) wtPosition(); });
+
+/* ===================== Scroll navigator (accessibility, assistive-touch style) ===================== */
+function activeScrollBody(){
+  const overlay = document.querySelector(".help-overlay.show, .wt-overlay.show");
+  if (overlay) return overlay.querySelector(".help-body, .panel-body");
+  const active = document.querySelector(".screen.active");
+  if (!active) return null;
+  return active.querySelector(".gallery-body, .panel-body");
+}
+function scrollNavAvailable(){
+  const body = activeScrollBody();
+  return !!(body && body.scrollHeight - body.clientHeight >= 80);
+}
+function updateScrollNav(){
+  if (!scrollNavAvailable()){ el.scrollNav.classList.remove("show"); setScrollToggleActive(false); return; }
+  const body = activeScrollBody();
+  el.snTop.disabled = body.scrollTop < 20;
+  el.snUp.disabled = body.scrollTop < 20;
+  const atBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 20;
+  el.snBottom.disabled = atBottom;
+  el.snDown.disabled = atBottom;
+}
+function setScrollToggleActive(on){
+  document.querySelectorAll(".scrollnav-toggle").forEach(b=>b.classList.toggle("active", on));
+}
+function toggleScrollNav(){
+  if (!scrollNavAvailable()){ toast("Nothing to scroll on this screen"); return; }
+  const showing = el.scrollNav.classList.toggle("show");
+  setScrollToggleActive(showing);
+  if (showing) updateScrollNav();
+}
+function hideScrollNav(){ el.scrollNav.classList.remove("show"); setScrollToggleActive(false); }
+function scrollBy(amount){ const body = activeScrollBody(); if (body) body.scrollBy({top:amount, behavior:"smooth"}); }
+el.snTop.addEventListener("click", ()=>{ const b=activeScrollBody(); if (b) b.scrollTo({top:0, behavior:"smooth"}); });
+el.snBottom.addEventListener("click", ()=>{ const b=activeScrollBody(); if (b) b.scrollTo({top:b.scrollHeight, behavior:"smooth"}); });
+el.snUp.addEventListener("click", ()=>scrollBy(-260));
+el.snDown.addEventListener("click", ()=>scrollBy(260));
+document.querySelectorAll(".gallery-body, .panel-body, .help-body").forEach(b=>b.addEventListener("scroll", updateScrollNav, {passive:true}));
+window.addEventListener("resize", updateScrollNav);
+// header toggle button on the gallery screen
+el.headerScrollnavToggle && el.headerScrollnavToggle.addEventListener("click", toggleScrollNav);
+// same toggle injected into every panel header (settings, help, camera form, etc.)
+document.querySelectorAll("#settings-screen .panel-header").forEach(h=>{
+  if (h.querySelector(".scrollnav-toggle")) return;
+  const btn = document.createElement("button");
+  btn.className = "icon-btn scrollnav-toggle";
+  btn.setAttribute("aria-label","Scroll navigator");
+  btn.style.marginLeft = "auto";
+  btn.innerHTML = '<span class="glyph" style="font-size:14px;">&#8693;</span>';
+  btn.addEventListener("click", toggleScrollNav);
+  h.appendChild(btn);
+});
+
+/* ===================== Boot ===================== */
+async function boot(){
+  applyTheme(localStorage.getItem("warden-theme") || "light");
+  try{
+    cameras = await storeAll("cameras");
+  } catch(e){ cameras = []; toast("Local storage unavailable"); }
+  await bootAuth();
+  setTimeout(updateScrollNav, 150);
+}
+boot();
+})();
+</script>
+</body>
+</html>
