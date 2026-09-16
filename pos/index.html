@@ -1314,6 +1314,49 @@
             margin-top: 0.1em;
             word-break: break-word;
         }
+        /* Labelled item fields on a gate pass. The label is set apart
+           from the value so a description that happens to read like a
+           place or a vessel name can't be mistaken for one. */
+        .receipt-doc .rd-box-field {
+            font-size: 0.78em;
+            color: #222;
+            margin-top: 0.12em;
+            word-break: break-word;
+            display: flex;
+            gap: 0.35em;
+            align-items: baseline;
+        }
+        .receipt-doc .rd-box-flabel {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.82em;
+            letter-spacing: 0.03em;
+            color: #555;
+            flex: 0 0 auto;
+        }
+        .receipt-doc .rd-box-fval {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .receipt-doc .rd-sub-label {
+            font-weight: 700;
+            color: #555;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.02em;
+        }
+        .receipt-doc .rd-box-idx {
+            font-weight: 800;
+            color: #555;
+        }
+        .receipt-doc .rd-gp-tally {
+            font-size: 0.82em;
+            border-top: 1px solid #000;
+            padding-top: 0.3em;
+            margin-bottom: 0.5em;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
         .receipt-doc .rd-box-qty {
             font-weight: 800;
             font-size: 1.3em;
@@ -2284,14 +2327,21 @@
                 if (el && v[map[id]]) el.textContent = v[map[id]];
             });
         }
+        /* Built-in payment QR, used when no QR has been set in Settings.
+           An admin uploading a file or entering a link in Settings still
+           overrides this — it is only the fallback, so this never
+           silently replaces a QR the yard has deliberately configured. */
+        const DEFAULT_BANK_QR_URL = 'https://i.ibb.co.com/Vrzzhjp/BANGLAQR-20260917-030107-0000.png';
         function applyBankQrImage(v) {
             const img = document.getElementById('bankQrImage');
             const placeholder = document.getElementById('qrPlaceholderContent');
             if (!img || !placeholder) return;
             /* An uploaded image wins over a link when both are present.
                Older saved records only ever had data_url, so reading it
-               first also keeps every existing setting working untouched. */
-            const src = (v && v.data_url) ? v.data_url : ((v && v.url) ? v.url : '');
+               first also keeps every existing setting working untouched.
+               If neither is set, the built-in default above is used. */
+            const src = (v && v.data_url) ? v.data_url :
+                ((v && v.url) ? v.url : DEFAULT_BANK_QR_URL);
             if (src) {
                 /* If a linked image fails to load (bad URL, site down,
                    offline) fall back to the placeholder rather than
@@ -2306,6 +2356,15 @@
                 placeholder.style.display = 'flex';
             }
         }
+        /* Show the built-in default immediately, before (and regardless of
+           whether) app_settings loads. loadAppSettings returns early when
+           the backend client is unavailable, and it never calls
+           applyBankQrImage at all if no bank_qr_image row exists — so
+           without this the default would never be painted and the QR panel
+           would sit empty. A configured QR still overrides it a moment
+           later once settings arrive. */
+        try { applyBankQrImage(null); } catch (_) {}
+
         async function loadAppSettings() {
             if (!sb) return;
             try {
@@ -2851,6 +2910,7 @@
                     submittedAt: row.submitted_at,
                     cashierName: row.cashier_name || '',
                     client: (row.record && row.record.client) || {},
+                    vehicle: (row.record && row.record.vehicle) || null,
                     items: (row.record && row.record.items) || [],
                     payments: (row.record && row.record.payments) || [],
                     reimbursement: (row.record && row.record.reimbursement) || null,
@@ -2887,7 +2947,8 @@
             /* Items table: one row per item, purely item facts. Payment
                and reimbursement info live in the Payments table below —
                not repeated here as a joined string. */
-            const ITEM_EXPORT_HEADERS = ['Receipt ID', 'Date', 'Cashier (Received By)', 'Client', 'Phone', 'Vessel',
+            const ITEM_EXPORT_HEADERS = ['Receipt ID', 'Date', 'Cashier (Received By)', 'Client', 'Phone',
+                'Vehicle Plate', 'Driver Name', 'Driver Phone', 'Vessel',
                 'Item', 'Category', 'Description', 'Quantity', 'Unit', 'Rate (Tk)', 'Amount (Tk)', 'Grand Total (Tk)'
             ];
             function buildItemExportRows(filtered) {
@@ -2898,15 +2959,18 @@
                     const client = r.client || {};
                     const totalCell = totalTkCell(row.total_cents != null ? row.total_cents : 0);
                     const dateStr = formatDateTime(row.submitted_at);
+                    const vh = r.vehicle || {};
+                    const vhCells = [vh.plate || '', vh.driverName || '', vh.driverPhone || ''];
                     if (!items.length) {
                         rows.push([row.receipt_id, dateStr, row.cashier_name || '-', client.name || '-', client.phone || '-',
-                            '-', '-', '', '', '', '', '', '', totalCell
+                            ...vhCells, '-', '-', '', '', '', '', '', '', totalCell
                         ]);
                     } else {
                         items.forEach(it => {
                             rows.push([row.receipt_id, dateStr, row.cashier_name || '-', client.name || '-', client.phone || '-',
-                                it.vessel || '-', it.name || '', it.category || '', it.desc || '', it.qty, it.unit,
-                                (it.rateCents / 100).toFixed(2), (it.amountCents / 100).toFixed(2), totalCell
+                                ...vhCells, it.vessel || '-', it.name || '', it.category || '', it.desc || '', it.qty, it.unit,
+                                Number.isFinite(it.rateCents) ? (it.rateCents / 100).toFixed(2) : '',
+                                Number.isFinite(it.amountCents) ? (it.amountCents / 100).toFixed(2) : '', totalCell
                             ]);
                         });
                     }
@@ -2990,11 +3054,17 @@
                collapse each receipt's detail rows under its banner row
                — genuine spreadsheet subrows, not indentation-as-text. */
             const STATEMENT_SHEET_HEADERS = ['Row Type', 'Receipt ID', 'Date', 'Client', 'Phone', 'Cashier',
+                'Vehicle Plate', 'Driver Name', 'Driver Phone',
                 'Item', 'Category', 'Vessel', 'Description', 'Qty', 'Unit', 'Rate (Tk)', 'Amount (Tk)',
                 'Payment Method', 'Payment Amount (Tk)', 'Payment Fee (Tk)', 'Payment Reference',
                 'Reimb. Bank', 'Reimb. Branch', 'Reimb. Account Name', 'Reimb. Account No', 'Reimb. Routing',
                 'Reimb. Cheque No', 'Reimb. Payee', 'Reimb. PO No', 'Reimb. Handed To', 'Grand Total (Tk)'
             ];
+            /* Column indexes are derived from the header list rather than
+               hard-coded, so adding a column here can never silently
+               desync the row writers below from the headers above. */
+            const SSC = {};
+            STATEMENT_SHEET_HEADERS.forEach((h, i) => { SSC[h] = i; });
             const SS_COLS = STATEMENT_SHEET_HEADERS.length;
             function ssBlankRow() { return new Array(SS_COLS).fill(''); }
             function tkNum(cents) { return Number.isFinite(cents) ? Math.round(cents) / 100 : ''; }
@@ -3006,8 +3076,8 @@
                 const aoa = [STATEMENT_SHEET_HEADERS.slice()];
                 const levels = [0];
                 const grandRow = ssBlankRow();
-                grandRow[0] = 'GRAND TOTAL — ALL RECEIPTS';
-                grandRow[27] = tkTotalNum(filtered.reduce((s, row) => s + (row.total_cents || 0), 0));
+                grandRow[SSC['Row Type']] = 'GRAND TOTAL — ALL RECEIPTS';
+                grandRow[SSC['Grand Total (Tk)']] = tkTotalNum(filtered.reduce((s, row) => s + (row.total_cents || 0), 0));
                 aoa.push(grandRow);
                 levels.push(0);
                 aoa.push(ssBlankRow());
@@ -3018,40 +3088,44 @@
                     const items = r.items || [];
                     const payments = r.payments || [];
                     const client = r.client || {};
+                    const vh = r.vehicle || {};
                     const dateStr = formatDateTime(row.submitted_at);
                     const totalNum = tkTotalNum(row.total_cents != null ? row.total_cents : 0);
 
                     const banner = ssBlankRow();
-                    banner[0] = 'Receipt';
-                    banner[1] = row.receipt_id;
-                    banner[2] = dateStr;
-                    banner[3] = client.name || '-';
-                    banner[4] = client.phone || '-';
-                    banner[5] = row.cashier_name || '-';
-                    banner[27] = totalNum;
+                    banner[SSC['Row Type']] = 'Receipt';
+                    banner[SSC['Receipt ID']] = row.receipt_id;
+                    banner[SSC['Date']] = dateStr;
+                    banner[SSC['Client']] = client.name || '-';
+                    banner[SSC['Phone']] = client.phone || '-';
+                    banner[SSC['Cashier']] = row.cashier_name || '-';
+                    banner[SSC['Vehicle Plate']] = vh.plate || '';
+                    banner[SSC['Driver Name']] = vh.driverName || '';
+                    banner[SSC['Driver Phone']] = vh.driverPhone || '';
+                    banner[SSC['Grand Total (Tk)']] = totalNum;
                     aoa.push(banner);
                     levels.push(0);
 
                     if (!items.length) {
                         const ir = ssBlankRow();
-                        ir[0] = 'Item';
-                        ir[1] = row.receipt_id;
-                        ir[6] = '(no items recorded)';
+                        ir[SSC['Row Type']] = 'Item';
+                        ir[SSC['Receipt ID']] = row.receipt_id;
+                        ir[SSC['Item']] = '(no items recorded)';
                         aoa.push(ir);
                         levels.push(1);
                     } else {
                         items.forEach(it => {
                             const ir = ssBlankRow();
-                            ir[0] = 'Item';
-                            ir[1] = row.receipt_id;
-                            ir[6] = it.name || '';
-                            ir[7] = it.category || '';
-                            ir[8] = it.vessel || '';
-                            ir[9] = it.desc || '';
-                            ir[10] = it.qty != null ? it.qty : '';
-                            ir[11] = it.unit || '';
-                            ir[12] = tkNum(it.rateCents);
-                            ir[13] = tkNum(it.amountCents);
+                            ir[SSC['Row Type']] = 'Item';
+                            ir[SSC['Receipt ID']] = row.receipt_id;
+                            ir[SSC['Item']] = it.name || '';
+                            ir[SSC['Category']] = it.category || '';
+                            ir[SSC['Vessel']] = it.vessel || '';
+                            ir[SSC['Description']] = it.desc || '';
+                            ir[SSC['Qty']] = it.qty != null ? it.qty : '';
+                            ir[SSC['Unit']] = it.unit || '';
+                            ir[SSC['Rate (Tk)']] = tkNum(it.rateCents);
+                            ir[SSC['Amount (Tk)']] = tkNum(it.amountCents);
                             aoa.push(ir);
                             levels.push(1);
                         });
@@ -3059,21 +3133,21 @@
 
                     if (!payments.length) {
                         const pr = ssBlankRow();
-                        pr[0] = 'Payment';
-                        pr[1] = row.receipt_id;
-                        pr[14] = '(no payments recorded)';
+                        pr[SSC['Row Type']] = 'Payment';
+                        pr[SSC['Receipt ID']] = row.receipt_id;
+                        pr[SSC['Payment Method']] = '(no payments recorded)';
                         aoa.push(pr);
                         levels.push(1);
                     } else {
                         payments.forEach(p => {
                             const fee = calcFee(p.amountCents || 0, p.method);
                             const pr = ssBlankRow();
-                            pr[0] = 'Payment';
-                            pr[1] = row.receipt_id;
-                            pr[14] = p.method || '-';
-                            pr[15] = tkNum(p.amountCents);
-                            pr[16] = tkNum(fee);
-                            pr[17] = p.ref ? p.ref.trim() : '';
+                            pr[SSC['Row Type']] = 'Payment';
+                            pr[SSC['Receipt ID']] = row.receipt_id;
+                            pr[SSC['Payment Method']] = p.method || '-';
+                            pr[SSC['Payment Amount (Tk)']] = tkNum(p.amountCents);
+                            pr[SSC['Payment Fee (Tk)']] = tkNum(fee);
+                            pr[SSC['Payment Reference']] = p.ref ? p.ref.trim() : '';
                             aoa.push(pr);
                             levels.push(1);
                         });
@@ -3082,27 +3156,27 @@
                     if (r.reimbursement && r.reimbursement.amountCents) {
                         const d = r.reimbursement.details || {};
                         const rr = ssBlankRow();
-                        rr[0] = 'Reimbursement';
-                        rr[1] = row.receipt_id;
-                        rr[14] = r.reimbursement.method || '-';
-                        rr[15] = tkNum(r.reimbursement.amountCents);
-                        rr[18] = d.bank || '';
-                        rr[19] = d.branch || '';
-                        rr[20] = d.accountName || '';
-                        rr[21] = d.accountNo || '';
-                        rr[22] = d.routing || '';
-                        rr[23] = d.chequeNo || '';
-                        rr[24] = d.payee || '';
-                        rr[25] = d.poNo || '';
-                        rr[26] = d.handedTo || '';
+                        rr[SSC['Row Type']] = 'Reimbursement';
+                        rr[SSC['Receipt ID']] = row.receipt_id;
+                        rr[SSC['Payment Method']] = r.reimbursement.method || '-';
+                        rr[SSC['Payment Amount (Tk)']] = tkNum(r.reimbursement.amountCents);
+                        rr[SSC['Reimb. Bank']] = d.bank || '';
+                        rr[SSC['Reimb. Branch']] = d.branch || '';
+                        rr[SSC['Reimb. Account Name']] = d.accountName || '';
+                        rr[SSC['Reimb. Account No']] = d.accountNo || '';
+                        rr[SSC['Reimb. Routing']] = d.routing || '';
+                        rr[SSC['Reimb. Cheque No']] = d.chequeNo || '';
+                        rr[SSC['Reimb. Payee']] = d.payee || '';
+                        rr[SSC['Reimb. PO No']] = d.poNo || '';
+                        rr[SSC['Reimb. Handed To']] = d.handedTo || '';
                         aoa.push(rr);
                         levels.push(1);
                     }
 
                     const totalRow = ssBlankRow();
-                    totalRow[0] = 'Total';
-                    totalRow[1] = row.receipt_id;
-                    totalRow[27] = totalNum;
+                    totalRow[SSC['Row Type']] = 'Total';
+                    totalRow[SSC['Receipt ID']] = row.receipt_id;
+                    totalRow[SSC['Grand Total (Tk)']] = totalNum;
                     aoa.push(totalRow);
                     levels.push(1);
 
@@ -3111,11 +3185,15 @@
                 });
                 return { aoa, levels };
             }
-            const STATEMENT_SHEET_COL_WIDTHS = [{ wch: 15 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 14 },
-                { wch: 16 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 24 }, { wch: 8 }, { wch: 8 }, { wch: 11 },
-                { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 16 },
-                { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }
-            ];
+            /* Widths are generated from the header list so this array can
+               never fall out of step with the columns again. */
+            const STATEMENT_SHEET_COL_WIDTHS = STATEMENT_SHEET_HEADERS.map(h => {
+                if (h === 'Description') return { wch: 26 };
+                if (h === 'Row Type' || h === 'Receipt ID' || h === 'Date') return { wch: 17 };
+                if (h === 'Client' || h === 'Cashier' || h === 'Item') return { wch: 20 };
+                if (h === 'Qty' || h === 'Unit') return { wch: 8 };
+                return { wch: 15 };
+            });
             function writeStatementWorkbook(filtered, filename) {
                 const { aoa, levels } = buildStatementSheetRows(filtered);
                 const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -3493,10 +3571,19 @@
                 const bodyRows = rows.map(r => {
                     const items = r.items || [];
                     const client = r.client || {};
+                    /* Vehicle/driver are captured on the sale but were
+                       never shown on any statement — included here so the
+                       statement carries every non-derived field the
+                       record holds. */
+                    const vh = r.vehicle || {};
+                    const vhBits = [vh.plate ? 'Vehicle: ' + vh.plate : '',
+                        vh.driverName ? 'Driver: ' + vh.driverName : '',
+                        vh.driverPhone ? '(' + vh.driverPhone + ')' : ''].filter(Boolean).join(' ');
                     const banner = `<tr class="stmt-receipt-row"><td colspan="${STMT_ITEM_COLS}">
                         Receipt ${escapeHtml(r.receiptId)} &nbsp;·&nbsp; ${escapeHtml(formatDateTime(new Date(r.submittedAt)))}
                         &nbsp;·&nbsp; Client: ${escapeHtml(client.name || '-')} (${escapeHtml(client.phone || '-')})
                         ${r.cashierName ? '&nbsp;·&nbsp; Received by: ' + escapeHtml(r.cashierName) : ''}
+                        ${vhBits ? '<br>' + escapeHtml(vhBits) : ''}
                     </td></tr>`;
                     const itemRows = items.length ? items.map(it => `<tr class="stmt-item-row">
                         <td class="stmt-indent">${escapeHtml(it.name || '-')}</td>
@@ -4690,21 +4777,28 @@
             /* Same "one row per item" structure as the admin statement,
                minus prices (this is the cashier's price-free gate-pass
                log, not a financial document). */
-            const STMT_LOCAL_COLS = 5;
+            const STMT_LOCAL_COLS = 6;
             function buildLocalStatementHtml() {
                 const rows = sharedTodayList;
                 const now = new Date();
                 const bodyRows = rows.map(r => {
                     const items = r.items || [];
                     const client = r.client || {};
+                    const vh = r.vehicle || {};
+                    const vhBits = [vh.plate ? 'Vehicle: ' + vh.plate : '',
+                        vh.driverName ? 'Driver: ' + vh.driverName : '',
+                        vh.driverPhone ? '(' + vh.driverPhone + ')' : ''].filter(Boolean).join(' ');
                     const banner = `<tr class="stmt-receipt-row"><td colspan="${STMT_LOCAL_COLS}">
                         Receipt ${escapeHtml(r.receiptId)} &nbsp;·&nbsp; ${escapeHtml(formatYardTime(r.submittedAt))}
                         &nbsp;·&nbsp; Client: ${escapeHtml(client.name || '-')} (${escapeHtml(client.phone || '-')})
+                        ${r.cashier ? '&nbsp;·&nbsp; Received by: ' + escapeHtml(r.cashier) : ''}
+                        ${vhBits ? '<br>' + escapeHtml(vhBits) : ''}
                     </td></tr>`;
                     const itemRows = items.length ? items.map(it => `<tr class="stmt-item-row">
                         <td class="stmt-indent">${escapeHtml(it.name || '-')}</td>
                         <td>${escapeHtml(it.category || '-')}</td>
                         <td>${escapeHtml(it.vessel || '-')}</td>
+                        <td>${escapeHtml(it.desc || '-')}</td>
                         <td class="num">${escapeHtml(it.qty != null ? String(it.qty) : '-')}</td>
                         <td>${escapeHtml(it.unit || '-')}</td>
                     </tr>`).join('') :
@@ -4726,7 +4820,7 @@
                     </div>
                     <table class="stmt-table">
                         <thead><tr>
-                            <th>Item</th><th>Category</th><th>Vessel</th><th class="num">Qty</th><th>Unit</th>
+                            <th>Item</th><th>Category</th><th>Vessel</th><th>Description</th><th class="num">Qty</th><th>Unit</th>
                         </tr></thead>
                         <tbody>${bodyRows}</tbody>
                     </table>
@@ -4786,11 +4880,11 @@
            for anyone who wants the older entries. Bump APP_VERSION and
            add a new entry at the TOP of CHANGELOG (moving the previous
            WHATS_NEW.items into history) every time this file ships. ── */
-        window.APP_VERSION = '1.6.1';
+        window.APP_VERSION = '1.7.1';
         window.WHATS_NEW = {
             version: window.APP_VERSION,
             items: [
-                'The Filer Panel\'s data source (get-today-history) is now deployed and confirmed working end-to-end — Filer accounts can see the day\'s transactions in full detail.'
+                'The payment QR code is now built into the app, so the Bank/QR panel shows it without any setup. An admin can still replace it at any time from Settings — an uploaded file or a link entered there always takes precedence over the built-in one.'
             ]
         };
         /* Older entries, most recent first. Kept short — this is a
@@ -6265,34 +6359,64 @@
             const fontPx = computePrintFontPx(items.length);
             const rootStyle = `font-size:${fontPx}px`;
 
+            /* Every non-price field is labelled here too, for the same
+               reason as the gate pass: an unlabelled description line
+               sitting under an unlabelled vessel line is ambiguous on a
+               printed page. Applies to the priced copy as well — nothing
+               is dropped from either, the priced one just adds rate and
+               amount on top. */
+            const itField = (label, value) => value ?
+                `<span class="rd-item-sub"><span class="rd-sub-label">${escapeHtml(label)}:</span> ${escapeHtml(value)}</span>` : '';
             let itemsHtml = '<table class="rd-items">' + items.map(it => {
-                const cat = it.category ? `<span class="rd-item-sub">Category: ${escapeHtml(it.category)}</span>` : '';
-                const vessel = it.vessel ? `<span class="rd-item-sub">Vessel: ${escapeHtml(it.vessel)}</span>` : '';
-                const desc = it.desc ? `<span class="rd-item-sub">${escapeHtml(it.desc)}</span>` : '';
+                const cat = itField('Category', it.category);
+                const vessel = itField('Vessel', it.vessel);
+                const desc = itField('Description', it.desc);
+                const qtyStr = `${escapeHtml(it.qty != null ? String(it.qty) : '-')} ${escapeHtml(it.unit || '')}`;
                 if (isGatePass || hidePrices) {
-                    return `<tr><td><span class="rd-item-name">${escapeHtml(it.name)}</span>${cat}${vessel}${desc}</td><td class="rd-qty">${escapeHtml(String(it.qty))} ${escapeHtml(it.unit)}</td></tr>`;
+                    return `<tr><td><span class="rd-item-name">${escapeHtml(it.name || '-')}</span>${cat}${vessel}${desc}</td><td class="rd-qty">${qtyStr}</td></tr>`;
                 }
-                return `<tr><td><span class="rd-item-name">${escapeHtml(it.name)}</span>${cat}${vessel}${desc}<span class="rd-item-sub">${escapeHtml(String(it.qty))} ${escapeHtml(it.unit)} × ${money(it.rateCents)}</span></td><td class="rd-amt">${money(it.amountCents)}</td></tr>`;
+                return `<tr><td><span class="rd-item-name">${escapeHtml(it.name || '-')}</span>${cat}${vessel}${desc}<span class="rd-item-sub">${qtyStr} × ${money(it.rateCents)}</span></td><td class="rd-amt">${money(it.amountCents)}</td></tr>`;
             }).join('') + '</table>';
 
             /* Gate pass items render as a flat grid — always fills
-               left-to-right first, tiling boxes side by side. */
+               left-to-right first, tiling boxes side by side.
+               Every non-price field the item carries is shown, each on
+               its own labelled line, so gate security can check an item
+               against the pass without having to guess which unlabelled
+               line means what. Previously Category/Vessel/Description all
+               shared one style and the description had no label at all,
+               so a description reading e.g. "Engine Room" was
+               indistinguishable from a vessel name. Prices are still
+               never shown here — a gate pass is a release authorisation,
+               not a financial document. */
             let gatePassItemsHtml = '';
             if (isGatePass) {
                 const gpCols = gatePassColumnCount(items.length);
+                const gpField = (label, value) => value ?
+                    `<div class="rd-box-field"><span class="rd-box-flabel">${escapeHtml(label)}</span><span class="rd-box-fval">${escapeHtml(value)}</span></div>` : '';
                 gatePassItemsHtml = `<div class="rd-item-grid" style="--rd-gp-cols:${gpCols}">` +
-                    items.map(it => {
-                        const cat = it.category ? `<div class="rd-box-vessel">Category: ${escapeHtml(it.category)}</div>` : '';
-                        const vessel = it.vessel ? `<div class="rd-box-vessel">Vessel: ${escapeHtml(it.vessel)}</div>` : '';
-                        const desc = it.desc ? `<div class="rd-box-vessel">${escapeHtml(it.desc)}</div>` : '';
+                    items.map((it, idx) => {
                         return `<div class="rd-item-box">
-                            <div class="rd-box-name">${escapeHtml(it.name)}</div>
-                            ${cat}
-                            ${vessel}
-                            ${desc}
-                            <div class="rd-box-qty">${escapeHtml(String(it.qty))} <span class="rd-box-unit">${escapeHtml(it.unit)}</span></div>
+                            <div class="rd-box-name"><span class="rd-box-idx">${idx + 1}.</span> ${escapeHtml(it.name || '-')}</div>
+                            ${gpField('Category', it.category)}
+                            ${gpField('Vessel', it.vessel)}
+                            ${gpField('Description', it.desc)}
+                            <div class="rd-box-qty">${escapeHtml(it.qty != null ? String(it.qty) : '-')} <span class="rd-box-unit">${escapeHtml(it.unit || '')}</span></div>
                         </div>`;
                     }).join('') + '</div>';
+                /* A count line so security can confirm nothing was added
+                   or removed after the pass was printed, and so a
+                   short-loaded truck is obvious against the pass. */
+                const unitTotals = {};
+                items.forEach(it => {
+                    const u = (it.unit || '').trim() || 'units';
+                    const q = Number(it.qty);
+                    if (Number.isFinite(q)) unitTotals[u] = (unitTotals[u] || 0) + q;
+                });
+                const totalsStr = Object.keys(unitTotals).map(u =>
+                    `${Math.round(unitTotals[u] * 1000) / 1000} ${u}`).join(' · ');
+                gatePassItemsHtml += `<div class="rd-gp-tally"><strong>${items.length}</strong> line item${items.length === 1 ? '' : 's'}` +
+                    (totalsStr ? ` &nbsp;·&nbsp; Total quantity: <strong>${escapeHtml(totalsStr)}</strong>` : '') + `</div>`;
             }
 
             const vh = data.vehicle || {};

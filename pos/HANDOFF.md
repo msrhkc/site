@@ -1,5 +1,5 @@
 # MSR POS — Handoff Document
-**Version 1.6.1 — 2026-09-13**
+**Version 1.7.1 — 2026-09-17**
 
 This is the current, working state of the MSR Retail POS: a single-file
 HTML app (`index.html`) backed by a Supabase project. This document is the
@@ -101,7 +101,11 @@ already works — `UPDATE` is the one new permission Edit-receipt needs).
   complete structured detail — vehicle/driver, full reimbursement fields,
   itemized statements — nothing collapsed into a single line
 - Printed statement: one row per item and one row per payment per receipt,
-  never joined into a single cell
+  never joined into a single cell. Carries every field the record holds,
+  including vehicle/driver and item description
+- Gate passes: every item field labelled (Category/Vessel/Description),
+  items numbered, with an item-count and total-quantity tally line for
+  gate verification. Never shows prices
 - "Round totals" setting: rounds grand totals to the nearest whole Tk
   (standard rounding, not always-up) for display only — never changes
   actual payment-collection math

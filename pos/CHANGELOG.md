@@ -410,3 +410,89 @@ add it there too, since editing calls `sb.from('receipts').update(...)`.
   full detail, end to end, matching everything requested in this build.
 - This is the version this handoff covers as the current, working state of
   the POS.
+
+## 1.7.0 — 2026-09-13
+### Gate passes — item detail properly structured
+- **Every item field is now labelled** (`CATEGORY:` / `VESSEL:` /
+  `DESCRIPTION:`) and styled distinctly from its value. Previously
+  Category, Vessel and Description all shared one identical unlabelled
+  style, and the description had no label at all — so a description
+  reading e.g. "Engine Room" was visually indistinguishable from a vessel
+  name on a printed pass.
+- **Items are numbered**, so a pass can be read against a load in order.
+- **New tally line** under the items: total line-item count plus total
+  quantity summed per unit (e.g. "2 line items · Total quantity: 7.5 kg"),
+  so a short-loaded or over-loaded truck is obvious against the pass at
+  the gate.
+- Prices remain absent from gate passes — verified by test that no
+  currency figure can appear on one. A gate pass is a release
+  authorisation, not a financial document.
+- The same labelling was applied to receipts and the price-free broker
+  copy, which had the identical ambiguity.
+
+### Statements and exports — no field left out
+Audited every field the record actually holds (`items`: name, category,
+vessel, desc, qty, unit, rateCents, amountCents; `record`: client,
+vehicle, cashier, payments, reimbursement, receiptId, submittedAt) against
+what each output actually emitted. Three real gaps were found and fixed:
+- **Vehicle and driver details appeared in no statement or export at all**
+  — captured on every sale, shown nowhere. Now included in: the admin
+  printed/on-screen statement, the cashier/filer price-free statement, the
+  XLSX statement sheet (as `Vehicle Plate` / `Driver Name` /
+  `Driver Phone` columns), and the CSV items export.
+  `buildStatementRows()` was also silently dropping `vehicle` on the way
+  through, so it's now carried like every other field.
+- **Item description was missing entirely from the price-free statement**
+  (cashier's daily / filer's "Today in full detail") — it showed Item,
+  Category, Vessel, Qty, Unit but not Description. Added, and the table
+  widened from 5 to 6 columns to match.
+- The price-free statement now also shows the receiving cashier and the
+  vehicle/driver line, matching the admin statement.
+
+### Structural hardening (prevents this class of bug recurring)
+- XLSX statement sheet column positions are now **derived by name** from
+  the single `STATEMENT_SHEET_HEADERS` list (`SSC['Description']` etc.)
+  instead of hard-coded numeric indexes. Previously, inserting a column
+  would have silently shifted every subsequent write by one, putting data
+  under the wrong headings — exactly the kind of silent corruption that is
+  hard to spot in a spreadsheet.
+- Column widths are likewise generated from the header list, so widths can
+  no longer fall out of step with the columns.
+
+### Verified
+- Gate pass: all fields labelled, numbered, tally correct, zero prices.
+- Admin statement: vehicle/driver/description/reimbursement all present;
+  every row exactly 8 columns.
+- CSV items (17 cols) and payments (19 cols): every row matches its header
+  width exactly.
+- XLSX statement: 31 headers, 31 widths, every row 31 wide, row-count
+  equals outline-level count, every value under its correct heading.
+- Full page regression: loads with zero errors, no missing or duplicate
+  element IDs, tag balance intact, no undefined CSS variables.
+
+### Data safety
+No schema change, no stored-record format change, and no migration needed
+for this release. Every change is additive on the presentation side —
+existing receipts render with the new structure automatically, and records
+that simply have no vehicle or description (older sales, walk-ins) render
+cleanly with those lines omitted rather than showing empty labels.
+
+## 1.7.1 — 2026-09-17
+- **Payment QR is now built into the app** as a default, so the Bank/QR
+  panel shows a scannable code with no configuration needed
+  (`DEFAULT_BANK_QR_URL`).
+- It is strictly a *fallback*, never an override: a QR an admin has
+  uploaded or linked in Settings always wins. Verified across all six
+  value shapes — link set, file uploaded, both set (upload wins), legacy
+  record with an empty `data_url`, explicitly cleared, and no record at
+  all — only the last three fall through to the built-in image.
+- Applied at startup rather than only on settings load. `loadAppSettings`
+  returns early when the backend client is unavailable, and never calls
+  `applyBankQrImage` at all when no `bank_qr_image` row exists — so
+  without an explicit startup call the default would never have been
+  painted and the panel would have sat empty on exactly the setups that
+  need the default most.
+- Existing behaviour preserved: a QR image that fails to load (dead link,
+  offline, host down) still falls back to the placeholder rather than
+  showing a broken-image icon.
+- No schema change, no migration, no stored-record change.
